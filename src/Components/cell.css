@@ -1,0 +1,29 @@
+.cell {
+    width: 25px;
+    height: 25px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+
+.cell-border {
+    width: 100%;
+    height: 100%;
+    border: 1px lightgray solid;
+
+    box-sizing: border-box;
+}
+
+.cell.hovered.legal .cell-border {
+    border: 2px lightgreen solid;
+}
+
+.cell.hovered.illegal .cell-border {
+    border: 2px lightcoral solid;
+}
+
+.cell.hasItem {
+    /* background-color: black; */
+}

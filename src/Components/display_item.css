@@ -1,0 +1,40 @@
+.display-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+
+
+}
+
+.display-item {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.display {
+    width: fit-content;
+    height: fit-content;
+    display: flex;
+
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
+
+.display p {
+    color: #000;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    margin: 0;
+    font-size: 10px;
+}
