@@ -8,6 +8,11 @@ export default defineConfig({
   plugins: [react()],
   root,
   base: '/layoutly/',
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "./src"),
+    },
+  },
   build: {
     outDir,
     emptyOutDir: true,

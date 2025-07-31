@@ -27,13 +27,14 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
     const [rotation, setRotation] = useState<number>(0)
     const [cell, setCell] = useState<HTMLElement | null>(null);
     const [canRotate, setCanRotate] = useState<boolean>(true);
+    const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
 
     // Helper function to get rotated dimensions
     const getRotatedDimensions = (rotation: number) => {
         const isRotated = rotation % 2 === 1; // 90° or 270°
         return {
-            width: isRotated ? item.cellsTall * 25 : item.cellsLong * 25,
-            height: isRotated ? item.cellsLong * 25 : item.cellsTall * 25,
+            width: isRotated ? item.cellsTall * cellSize : item.cellsLong * cellSize,
+            height: isRotated ? item.cellsLong * cellSize : item.cellsTall * cellSize,
             cellsWide: isRotated ? item.cellsTall : item.cellsLong,
             cellsTall: isRotated ? item.cellsLong : item.cellsTall
         };
@@ -42,8 +43,8 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
     // Helper function to calculate position offset for rotation
     // Helper function to calculate position offset for rotation
     const getRotationOffset = (rotation: number) => {
-        const originalWidth = item.cellsLong * 25;
-        const originalHeight = item.cellsTall * 25;
+        const originalWidth = item.cellsLong * cellSize;
+        const originalHeight = item.cellsTall * cellSize;
 
         switch (rotation % 4) {
             case 0: // 0°
@@ -141,18 +142,21 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
         if (isDragging) {
             setPrevX(x)
             setPrevY(y)
-
-            // Calculate the offset from mouse to element when drag starts
+            const preventScroll = (e: TouchEvent) => {
+                e.preventDefault();
+            };
+            document.body.addEventListener('touchmove', preventScroll, { passive: false });
+            // Calculate the offset from mouse/touch to element when drag starts
             const rect = document.getElementById(item.id)?.getBoundingClientRect();
             const initialOffsetX = rect ? rect.left - x : 0;
             const initialOffsetY = rect ? rect.top - y : 0;
+
             if (isSelected) {
                 onDeselect();
-
             }
-            document.onmousemove = (e) => {
 
-
+            // Handle both mouse and touch events
+            const handleMove = (clientX: number, clientY: number, target: EventTarget | null) => {
                 // Create item with current rotation for highlighting
                 const rotatedDims = getRotatedDimensions(rotation);
                 const tempItem = {
@@ -161,17 +165,33 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                     cellsTall: rotatedDims.cellsTall
                 };
 
-                highlightCells(CellId.fromString((e.target! as HTMLElement).id), tempItem);
-                setX(e.clientX - initialOffsetX)
-                setY(e.clientY - initialOffsetY + 5)
-            }
+                // For touch events, we need to find the element under the touch point
+                let targetElement = target as HTMLElement;
+                if (!targetElement || !targetElement.classList?.contains("cell")) {
+                    // Use elementFromPoint to find the cell under the touch
+                    const elementUnderTouch = document.elementFromPoint(clientX, clientY);
+                    if (elementUnderTouch?.classList?.contains("cell")) {
+                        targetElement = elementUnderTouch as HTMLElement;
+                    }
+                }
 
-            document.onmouseup = (e) => {
-                console.log(e.target)
+                if (targetElement?.classList?.contains("cell")) {
+                    highlightCells(CellId.fromString(targetElement.id), tempItem);
+                }
+
+                setX(clientX - initialOffsetX)
+                setY(clientY - initialOffsetY + 5)
+            };
+
+            const handleEnd = (clientX: number, clientY: number) => {
+                console.log("Drag ended")
                 unHighlightCells();
-                const targetElement = e.target! as HTMLElement
+                document.body.removeEventListener('touchmove', preventScroll);
 
-                if (!targetElement.classList.contains("cell")) {
+                // Find the element under the final position
+                const targetElement = document.elementFromPoint(clientX, clientY) as HTMLElement;
+
+                if (!targetElement?.classList?.contains("cell")) {
                     setX(prevX)
                     setY(prevY)
                 } else {
@@ -207,10 +227,46 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                     setCell(targetElement)
                 }
                 setIsDragging(false)
-            }
+            };
+
+            // Mouse events
+            document.onmousemove = (e) => {
+                e.preventDefault();
+                handleMove(e.clientX, e.clientY, e.target);
+            };
+
+            document.onmouseup = (e) => {
+                handleEnd(e.clientX, e.clientY);
+                document.onmousemove = null;
+                document.onmouseup = null;
+                document.ontouchmove = null;
+                document.ontouchend = null;
+            };
+
+            // Touch events
+            document.ontouchmove = (e) => {
+                e.preventDefault(); // Prevent scrolling
+                const touch = e.touches[0];
+                handleMove(touch.clientX, touch.clientY, e.target);
+            };
+
+            document.ontouchend = (e) => {
+                const touch = e.changedTouches[0];
+                handleEnd(touch.clientX, touch.clientY);
+                document.onmousemove = null;
+                document.onmouseup = null;
+                document.ontouchmove = null;
+                document.ontouchend = null;
+            };
+            return () => {
+                document.removeEventListener('touchmove', preventScroll);
+            };
+
         } else {
-            document.onmousemove = null
-            document.onmouseup = null
+            document.onmousemove = null;
+            document.onmouseup = null;
+            document.ontouchmove = null;
+            document.ontouchend = null;
         }
     }, [isDragging, cell, rotation])
 
@@ -239,63 +295,121 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
     }
 
     return (
-        <>
-            <div
-                id={item.id}
-                className={`draggable-item ${isDragging ? "dragging" : isSelected ? "selected" : ""}`}
-                style={{
-                    top: `${y}px`,
-                    left: `${x}px`,
-                    width: `${item.cellsLong * 25 - (isSelected ? 4 : 0)}px`,
-                    height: `${item.cellsTall * 25 - (isSelected ? 4 : 0)}px`,
-                    rotate: `${rotation * 90}deg`,
-                    transformOrigin: 'center center'
-                }}
-                onMouseDown={() => setIsDragging(true)}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (!item.hasMoved) return;
-                    if (isSelected) {
-                        onDeselect();
-                    } else {
-                        checkCanRotate();
-                        onSelect(item.id);
-                    }
-                }}
-            >
-                <img src={item.icon} alt="icon" />
-            </div>
-            {(isSelected || isUnselecting) && (
+        x == 0 || y == 0 ? null :
+            <>
                 <div
-                    className={`draggable-item-options ${isUnselecting ? "exiting" : ""}`}
+                    id={item.id}
+                    className={`draggable-item ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""}`}
                     style={{
-                        top: `${y + (item.cellsTall * 25) / 2 - (rotatedDims.height) / 2 - 25}px`,
-
-                        left: `${x + (item.cellsLong * 25) / 2 - (rotatedDims.width) / 2}px`,
-                        width: `${rotatedDims.width}px`
+                        top: `${y}px`,
+                        left: `${x}px`,
+                        width: `${item.cellsLong * cellSize - (isSelected ? 4 : 0)}px`,
+                        height: `${item.cellsTall * cellSize - (isSelected ? 4 : 0)}px`,
+                        rotate: `${rotation * 90}deg`,
+                        transformOrigin: 'center center'
+                    }}
+                    onMouseDown={item.moveable ? () => setIsDragging(true) : undefined}
+                    onTouchStart={item.moveable ? (e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
+                    } : undefined}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (!item.hasMoved) return;
+                        if (isSelected) {
+                            onDeselect();
+                        } else {
+                            checkCanRotate();
+                            onSelect(item.id);
+                        }
                     }}
                 >
-                    <img
-                        src={Rotate}
-                        alt="rotate"
-                        className={"rotate-icon" + (canRotate ? " can-rotate" : " cannot-rotate")}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            rotateItem();
-                        }}
-                    />
-                    <img
-                        src={XMark}
-                        alt="delete"
-                        className="delete-icon"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            deleteItem(item, CellId.fromString(cell?.id || ""));
-                        }}
-                    />
-                </div>
-            )}
-        </>
+                    {item.icon.includes("custom-") ?
+                        <div className="custom-icon">
+                            <p>{item.icon.split("custom-")[1]}</p>
+                        </div>
+                        :
+                        <img src={item.icon} alt="icon" />
+                    }
+                </div >
+                {(isSelected || isUnselecting) && (
+                    <>
+                        {/* Check if mobile device */}
+                        {/Mobi|Android/i.test(navigator.userAgent) ? (
+                            // Mobile layout - split options left and right
+                            <>
+                                <div
+                                    className={`draggable-item-options mobile-left ${isUnselecting ? "exiting" : ""}`}
+                                    style={{
+                                        top: `${y + (item.cellsTall * cellSize) / 2 - 10}px`, // Center vertically (10px = half of options height)
+                                        left: `${x + (item.cellsLong * cellSize) / 2 - (rotatedDims.width) / 2 - 20}px`, // 30px left of item
+                                        width: `10px`
+                                    }}
+                                >
+                                    <img
+                                        src={Rotate}
+                                        alt="rotate"
+                                        className={"rotate-icon" + (canRotate ? " can-rotate" : " cannot-rotate")}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            rotateItem();
+                                        }}
+                                    />
+                                </div>
+                                <div
+                                    className={`draggable-item-options mobile-right ${isUnselecting ? "exiting" : ""}`}
+                                    style={{
+                                        top: `${y + (item.cellsTall * cellSize) / 2 - 10}px`, // Center vertically
+                                        left: `${x + (item.cellsLong * cellSize) / 2 + (rotatedDims.width) / 2 + 10}px`, // 10px right of item
+                                        width: `10px`
+                                    }}
+                                >
+                                    <img
+                                        src={XMark}
+                                        alt="delete"
+                                        className="delete-icon"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteItem(item, CellId.fromString(cell?.id || ""));
+                                        }}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            // Desktop layout - options above item
+                            <div
+                                className={`draggable-item-options ${isUnselecting ? "exiting" : ""}`}
+                                style={{
+                                    top: `${y + (item.cellsTall * cellSize) / 2 - (rotatedDims.height) / 2 - 20}px`,
+                                    left: `${x + (item.cellsLong * cellSize) / 2 - (rotatedDims.width) / 2}px`,
+                                    width: `${rotatedDims.width}px`
+                                }}
+                            >
+                                <img
+                                    src={Rotate}
+                                    alt="rotate"
+                                    className={"rotate-icon" + (canRotate ? " can-rotate" : " cannot-rotate")}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        rotateItem();
+                                    }}
+                                />
+                                <img
+                                    src={XMark}
+                                    alt="delete"
+                                    className="delete-icon"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteItem(item, CellId.fromString(cell?.id || ""));
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </>
+                )
+                }
+
+            </>
     )
 }
 

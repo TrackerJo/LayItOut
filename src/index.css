@@ -5,14 +5,19 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  background-color: #f8fafc;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+@font-face {
+  font-family: 'Cassandra';
+  /*a name to be used later*/
+  src: url('./assets/Cassandra.ttf');
+
+}
 
 body {
   margin: 0;
@@ -20,4 +25,46 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+
+  /* High-tech grid background */
+  background-color: #f1f5f9;
+  background-image:
+    /* Horizontal lines */
+    linear-gradient(to right, transparent 0%, transparent calc(50% - 0.5px), rgba(148, 163, 184, 0.3) calc(50% - 0.5px), rgba(148, 163, 184, 0.3) calc(50% + 0.5px), transparent calc(50% + 0.5px), transparent 100%),
+    /* Vertical lines */
+    linear-gradient(to bottom, transparent 0%, transparent calc(50% - 0.5px), rgba(148, 163, 184, 0.3) calc(50% - 0.5px), rgba(148, 163, 184, 0.3) calc(50% + 0.5px), transparent calc(50% + 0.5px), transparent 100%),
+    /* Grid intersection dots */
+    radial-gradient(circle at center, rgba(99, 102, 241, 0.4) 1px, transparent 1px);
+
+  background-size: 40px 40px, 40px 40px, 40px 40px;
+  background-position: 0 0, 0 0, 0 0;
+
+  /* Add subtle gradient overlay */
+  background-attachment: local;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+    linear-gradient(135deg, rgba(236, 254, 255, 0.8) 0%, rgba(243, 244, 246, 0.8) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+@media (max-width: 768px) {
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-size: 30px 30px, 30px 30px, 30px 30px;
+    /* Smaller grid on mobile */
+  }
 }

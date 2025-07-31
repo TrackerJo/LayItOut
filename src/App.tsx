@@ -5,35 +5,60 @@ import './App.css'
 import Area from './Components/area'
 import type { CellProps } from './Components/cell';
 import DraggableItem from './Components/draggable_item';
-import { CellId, InventoryItem, Item } from './constants';
+import { CellId, InventoryItem, Item, StaringItem } from './constants';
 import Toolbox from './Components/toolbox';
 import ChairIcon from './assets/chair.png';
 import RectangleTable from './assets/rectangle_table.png';
+import RectangleTableChairs from './assets/rectangle_table_chairs.png';
 
 
 function App() {
-  const width = 300;
-  const height = 200;
+  const width = /Mobi|Android/i.test(navigator.userAgent) ? 250 : 500;
+  const height = /Mobi|Android/i.test(navigator.userAgent) ? 150 : 300;
   const [cells, setCells] = useState<CellProps[][]>([]);
   const [items, setItems] = useState<Item[]>([])
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [unselectingItemIds, setUnselectingItemIds] = useState<string[]>([]);
+  const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
-    new InventoryItem({ quantity: 60, item: new Item({ id: "1", name: "Chair", cellsLong: 1, cellsTall: 1, icon: ChairIcon }) }), new InventoryItem({ quantity: 4, item: new Item({ id: "2", name: "Table", cellsLong: 4, cellsTall: 2, icon: RectangleTable }) })
+    new InventoryItem({ quantity: 60, item: new Item({ id: "1", name: "Chair", cellsLong: 2, cellsTall: 2, icon: ChairIcon }) }), new InventoryItem({ quantity: 4, item: new Item({ id: "2", name: "Table", cellsLong: 8, cellsTall: 4, icon: RectangleTable }) })
   ]);
+  const [startingItems, setStartingItems] = useState<StaringItem[]>([
 
+    new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 2", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })
+  ]);
 
 
 
 
   function generateCells() {
     const newCells: CellProps[][] = [];
-    [...Array((height / 25)).keys()].map((j) => {
+    [...Array((height / cellSize)).keys()].map((j) => {
       const rowCells: CellProps[] = [];
-      [...Array((width / 25)).keys()].map((i) => rowCells.push({ id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false }))
+      [...Array((width / cellSize)).keys()].map((i) => rowCells.push({ id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "" }))
       newCells.push(rowCells)
     })
     setCells([...newCells]);
+    setTimeout(() => {
+
+      for (const startingItem of startingItems) {
+        console.log("Placing starting item", startingItem.item.name, startingItem.cell)
+        for (let i = 0; i < startingItem.item.cellsTall; i++) {
+          for (let j = 0; j < startingItem.item.cellsLong; j++) {
+            newCells[startingItem.cell.y + i][startingItem.cell.x + j].hasItem = true;
+            newCells[startingItem.cell.y + i][startingItem.cell.x + j].itemId = startingItem.item.id;
+          }
+        }
+
+        startingItem.item.initialElement = document.querySelector(`#${startingItem.cell.toId()}.cell:not(.cell-border)`) as HTMLElement;
+
+
+        console.log("Adding item to items", startingItem.item.initialElement)
+        setItems((old) => [...old, startingItem.item])
+      }
+      setCells([...newCells]);
+    }, 100)
+
   }
 
   function flattenCells(): CellProps[] {
@@ -103,13 +128,14 @@ function App() {
 
     // If the item is being placed, remove it from the inventory
     console.log("Removing item from inventory", item.name)
-
+    let itemRemoved = false;
     if (!item.hasMoved) {
       const index = inventoryItems.findIndex((i) => i.item.name == item.name && !i.item.hasMoved);
       if (index !== -1) {
         const newInventoryItems = [...inventoryItems];
         newInventoryItems[index].quantity -= 1;
         if (newInventoryItems[index].quantity <= 0) {
+          itemRemoved = true;
           newInventoryItems.splice(index, 1);
         }
         setInventoryItems(newInventoryItems);
@@ -120,12 +146,24 @@ function App() {
 
     setItems((old) => {
       console.log("Placing item", item.id)
-      if (old.find((i) => i.id == item.id) == undefined) {
-        console.log("Item not found, adding new item")
 
-      }
       console.log("Updating item", item.id)
-      old.find((i) => i.id == item.id)!.hasMoved = true
+      if (!old.find((i) => i.id == item.id)!.hasMoved) {
+        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+        if (isMobile && !itemRemoved) {
+
+          const newItem = new Item({
+            id: item.name + (Math.random() * 10000).toString(),
+            cellsLong: item.cellsLong,
+            cellsTall: item.cellsTall,
+            initialElement: item.initialElement,
+            name: item.name,
+            icon: item.icon
+          });
+          old = [...old, newItem];
+        }
+        old.find((i) => i.id == item.id)!.hasMoved = true
+      }
       return old;
     })
   }
@@ -133,7 +171,7 @@ function App() {
   function addItem(item: Item) {
     // items.push(item)
     // setItems(items)
-    if (items.find((i) => i.name == item.name && !i.hasMoved)) {
+    if (items.find((i) => i.name == item.name && !i.hasMoved && !i.starterItem)) {
       return
     }
     setItems((old) => [...old, item])
@@ -170,6 +208,17 @@ function App() {
     setItems((old) => {
       console.log()
       return old.filter((i) => i.id != item.id)
+    })
+    //add the item to the inventory
+    setInventoryItems((old) => {
+      const index = old.findIndex((i) => i.item.name == item.name && !i.item.hasMoved);
+      if (index !== -1) {
+        const newInventoryItems = [...old];
+        newInventoryItems[index].quantity += 1;
+        return newInventoryItems;
+      } else {
+        return [...old, new InventoryItem({ item: new Item({ id: item.id, name: item.name, cellsLong: rotatedDims.cellsWide, cellsTall: rotatedDims.cellsTall, icon: item.icon }), quantity: 1 })];
+      }
     })
   }
 
@@ -213,11 +262,51 @@ function App() {
     }
     const canPlace = canPlaceItem(startCell, item);
     // Reset all cells to not hovered
-    newCells.forEach(row => row.forEach(cell => cell.mouseOver = false));
+    newCells.forEach(row => row.forEach(cell => { cell.mouseOver = false; cell.canPlaceItem = false; cell.mouseOverLocation = "" }));
     // Highlight the cells that the item would occupy
+    console.log("Highlighting cells for item", item.name, "Cells Long", item.cellsLong, "Cells Tall", item.cellsTall)
     for (let i = 0; i < item.cellsTall; i++) {
       for (let j = 0; j < item.cellsLong; j++) {
         if (startCell.y + i < newCells.length && startCell.x + j < newCells[startCell.y + i].length) {
+          if (item.cellsLong === 1 && item.cellsTall === 1) {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "single";
+          } else if (item.cellsTall === 1) {
+            if (j === 0) {
+              newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "leftFull";
+            } else if (j === item.cellsLong - 1) {
+              newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "rightFull";
+            } else {
+              newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "middleFull";
+            }
+          } else if (item.cellsLong === 1) {
+            if (i === 0) {
+              newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "topFull";
+            } else if (i === item.cellsTall - 1) {
+              newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "bottomFull";
+            } else {
+              newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "middleVFull";
+            }
+          }
+
+          else if (i === 0 && j === 0) {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "topLeftCorner";
+          } else if (i === 0 && j === item.cellsLong - 1) {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "topRightCorner";
+          } else if (i === item.cellsTall - 1 && j === 0) {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "bottomLeftCorner";
+          } else if (i === item.cellsTall - 1 && j === item.cellsLong - 1) {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "bottomRightCorner";
+          } else if (i === 0) {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "top";
+          } else if (i === item.cellsTall - 1) {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "bottom";
+          } else if (j === 0) {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "left";
+          } else if (j === item.cellsLong - 1) {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "right";
+          } else {
+            newCells[startCell.y + i][startCell.x + j].mouseOverLocation = "middle";
+          }
           newCells[startCell.y + i][startCell.x + j].mouseOver = true;
           newCells[startCell.y + i][startCell.x + j].canPlaceItem = canPlace;
         }
@@ -231,6 +320,7 @@ function App() {
     newCells.forEach(row => row.forEach(cell => {
       cell.mouseOver = false;
       cell.canPlaceItem = false;
+      cell.mouseOverLocation = "";
     }));
     setCells(newCells);
   }
@@ -256,6 +346,8 @@ function App() {
   }, [selectedItemId, items]);
   return (
     <>
+      <h1 className='title'>LayItOut</h1>
+
       <div className="App">
         <Area width={width} height={height} cells={flattenCells()} />
         <Toolbox addItem={addItem} inventoryItems={inventoryItems.map(inv =>

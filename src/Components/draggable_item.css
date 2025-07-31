@@ -20,6 +20,7 @@
     /* Ensure rotation happens around center */
     transition: rotate 0.2s ease-in-out;
 
+
 }
 
 .draggable-item-options {
@@ -116,6 +117,88 @@ body:not(body:has(.draggable-item.dragging)) .draggable-item {
 }
 
 .draggable-item.selected {
-    border: 2px solid blue;
-    box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
+    border: 2px solid rgba(59, 130, 246, 0.8);
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.1),
+        0 2px 6px rgba(0, 0, 0, 0.06);
+    z-index: 2;
+    animation: selectedPulse 2s ease-in-out infinite;
+}
+
+@keyframes selectedPulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 0 2px rgba(59, 130, 246, 0.2),
+            0 8px 25px rgba(59, 130, 246, 0.15),
+            0 3px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 4px rgba(59, 130, 246, 0.3),
+            0 12px 35px rgba(59, 130, 246, 0.25),
+            0 5px 15px rgba(0, 0, 0, 0.15);
+    }
+}
+
+.draggable-item:hover:not(.dragging):not(.selected) {
+    /* transform: scale(1.02); */
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.1),
+        0 2px 6px rgba(0, 0, 0, 0.06);
+    /* border: 2px solid rgba(148, 163, 184, 0.3); */
+
+}
+
+.custom-icon {
+    width: 100%;
+    height: 100%;
+    color: black;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+
+}
+
+.custom-icon p {
+    border: 1px solid #2c2c2c;
+    width: 90%;
+    height: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+}
+
+.draggable-item.not-moveable {
+    cursor: not-allowed !important;
+
+
+}
+
+/* Add a faint black tint to not moveable item */
+.draggable-item.not-moveable img {
+    filter: brightness(0.8) grayscale(0.5);
+}
+
+.draggable-item.not-moveable div {
+    filter: brightness(0.8) grayscale(0.5);
+}
+
+@media (max-width: 768px) {
+    .rotate-icon {
+        width: 12px;
+        height: 12px;
+    }
+
+    .delete-icon {
+        width: 10px;
+        height: 10px;
+    }
+
+
 }

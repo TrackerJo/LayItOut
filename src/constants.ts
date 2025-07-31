@@ -25,13 +25,16 @@ export class Item {
     cellsTall: number;
     hasMoved: boolean;
     initialElement?: HTMLElement;
-
+    moveable: boolean;
     roation: number;
+    starterItem: boolean;
 
-    constructor({ id, cellsLong, cellsTall, initialElement, name, icon }: {
+    constructor({ id, cellsLong, cellsTall, initialElement, name, icon, moveable, starterItem }: {
         id: string, cellsLong: number, cellsTall: number, initialElement?: HTMLElement,
         name: string,
-        icon: string
+        icon: string,
+        moveable?: boolean,
+        starterItem?: boolean
     }) {
         this.id = id;
         this.cellsLong = cellsLong;
@@ -42,6 +45,8 @@ export class Item {
         this.name = name;
         this.icon = icon;
         this.roation = 0;
+        this.moveable = moveable ?? true;
+        this.starterItem = starterItem ?? false;
     }
 
 }
@@ -54,4 +59,15 @@ export class InventoryItem {
         this.item = item;
         this.quantity = quantity;
     }
+}
+
+export class StaringItem {
+    cell: CellId;
+    item: Item;
+
+    constructor({ cell, item }: { cell: CellId, item: Item }) {
+        this.cell = cell;
+        this.item = item;
+    }
+
 }
