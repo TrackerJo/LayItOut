@@ -80,6 +80,7 @@ export class Section {
     cellsTall: number;
     startingItems: StaringItem[];
     items: Item[];
+    
 
     constructor({ name, cellId, cellsLong, cellsTall, startingItems }: {
         name: string,

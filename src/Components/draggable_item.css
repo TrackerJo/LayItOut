@@ -23,6 +23,10 @@
 
 }
 
+.draggable-item.invisible {
+    display: none !important;
+}
+
 .draggable-item-options {
     position: absolute;
     display: flex;

@@ -30,3 +30,7 @@
     border-radius: 16px;
     pointer-events: none;
 }
+
+.area.invisible {
+    display: none !important;
+}

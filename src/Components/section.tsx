@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import type { Section } from "../constants";
 import "./section.css";
 
+type SectionAreaProps = {
+    section: Section
+    visible?: boolean
+}
 
-
-function SectionArea({ section }: { section: Section }) {
+function SectionArea({ section, visible }: SectionAreaProps) {
 
     const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
     const [x, setX] = useState(section.cellElement?.offsetLeft ?? 0);
@@ -27,7 +30,7 @@ function SectionArea({ section }: { section: Section }) {
     }, [section.cellElement]);
     return (
         section.cellElement && (
-            <div className="section" style={{
+            <div className={`section ${visible ?? true ? "" : "invisible"}`} style={{
                 top: `${section.cellElement.offsetTop}px`,
                 left: `${section.cellElement.offsetLeft}px`,
                 width: `${section.cellsLong * cellSize - 2}px`,

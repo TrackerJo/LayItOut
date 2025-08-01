@@ -8,13 +8,14 @@ export type CellProps = {
     mouseOver: boolean
     canPlaceItem: boolean,
     mouseOverLocation: string
-    inSection: boolean
+    inSection: boolean,
+    section?: string
 }
 
-function Cell({ id, mouseOver, canPlaceItem, hasItem, mouseOverLocation, inSection }: CellProps) {
+function Cell({ id, mouseOver, canPlaceItem, hasItem, mouseOverLocation, inSection, section }: CellProps) {
     return (
-        <div className={`cell ${mouseOver ? "hovered" : ""} ${canPlaceItem ? "legal" : "illegal"} ${hasItem ? "hasItem" : ""} ${mouseOverLocation} ${!inSection ? "outside" : ""}`} id={id.toId()}>
-            <div className="cell cell-border" id={id.toId()}>
+        <div className={`cell ${mouseOver ? "hovered" : ""} ${canPlaceItem ? "legal" : "illegal"} ${hasItem ? "hasItem" : ""} ${mouseOverLocation} ${!inSection ? "outside" : ""}`} id={`${section == null ? "" : section.split(" ").join("")}${id.toId()}`}>
+            <div className="cell cell-border" id={`${section == null ? "" : section.split(" ").join("")}${id.toId()}`}>
 
             </div>
         </div>

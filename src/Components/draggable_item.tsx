@@ -16,9 +16,10 @@ type DraggableItemProps = {
     highlightCells: (startCell: CellId, item: Item) => void
     unHighlightCells: () => void
     isUnselecting: boolean
+    visible?: boolean
 }
 
-function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells }: DraggableItemProps) {
+function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible }: DraggableItemProps) {
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
     const [prevX, setPrevX] = useState<number>(0)
@@ -176,6 +177,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                 }
 
                 if (targetElement?.classList?.contains("cell")) {
+                    console.log("Target element:", targetElement.id);
                     highlightCells(CellId.fromString(targetElement.id), tempItem);
                 }
 
@@ -299,7 +301,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             <>
                 <div
                     id={item.id}
-                    className={`draggable-item ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""}`}
+                    className={`draggable-item ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""} ${visible ? "" : "invisible"}`}
                     style={{
                         top: `${y}px`,
                         left: `${x}px`,

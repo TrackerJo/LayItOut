@@ -31,3 +31,7 @@
     color: #333;
     z-index: 10;
 }
+
+.section.invisible {
+    display: none !important;
+}

@@ -49,3 +49,27 @@ body:has(.draggable-item.dragging) {
 
   }
 }
+
+.mobile-areas {
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  /* overflow: scroll; */
+  /* position: relative;  */
+  gap: 1rem;
+
+}
+
+.back-mobile-areas {
+  width: 20px;
+  rotate: 180deg;
+  cursor: pointer;
+}
+
+.forward-mobile-areas {
+  width: 20px;
+  cursor: pointer;
+
+}
