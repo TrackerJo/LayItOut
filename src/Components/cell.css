@@ -8,6 +8,11 @@
     /* position: relative; */
 }
 
+.cell.outside .cell-border {
+    /* display: none; */
+    display: none;
+}
+
 .cell-border {
     width: 100%;
     height: 100%;
@@ -62,7 +67,7 @@
     /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
 }
 
-.cell.hovered.legal.topLeftCorner .cell-border {
+.cell.hovered.legal.bottomRightCorner .cell-border {
     border-bottom: 2px solid rgba(34, 197, 94, 0.6);
     border-right: 2px solid rgba(34, 197, 94, 0.6);
     background: rgba(34, 197, 94, 0.1);
@@ -196,16 +201,166 @@
     /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
 }
 
-
-
-
-.cell.hovered.illegal .cell-border {
-    border: 2px solid rgba(239, 68, 68, 0.6);
+.cell.hovered.illegal.topLeftCorner .cell-border {
+    border-top: 2px solid rgba(239, 68, 68, 0.6);
+    border-left: 2px solid rgba(239, 68, 68, 0.6);
     background: rgba(239, 68, 68, 0.1);
     box-shadow:
         0 0 0 1px rgba(239, 68, 68, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    /* animation: pulseRed 0.6s ease-in-out infinite alternate; */
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.topRightCorner .cell-border {
+    border-top: 2px solid rgba(239, 68, 68, 0.6);
+    border-right: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.bottomLeftCorner .cell-border {
+    border-bottom: 2px solid rgba(239, 68, 68, 0.6);
+    border-left: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.bottomRightCorner .cell-border {
+    border-bottom: 2px solid rgba(239, 68, 68, 0.6);
+    border-right: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.top .cell-border {
+    border-top: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.left .cell-border {
+
+    border-left: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.bottom .cell-border {
+    border-bottom: 2px solid rgba(239, 68, 68, 0.6);
+
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.right .cell-border {
+    border-right: 2px solid rgba(239, 68, 68, 0.6);
+
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.middle .cell-border {
+
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.single .cell-border {
+    border: 2px solid rgba(239, 68, 68, 0.6);
+
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.leftFull .cell-border {
+    border-top: 2px solid rgba(239, 68, 68, 0.6);
+    border-bottom: 2px solid rgba(239, 68, 68, 0.6);
+    border-left: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.middleFull .cell-border {
+    border-top: 2px solid rgba(239, 68, 68, 0.6);
+    border-bottom: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.rightFull .cell-border {
+    border-top: 2px solid rgba(239, 68, 68, 0.6);
+    border-bottom: 2px solid rgba(239, 68, 68, 0.6);
+    border-right: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.topFull .cell-border {
+    border-top: 2px solid rgba(239, 68, 68, 0.6);
+    border-right: 2px solid rgba(239, 68, 68, 0.6);
+    border-left: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.middleVFull .cell-border {
+    border-right: 2px solid rgba(239, 68, 68, 0.6);
+    border-left: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
+}
+
+.cell.hovered.illegal.bottomFull .cell-border {
+    border-right: 2px solid rgba(239, 68, 68, 0.6);
+    border-bottom: 2px solid rgba(239, 68, 68, 0.6);
+    border-left: 2px solid rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
 }
 
 .cell.hasItem .cell-border {

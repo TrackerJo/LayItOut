@@ -5,16 +5,19 @@ import './App.css'
 import Area from './Components/area'
 import type { CellProps } from './Components/cell';
 import DraggableItem from './Components/draggable_item';
-import { CellId, InventoryItem, Item, StaringItem } from './constants';
+import { CellId, InventoryItem, Item, Section, StaringItem } from './constants';
 import Toolbox from './Components/toolbox';
 import ChairIcon from './assets/chair.png';
 import RectangleTable from './assets/rectangle_table.png';
 import RectangleTableChairs from './assets/rectangle_table_chairs.png';
+import SectionArea from './Components/section';
+
 
 
 function App() {
-  const width = /Mobi|Android/i.test(navigator.userAgent) ? 250 : 500;
-  const height = /Mobi|Android/i.test(navigator.userAgent) ? 150 : 300;
+  const [isMobile, setIsMobile] = useState<boolean>(/Mobi|Android/i.test(navigator.userAgent));
+  const [width, setWidth] = useState<number>(0);
+  const [height, setHeight] = useState<number>(0);
   const [cells, setCells] = useState<CellProps[][]>([]);
   const [items, setItems] = useState<Item[]>([])
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -25,23 +28,130 @@ function App() {
   ]);
   const [startingItems, setStartingItems] = useState<StaringItem[]>([
 
-    new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 2", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })
+
+  ]);
+  const [sections, setSections] = useState<Section[]>([new Section({
+    cellId: new CellId({ x: 0, y: 0 }),
+    cellsLong: 500 / cellSize,
+    cellsTall: 300 / cellSize,
+    startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 2", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
+    name: "Main Area"
+  }),
+  new Section({
+    cellId: new CellId({ x: 0, y: 300 / cellSize }),
+    cellsLong: 500 / cellSize,
+    cellsTall: 300 / cellSize,
+    startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 2", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
+    name: "Kitchen"
+  }),
+  new Section({
+    cellId: new CellId({ x: 500 / cellSize, y: 300 / cellSize }),
+    cellsLong: 300 / cellSize,
+    cellsTall: 200 / cellSize,
+    startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 2", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
+    name: "Outdoor Area"
+  }),
+  new Section({
+    cellId: new CellId({ x: 500 / cellSize, y: 0 }),
+    cellsLong: 200 / cellSize,
+    cellsTall: 300 / cellSize,
+    startingItems: [],
+    name: "Bathroom"
+  })
   ]);
 
-
+  function getSectionByCellId(cellId: CellId): Section | null {
+    for (const section of sections) {
+      if (cellId.x >= section.cellId.x && cellId.x < section.cellId.x + section.cellsLong &&
+        cellId.y >= section.cellId.y && cellId.y < section.cellId.y + section.cellsTall) {
+        return section;
+      }
+    }
+    return null;
+  }
 
 
   function generateCells() {
     const newCells: CellProps[][] = [];
-    [...Array((height / cellSize)).keys()].map((j) => {
+    let currentWidth = width;
+    let currentHeight = height;
+    for (const section of sections) {
+      console.log("Generating cells for section", section.name, "at", section.cellId, "with size", section.cellsLong, "x", section.cellsTall)
+      if (isMobile) {
+        section.cellId.x = section.cellId.x / 2;
+        section.cellId.y = section.cellId.y / 2;
+      }
+      console.log("Added section Length:", section.cellsLong * cellSize + section.cellId.x)
+      if ((section.cellsLong + section.cellId.x) * cellSize > currentWidth) {
+        currentWidth += section.cellsLong * cellSize;
+      }
+      if ((section.cellsTall + section.cellId.y) * cellSize > currentHeight) {
+        currentHeight += section.cellsTall * cellSize;
+      }
+    }
+    console.log("Current width:", currentWidth, "Current height:", currentHeight);
+    if (isMobile) {
+      currentHeight = currentHeight / 2;
+      currentWidth = currentWidth / 2;
+    }
+    setWidth(currentWidth);
+    setHeight(currentHeight);
+    // setSections((old) => {
+    //   return old.map((section) => {
+    //     return new Section({
+    //       name: section.name,
+    //       cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+    //       cellsLong: section.cellsLong,
+    //       cellsTall: section.cellsTall,
+    //       startingItems: section.startingItems
+    //     })
+    //   })
+    // });
+
+    [...Array((currentHeight / cellSize)).keys()].map((j) => {
       const rowCells: CellProps[] = [];
-      [...Array((width / cellSize)).keys()].map((i) => rowCells.push({ id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "" }))
+      [...Array((currentWidth / cellSize)).keys()].map((i) => {
+        console.log(getSectionByCellId(new CellId({ x: i, y: j })) != null ? "In section" : "Outside section")
+        rowCells.push({
+          id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "", inSection: getSectionByCellId(new CellId({ x: i, y: j })) != null
+        })
+      })
       newCells.push(rowCells)
     })
     setCells([...newCells]);
     setTimeout(() => {
+      const newStartingItems: StaringItem[] = [...startingItems]
+      const newSections: Section[] = [...sections];
+      for (const section of newSections) {
+        console.log("Adding section", section.name, section.cellId)
 
-      for (const startingItem of startingItems) {
+        section.cellElement = document.querySelector(`#${section.cellId.toId()}.cell:not(.cell-border)`) as HTMLElement;
+        if (isMobile) {
+          section.cellsLong = section.cellsLong / 2;
+          section.cellsTall = section.cellsTall / 2;
+        }
+        console.log("Section element found", section.cellElement)
+        newStartingItems.push(...section.startingItems.map((item) => {
+          return new StaringItem({
+            cell: new CellId({ x: section.cellId.x + item.cell.x, y: section.cellId.y + item.cell.y }),
+            item: new Item({
+              id: item.item.id,
+              name: item.item.name,
+              cellsLong: item.item.cellsLong,
+              cellsTall: item.item.cellsTall,
+              icon: item.item.icon,
+              initialElement: document.querySelector(`#${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
+              starterItem: true,
+              moveable: item.item.moveable
+            })
+          })
+        }))
+
+      }
+      console.log("Setting sections", newSections)
+      setSections([...newSections]);
+
+      for (const startingItem of newStartingItems) {
         console.log("Placing starting item", startingItem.item.name, startingItem.cell)
         for (let i = 0; i < startingItem.item.cellsTall; i++) {
           for (let j = 0; j < startingItem.item.cellsLong; j++) {
@@ -56,6 +166,7 @@ function App() {
         console.log("Adding item to items", startingItem.item.initialElement)
         setItems((old) => [...old, startingItem.item])
       }
+
       setCells([...newCells]);
     }, 100)
 
@@ -70,6 +181,8 @@ function App() {
   useEffect(() => {
     generateCells()
   }, [])
+
+
 
   function canPlaceItem(startCell: CellId, item: Item): boolean {
     console.log(startCell)
@@ -86,10 +199,24 @@ function App() {
     if (startCell.y + item.cellsTall > columnLength) {
       return false;
     }
-
+    const startingSection = getSectionByCellId(startCell);
+    if (!startingSection) {
+      console.log("Item is out of bounds of any section")
+      return false;
+    }
     // Use rotated dimensions for collision checking
     for (let i = 0; i < item.cellsTall; i++) {
       for (let j = 0; j < item.cellsLong; j++) {
+        //Check section it is in
+        const section = getSectionByCellId(new CellId({ x: startCell.x + j, y: startCell.y + i }));
+        if (!section) {
+          console.log("Item is out of bounds of any section")
+          return false;
+        }
+        if (section.name != startingSection.name) {
+          console.log("Item is crossing section boundaries")
+          return false;
+        }
         if (cells[startCell.y + i][startCell.x + j].hasItem && cells[startCell.y + i][startCell.x + j].itemId != item.id) {
           console.log("Something is already here")
           return false;
@@ -106,6 +233,10 @@ function App() {
 
     if (removeCell != null) {
       console.log("Removing item")
+      const section = getSectionByCellId(removeCell);
+      //remove item from section
+      section!.items = section!.items.filter((i) => i.id != item.id);
+
       // Use rotated dimensions for removal
       for (let i = 0; i < item.cellsTall; i++) {
         for (let j = 0; j < item.cellsLong; j++) {
@@ -114,6 +245,9 @@ function App() {
         }
       }
     }
+    const section = getSectionByCellId(startCell);
+    // Add item to section
+    section!.items.push(item);
 
     // Use rotated dimensions for placement
     for (let i = 0; i < item.cellsTall; i++) {
@@ -346,9 +480,10 @@ function App() {
   }, [selectedItemId, items]);
   return (
     <>
-      <h1 className='title'>LayItOut</h1>
 
       <div className="App">
+        <h1 className='title'>LayItOut</h1>
+
         <Area width={width} height={height} cells={flattenCells()} />
         <Toolbox addItem={addItem} inventoryItems={inventoryItems.map(inv =>
           new InventoryItem({
@@ -362,8 +497,9 @@ function App() {
             , quantity: inv.quantity
           })
         )} />
-      </div>
 
+      </div>
+      {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} />)}
       {items.map((item) => {
         return <DraggableItem item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
           onSelect={(itemId) => {
@@ -391,6 +527,7 @@ function App() {
 
           }} />
       })}
+
     </>
   )
 }

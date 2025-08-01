@@ -7,7 +7,7 @@ const outDir = resolve(__dirname, 'dist')
 export default defineConfig({
   plugins: [react()],
   root,
-  base: '/layoutly/',
+  base: '/LayItOut/',
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),

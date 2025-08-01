@@ -71,3 +71,29 @@ export class StaringItem {
     }
 
 }
+
+export class Section {
+    name: string;
+    cellId: CellId;
+    cellElement: HTMLElement | null;
+    cellsLong: number;
+    cellsTall: number;
+    startingItems: StaringItem[];
+    items: Item[];
+
+    constructor({ name, cellId, cellsLong, cellsTall, startingItems }: {
+        name: string,
+        cellId: CellId,
+        cellsLong: number,
+        cellsTall: number,
+        startingItems: StaringItem[]
+    }) {
+        this.name = name;
+        this.cellId = cellId;
+        this.cellsLong = cellsLong;
+        this.cellsTall = cellsTall;
+        this.startingItems = startingItems;
+        this.cellElement = null;
+        this.items = [];
+    }
+}

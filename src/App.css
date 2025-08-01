@@ -16,6 +16,7 @@ body:has(.draggable-item.dragging) {
   align-items: center;
   justify-content: center;
 
+
   gap: 1rem;
 }
 
@@ -26,12 +27,14 @@ body:has(.draggable-item.dragging) {
   color: rgba(59, 130, 246, 0.9);
   /* margin-bottom: 1rem; */
   /* position in to top center of the screen */
-  position: absolute;
+  /* position: absolute;
   top: 1rem;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%); */
   pointer-events: none;
+  text-shadow: 0 2px 4px rgba(0, 176, 220, 0.5);
 }
+
 
 
 @media (max-width: 768px) {
