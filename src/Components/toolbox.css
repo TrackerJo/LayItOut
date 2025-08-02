@@ -5,7 +5,8 @@
     /* backdrop-filter: blur(10px); */
     /* -webkit-backdrop-filter: blur(10px); */
     display: flex;
-    align-items: center;
+    /* align-items: center; */
+    justify-content: space-around;
     padding: 20px;
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.12),
@@ -15,6 +16,7 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
     /* position: relative; */
     overflow: hidden;
+    margin: 20px;
 }
 
 .toolbox::before {
@@ -33,6 +35,6 @@
     .toolbox {
         width: calc(100vw - 80px);
         padding: 16px;
-        margin: 0 20px;
+        margin: 40px 20px;
     }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import "./draggable_item.css"
 import { CellId, Item } from "../constants";
 import XMark from "../assets/xmark.png";
@@ -22,12 +22,14 @@ type DraggableItemProps = {
 function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible }: DraggableItemProps) {
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
+    const textRef = useRef<HTMLParagraphElement>(null);
     const [prevX, setPrevX] = useState<number>(0)
     const [prevY, setPrevY] = useState<number>(0)
     const [isDragging, setIsDragging] = useState<boolean>(false)
     const [rotation, setRotation] = useState<number>(0)
     const [cell, setCell] = useState<HTMLElement | null>(null);
     const [canRotate, setCanRotate] = useState<boolean>(true);
+    const [fontSize, setFontSize] = useState<number>(12); // Default font size
     const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
 
     // Helper function to get rotated dimensions
@@ -98,8 +100,62 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             placeItem(CellId.fromString(cell.id), tempItem, CellId.fromString(cell.id));
         }
     };
+    function getTextWidth(fontSize: number): number {
+        const element = textRef.current!;
+        const style = window.getComputedStyle(element);
+
+        // Create temporary element
+        const temp = document.createElement('span');
+        temp.style.font = style.font;
+        temp.style.fontSize = fontSize + 'px';
+        temp.style.fontFamily = style.fontFamily;
+        temp.style.fontWeight = style.fontWeight;
+        temp.style.position = 'absolute';
+        temp.style.visibility = 'hidden';
+        temp.style.whiteSpace = 'nowrap';
+        temp.textContent = element.textContent;
+
+        document.body.appendChild(temp);
+        const textWidth = temp.offsetWidth;
+        document.body.removeChild(temp);
+        return textWidth;
+    }
+
+    function decreaseFontSize(currentFontSize: number): number {
+
+        // setFontSize(currentFontSize - 1);
+        if (textRef.current) {
+            const element = textRef.current;
+            const currentWidth = getTextWidth(currentFontSize - 1);
+            console.log("Current text width:", currentWidth);
+            console.log("Paragraph width:", element.offsetWidth);
+
+            if (currentWidth > element.offsetWidth && fontSize > 6) {
+                console.log("Decreasing font size to:", currentFontSize - 1);
+                return decreaseFontSize(currentFontSize - 1);
+
+            } else {
+                return currentFontSize - 1;
+            }
+        }
+    }
 
     useEffect(() => {
+        setTimeout(() => {
+            if (textRef.current) {
+                setFontSize(decreaseFontSize(fontSize));
+
+            }
+
+        }, 100);
+    }, []);
+
+    useEffect(() => {
+        console.log("Item updated:", item);
+    }, [item.initialElement!.offsetTop, item.initialElement!.offsetLeft]);
+
+    useEffect(() => {
+
         if (item.initialElement != null && !item.hasMoved) {
 
             setX(item.initialElement.offsetLeft)
@@ -308,7 +364,8 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                         width: `${item.cellsLong * cellSize - (isSelected ? 4 : 0)}px`,
                         height: `${item.cellsTall * cellSize - (isSelected ? 4 : 0)}px`,
                         rotate: `${rotation * 90}deg`,
-                        transformOrigin: 'center center'
+                        transformOrigin: 'center center',
+                        fontSize: `${fontSize}px`
                     }}
                     onMouseDown={item.moveable ? () => setIsDragging(true) : undefined}
                     onTouchStart={item.moveable ? (e) => {
@@ -327,8 +384,11 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                     }}
                 >
                     {item.icon.includes("custom-") ?
-                        <div className="custom-icon">
-                            <p>{item.icon.split("custom-")[1]}</p>
+                        <div className="custom-icon" >
+                            <div>
+                                <p ref={textRef}>{item.icon.split("custom-")[1]}</p>
+
+                            </div>
                         </div>
                         :
                         <img src={item.icon} alt="icon" />

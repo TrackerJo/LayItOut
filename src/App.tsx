@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 
 import './App.css'
@@ -9,10 +9,12 @@ import { CellId, InventoryItem, Item, Section, StaringItem } from './constants';
 import Toolbox from './Components/toolbox';
 import ChairIcon from './assets/chair.png';
 import RectangleTable from './assets/rectangle_table.png';
-import RectangleTableChairs from './assets/rectangle_table_chairs.png';
+
 import SectionArea from './Components/section';
 import ForwardIcon from './assets/forward.png';
-import BackwardIcon from './assets/backward.png';
+
+import LayoutDialog from './Components/layout_dialog';
+import LayoutIcon from './assets/layout_icon.png';
 
 
 
@@ -27,12 +29,13 @@ function App() {
   const [unselectingItemIds, setUnselectingItemIds] = useState<string[]>([]);
   const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
+
     new InventoryItem({ quantity: 60, item: new Item({ id: "1", name: "Chair", cellsLong: 2, cellsTall: 2, icon: ChairIcon }) }), new InventoryItem({ quantity: 4, item: new Item({ id: "2", name: "Table", cellsLong: 8, cellsTall: 4, icon: RectangleTable }) })
   ]);
-  const [startingItems, setStartingItems] = useState<StaringItem[]>([
+  const layoutDialogRef = useRef<HTMLDialogElement>(null);
+  const [layoutDialogOpen, setLayoutDialogOpen] = useState<boolean>(false);
+  const [layoutSections, setLayoutSections] = useState<Section[]>([]);
 
-
-  ]);
   const [sections, setSections] = useState<Section[]>([new Section({
     cellId: new CellId({ x: 0, y: 0 }),
     cellsLong: 500 / cellSize,
@@ -79,6 +82,16 @@ function App() {
 
 
   function generateCells() {
+    setLayoutSections([...sections.map((section) => {
+      return new Section({
+        name: section.name,
+        cellId: new CellId({ x: section.cellId.x / 4, y: section.cellId.y / 4 }),
+        cellsLong: section.cellsLong / 4,
+        cellsTall: section.cellsTall / 4,
+        startingItems: []
+      })
+    })
+    ]);
     let currentWidth = width;
     let currentHeight = height;
     if (isMobile) {
@@ -165,12 +178,12 @@ function App() {
       setCells([...newCells]);
 
       setTimeout(() => {
-        const newStartingItems: StaringItem[] = [...startingItems]
+        const newStartingItems: StaringItem[] = []
         const newSections: Section[] = [...sections];
         for (const section of newSections) {
           console.log("Adding section", section.name, section.cellId)
 
-          section.cellElement = document.querySelector(`#${section.cellId.toId()}.cell:not(.cell-border)`) as HTMLElement;
+          section.cellElement = document.querySelector(`.App #${section.cellId.toId()}.cell:not(.cell-border)`) as HTMLElement;
 
           console.log("Section element found", section.cellElement)
           newStartingItems.push(...section.startingItems.map((item) => {
@@ -182,7 +195,7 @@ function App() {
                 cellsLong: item.item.cellsLong,
                 cellsTall: item.item.cellsTall,
                 icon: item.item.icon,
-                initialElement: document.querySelector(`#${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
+                initialElement: document.querySelector(`.App #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
                 starterItem: true,
                 moveable: item.item.moveable
               })
@@ -202,7 +215,7 @@ function App() {
             }
           }
 
-          startingItem.item.initialElement = document.querySelector(`#${startingItem.cell.toId()}.cell:not(.cell-border)`) as HTMLElement;
+          startingItem.item.initialElement = document.querySelector(`.App #${startingItem.cell.toId()}.cell:not(.cell-border)`) as HTMLElement;
 
 
           console.log("Adding item to items", startingItem.item.initialElement)
@@ -237,7 +250,7 @@ function App() {
     console.log("NEW SECTION", newSection)
     console.log("Adding section", newSection.name, newSection.cellId)
     console.log("MOBILE CELLS", mobileCells)
-    newSection.cellElement = document.querySelector(`#${newSection.name.split(" ").join("-")} #${newSection.name.split(" ").join("")}${newSection.cellId.toId()}.cell:not(.cell-border)`) as HTMLElement;
+    newSection.cellElement = document.querySelector(`.App #${newSection.name.split(" ").join("-")} #${newSection.name.split(" ").join("")}${newSection.cellId.toId()}.cell:not(.cell-border)`) as HTMLElement;
 
     // newSection.cellsLong = newSection.cellsLong / 2;
     // newSection.cellsTall = newSection.cellsTall / 2;
@@ -253,7 +266,7 @@ function App() {
         }
       }
 
-      startingItem.item.initialElement = document.querySelector(`#${newSection.name.split(" ").join("-")} #${newSection.name.split(" ").join("")}${startingItem.cell.toId()}.cell:not(.cell-border)`) as HTMLElement;
+      startingItem.item.initialElement = document.querySelector(`.App #${newSection.name.split(" ").join("-")} #${newSection.name.split(" ").join("")}${startingItem.cell.toId()}.cell:not(.cell-border)`) as HTMLElement;
 
 
       console.log("Adding item to items", startingItem.item.initialElement)
@@ -305,6 +318,7 @@ function App() {
 
   useEffect(() => {
     generateCells()
+
   }, [])
 
 
@@ -640,41 +654,43 @@ function App() {
 
       <div className="App">
         <h1 className='title'>LayItOut</h1>
+        <br />
+        <div className='layout'>
 
-        {isMobile ? <div className='mobile-areas' style={{ height: mobileHeight + "px" }}>
-          <img src={ForwardIcon} onClick={() => {
-            const index = sections.findIndex((s) => s.name == mobileViewingSection);
-            if (index === -1) return;
-            const nextIndex = (index - 1 + sections.length) % sections.length;
-            setMobileViewingSection(sections[nextIndex].name);
-            console.log("Changing viewing section to", sections[nextIndex].name)
+          {isMobile ? <div className='mobile-areas' style={{ height: mobileHeight + "px" }}>
+            <img src={ForwardIcon} onClick={() => {
+              const index = sections.findIndex((s) => s.name == mobileViewingSection);
+              if (index === -1) return;
+              const nextIndex = (index - 1 + sections.length) % sections.length;
+              setMobileViewingSection(sections[nextIndex].name);
+              console.log("Changing viewing section to", sections[nextIndex].name)
 
-          }} className='back-mobile-areas' />
-          {mobileAreas.map((area, index) => (
-            <Area width={area.width} height={area.height} cells={flattenCells(mobileCells.find((c) => c.sectionName == area.sectionName)!.cells)} key={index} id={area.sectionName} visibile={mobileViewingSection == null ? true : area.sectionName == mobileViewingSection} section={area.sectionName} />
-          ))}
-          <img src={ForwardIcon} onClick={() => {
-            const index = sections.findIndex((s) => s.name == mobileViewingSection);
-            if (index === -1) return;
-            const nextIndex = (index + 1) % sections.length;
-            setMobileViewingSection(sections[nextIndex].name);
-            console.log("Changing viewing section to", sections[nextIndex].name)
+            }} className='back-mobile-areas' />
+            {mobileAreas.map((area, index) => (
+              <Area width={area.width} height={area.height} cells={flattenCells(mobileCells.find((c) => c.sectionName == area.sectionName)!.cells)} key={index} id={area.sectionName} visibile={mobileViewingSection == null ? true : area.sectionName == mobileViewingSection} section={area.sectionName} />
+            ))}
+            <img src={ForwardIcon} onClick={() => {
+              const index = sections.findIndex((s) => s.name == mobileViewingSection);
+              if (index === -1) return;
+              const nextIndex = (index + 1) % sections.length;
+              setMobileViewingSection(sections[nextIndex].name);
+              console.log("Changing viewing section to", sections[nextIndex].name)
 
-          }} className='forward-mobile-areas' /></div>
-          : <Area width={width} height={height} cells={flattenCells(cells)} />}
-        <Toolbox addItem={addItem} inventoryItems={inventoryItems.map(inv =>
-          new InventoryItem({
-            item: new Item({
-              id: inv.item.id,
-              name: inv.item.name,
-              cellsLong: inv.item.cellsLong,
-              cellsTall: inv.item.cellsTall,
-              icon: inv.item.icon
+            }} className='forward-mobile-areas' /></div>
+            : <Area width={width} height={height} cells={flattenCells(cells)} />}
+          <Toolbox addItem={addItem} inventoryItems={inventoryItems.map(inv =>
+            new InventoryItem({
+              item: new Item({
+                id: inv.item.id,
+                name: inv.item.name,
+                cellsLong: inv.item.cellsLong,
+                cellsTall: inv.item.cellsTall,
+                icon: inv.item.icon
+              })
+              , quantity: inv.quantity
             })
-            , quantity: inv.quantity
-          })
-        )} />
-
+          )} />
+        </div>
       </div>
       {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} />)}
       {items.map((item) => {
@@ -706,7 +722,19 @@ function App() {
 
           }} />
       })}
+      {isMobile && <div className='layout-icon' onClick={() => {
+        layoutDialogRef.current?.showModal();
+        setLayoutDialogOpen(true);
+        console.log("Showing layout dialog")
+      }}>
 
+        <img src={LayoutIcon} alt="" />
+      </div>}
+      <LayoutDialog dialogRef={layoutDialogRef} isOpen={layoutDialogOpen} closeDialog={() => {
+        layoutDialogRef.current?.close();
+        setLayoutDialogOpen(false);
+
+      }} layoutSections={layoutSections} />
     </>
   )
 }
