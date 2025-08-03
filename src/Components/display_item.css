@@ -3,8 +3,13 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
     transition: all 0.2s ease;
     cursor: grab;
+
 
     position: relative;
     display: flex;
@@ -33,6 +38,7 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    pointer-events: none;
 
     transition: all 0.2s ease;
 }
@@ -44,26 +50,16 @@
     flex-direction: column;
     align-items: center;
     padding: 12px;
-    margin: 4px;
+
     background: rgba(255, 255, 255, 0.8);
     border-radius: 12px;
     border: 1px solid rgba(148, 163, 184, 0.2);
     transition: all 0.2s ease;
 
-    overflow: hidden;
+
 }
 
-.display::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.01) 0%, rgba(139, 92, 246, 0.01) 100%);
-    border-radius: 12px;
-    pointer-events: none;
-}
+
 
 .display:hover {
     background: rgba(255, 255, 255, 0.95);

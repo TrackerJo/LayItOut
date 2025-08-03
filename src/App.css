@@ -24,7 +24,7 @@ body:has(.draggable-item.dragging) {
   width: 100%;
   height: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
 
@@ -44,7 +44,14 @@ body:has(.draggable-item.dragging) {
   text-shadow: 0 2px 4px rgba(0, 176, 220, 0.5);
 }
 
+@media (max-width: 1265px) {
+  .layout {
+    flex-direction: column-reverse !important;
+    align-items: center;
+    justify-content: center;
 
+  }
+}
 
 @media (max-width: 768px) {
   #root {
@@ -55,6 +62,11 @@ body:has(.draggable-item.dragging) {
     align-items: center;
     justify-content: center;
     padding: 0;
+
+  }
+
+  .title {
+    padding: 1rem;
 
   }
 }
@@ -91,7 +103,7 @@ body:has(.draggable-item.dragging) {
   bottom: 20px;
   right: 20px;
   z-index: 1000;
-  background-color: #f7f3fb;
+  background-color: white;
   border-radius: 50%;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.12),
@@ -118,7 +130,7 @@ body:has(.draggable-item.dragging) {
   bottom: 20px;
   left: 20px;
   z-index: 1000;
-  background-color: #f7f3fb;
+  background-color: white;
   border-radius: 50%;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.12),

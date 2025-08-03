@@ -14,12 +14,13 @@ type DraggableItemProps = {
     onSelect: (itemId: string) => void,
     onDeselect: () => void
     highlightCells: (startCell: CellId, item: Item) => void
-    unHighlightCells: () => void
+    unHighlightCells: () => void,
+    removeItem: (item: Item) => void,
     isUnselecting: boolean
     visible?: boolean
 }
 
-function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible }: DraggableItemProps) {
+function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible, removeItem }: DraggableItemProps) {
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
     const textRef = useRef<HTMLParagraphElement>(null);
@@ -31,6 +32,8 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
     const [canRotate, setCanRotate] = useState<boolean>(true);
     const [fontSize, setFontSize] = useState<number>(12); // Default font size
     const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
+    const itemRef = useRef<HTMLDivElement>(null);
+    const [inViewport, setInViewport] = useState<boolean>(true);
 
     // Helper function to get rotated dimensions
     const getRotatedDimensions = (rotation: number) => {
@@ -129,7 +132,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             const currentWidth = getTextWidth(currentFontSize - 1);
 
 
-            if (currentWidth > element.offsetWidth && fontSize > 6) {
+            if (currentWidth > element.offsetWidth && currentFontSize - 1 > 8) {
 
                 return decreaseFontSize(currentFontSize - 1);
 
@@ -146,26 +149,103 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                 setFontSize(decreaseFontSize(fontSize));
 
             }
+            if (item.isDisplayItem && !item.hasMoved) {
+                console.log("Starting item as dragging item");
+                setIsDragging(true);
+
+            }
 
         }, 100);
+
     }, []);
 
-    useEffect(() => {
-        console.log("Item updated:", item);
-    }, [item.initialElement!.offsetTop, item.initialElement!.offsetLeft]);
+
+
 
     useEffect(() => {
 
         if (item.initialElement != null && !item.hasMoved) {
 
-            setX(item.initialElement.offsetLeft)
-            setPrevX(item.initialElement.offsetLeft)
-            setY(item.initialElement.offsetTop)
-            setPrevY(item.initialElement.offsetTop)
+            if (item.initialElement && !item.hasMoved) {
+                const toolbox = document.querySelector(".toolbox")!;
+                const scrollLeft = toolbox.scrollLeft;
+                const scrollTop = toolbox.scrollTop;
+                if (item.isDisplayItem) {
+
+                    setX(item.initialElement.offsetLeft - scrollLeft);
+                    setY(item.initialElement.offsetTop - scrollTop);
+                    setPrevX(item.initialElement.offsetLeft - scrollLeft);
+                    setPrevY(item.initialElement.offsetTop - scrollTop);
+                } else {
+                    setX(item.initialElement.offsetLeft);
+                    setY(item.initialElement.offsetTop);
+                    setPrevX(item.initialElement.offsetLeft);
+                    setPrevY(item.initialElement.offsetTop);
+                }
+
+            }
+
+            setInterval(() => {
+                //check if item is being dragged
+                if (isDragging) return;
+                if (itemRef.current) {
+                    if (itemRef.current.classList.contains("dragging")) {
+
+                        return;
+                    }
+                }
+                if (item.initialElement && !item.hasMoved) {
+                    // const toolbox = document.querySelector(".toolbox")!;
+                    // const scrollLeft = toolbox.scrollLeft;
+                    // const scrollTop = toolbox.scrollTop;
+                    // if (item.isDisplayItem) {
+
+                    //     setX(item.initialElement.offsetLeft - scrollLeft);
+                    //     setY(item.initialElement.offsetTop - scrollTop);
+                    //     setPrevX(item.initialElement.offsetLeft - scrollLeft);
+                    //     setPrevY(item.initialElement.offsetTop - scrollTop);
+                    // } else {
+                    setX(item.initialElement.offsetLeft);
+                    setY(item.initialElement.offsetTop);
+                    setPrevX(item.initialElement.offsetLeft);
+                    setPrevY(item.initialElement.offsetTop);
+                    // }
+
+                }
+            }, 10);
+
+            //add scroll event listener to update position
+            // window.document.querySelector(".toolbox")!.addEventListener("scroll", () => {
+            //     console.log("Scroll event detected, updating position");
+            //     //you now need to adjust the x and y position based on the scroll position
+            //     if (item.initialElement && !item.hasMoved && item.isDisplayItem) {
+            //         const toolbox = document.querySelector(".toolbox")!;
+            //         //Check if the item is in the viewport
+            //         const rect = item.initialElement.getBoundingClientRect();
+            //         const toolboxRect = toolbox.getBoundingClientRect();
+            //         const isInViewport = (
+            //             rect.left >= toolboxRect.left &&
+            //             rect.right <= toolboxRect.right &&
+            //             rect.top >= toolboxRect.top &&
+            //             rect.bottom <= toolboxRect.bottom
+            //         );
+            //         // if (!isInViewport) {
+            //         //     console.log("Item is not in viewport, removing it from the toolbox");
+            //         //     setInViewport(false);
+            //         //     // item.initialElement = undefined;
+            //         //     // item.hasMoved = true;
+            //         //     // item.isDisplayItem = false;
+            //         //     // item.id = item.name + (Math.random() * 10000).toString();
+            //         //     // itemRef.current!.id = item.id; // Update the ID of the draggable item
+            //         // } else {
+            //         //     setInViewport(true);
+            //         // }
+            //     }
+            // });
         }
 
 
-    }, [item])
+    }, [item, isDragging]);
 
     const handleResize = () => {
         if (isDragging) return;
@@ -193,16 +273,19 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             window.removeEventListener("resize", handleResize);
         }
     }, [cell, rotation, isDragging]);
-
+    const preventScroll = (e: TouchEvent) => {
+        e.preventDefault();
+    };
     useEffect(() => {
         console.log("IS Dragging: ", isDragging)
         if (isDragging) {
             setPrevX(x)
             setPrevY(y)
-            const preventScroll = (e: TouchEvent) => {
-                e.preventDefault();
-            };
+
+
+
             document.body.addEventListener('touchmove', preventScroll, { passive: false });
+
             // Calculate the offset from mouse/touch to element when drag starts
             const rect = document.getElementById(item.id)?.getBoundingClientRect();
             const initialOffsetX = rect ? rect.left - x : 0;
@@ -235,6 +318,8 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                 if (targetElement?.classList?.contains("cell")) {
                     console.log("Target element:", targetElement.id);
                     highlightCells(CellId.fromString(targetElement.id), tempItem);
+                } else {
+                    unHighlightCells();
                 }
 
                 setX(clientX - initialOffsetX)
@@ -244,12 +329,20 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             const handleEnd = (clientX: number, clientY: number) => {
                 console.log("Drag ended")
                 unHighlightCells();
+
                 document.body.removeEventListener('touchmove', preventScroll);
+
 
                 // Find the element under the final position
                 const targetElement = document.elementFromPoint(clientX, clientY) as HTMLElement;
 
                 if (!targetElement?.classList?.contains("cell")) {
+                    if (item.isDisplayItem && !item.hasMoved) {
+                        console.log("Removing item from toolbox");
+                        removeItem(item);
+                        return;
+                    }
+
                     setX(prevX)
                     setY(prevY)
                 } else {
@@ -262,6 +355,11 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                     };
 
                     if (!canPlaceItem(CellId.fromString(targetElement.id), tempItem)) {
+                        if (item.isDisplayItem && !item.hasMoved) {
+                            console.log("Removing item from toolbox");
+                            removeItem(item);
+                            return;
+                        }
                         setX(prevX);
                         setY(prevY);
                         setIsDragging(false);
@@ -311,13 +409,16 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             document.ontouchend = (e) => {
                 const touch = e.changedTouches[0];
                 handleEnd(touch.clientX, touch.clientY);
+                document.removeEventListener('touchmove', preventScroll);
                 document.onmousemove = null;
                 document.onmouseup = null;
                 document.ontouchmove = null;
                 document.ontouchend = null;
             };
             return () => {
+
                 document.removeEventListener('touchmove', preventScroll);
+
             };
 
         } else {
@@ -325,6 +426,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             document.onmouseup = null;
             document.ontouchmove = null;
             document.ontouchend = null;
+            document.body.removeEventListener('touchmove', preventScroll);
         }
     }, [isDragging, cell, rotation])
 
@@ -353,16 +455,17 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
     }
 
     return (
-        x == 0 || y == 0 ? null :
+        x == 0 || y == 0 || !inViewport ? null :
             <>
                 <div
                     id={item.id}
+                    ref={itemRef}
                     className={`draggable-item ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""} ${visible ? "" : "invisible"}`}
                     style={{
                         top: `${y}px`,
                         left: `${x}px`,
-                        width: `${item.cellsLong * cellSize - (isSelected ? 4 : 0)}px`,
-                        height: `${item.cellsTall * cellSize - (isSelected ? 4 : 0)}px`,
+                        width: `${item.cellsLong * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0)}px`,
+                        height: `${item.cellsTall * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0)}px`,
                         rotate: `${rotation * 90}deg`,
                         transformOrigin: 'center center',
                         fontSize: `${fontSize}px`

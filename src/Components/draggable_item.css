@@ -147,7 +147,7 @@ body:not(body:has(.draggable-item.dragging)) .draggable-item {
     }
 }
 
-.draggable-item:hover:not(.dragging):not(.selected) {
+body:not(:has(.draggable-item.dragging)) .draggable-item:hover:not(.dragging):not(.selected):not(.not-moveable) {
     /* transform: scale(1.02); */
     box-shadow:
         0 6px 20px rgba(0, 0, 0, 0.1),
@@ -194,7 +194,7 @@ body:not(body:has(.draggable-item.dragging)) .draggable-item {
     margin: 0;
 }
 
-.draggable-item.not-moveable {
+body:not(:has(.draggable-item.dragging)) .draggable-item.not-moveable {
     cursor: not-allowed !important;
 
 

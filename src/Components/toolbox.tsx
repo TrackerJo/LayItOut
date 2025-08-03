@@ -1,18 +1,29 @@
 
 
-import { InventoryItem, Item } from "../constants"
+import { CellId, InventoryItem, Item } from "../constants"
 import DisplayItem from "./display_item"
 import "./toolbox.css"
+import PlusCircle from "../assets/plus.circle.png"
 
 type ToolboxProps = {
     inventoryItems: InventoryItem[]
-    addItem: (item: Item) => void
+    addDraggingItem: (item: Item) => void,
+    showAddCustomItem: () => void,
+    removeItem: (item: Item) => void,
 
+    maxHeight?: number,
 }
 
-function Toolbox({ inventoryItems, addItem, }: ToolboxProps) {
-    return (<div className="toolbox">
-        {inventoryItems.map((item) => <DisplayItem inventoryItem={item} addItem={addItem} />)}
+function Toolbox({ inventoryItems, addDraggingItem, maxHeight, removeItem, showAddCustomItem }: ToolboxProps) {
+    return (<div className="toolbox" style={{ maxHeight: maxHeight ? `${maxHeight}px` : '200px' }}>
+        {inventoryItems.map((item) => <DisplayItem inventoryItem={item} addDraggingItem={addDraggingItem} removeItem={removeItem} />)}
+        <div className="add-item" onClick={() => {
+            showAddCustomItem();
+
+        }}>
+            <img src={PlusCircle} alt="Add Item" />
+
+        </div>
     </div>)
 }
 

@@ -30,13 +30,16 @@ export class Item {
     moveable: boolean;
     roation: number;
     starterItem: boolean;
+    isDisplayItem: boolean;
+    
 
-    constructor({ id, cellsLong, cellsTall, initialElement, name, icon, moveable, starterItem }: {
+    constructor({ id, cellsLong, cellsTall, initialElement, name, icon, moveable, starterItem, displayItem }: {
         id: string, cellsLong: number, cellsTall: number, initialElement?: HTMLElement,
         name: string,
         icon: string,
         moveable?: boolean,
-        starterItem?: boolean
+        starterItem?: boolean,
+        displayItem?: boolean
     }) {
         this.id = id;
         this.cellsLong = cellsLong;
@@ -49,6 +52,9 @@ export class Item {
         this.roation = 0;
         this.moveable = moveable ?? true;
         this.starterItem = starterItem ?? false;
+        this.isDisplayItem = displayItem ?? false;
+
+
     }
 
 }
@@ -158,4 +164,15 @@ export class Template {
             }))
         });
     }
+}
+
+export class DisplayItem {
+    name: string;
+    item: Item;
+
+    constructor({ name, item }: { name: string, item: Item }) {
+        this.name = name;
+        this.item = item;
+    }
+
 }

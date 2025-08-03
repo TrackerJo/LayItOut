@@ -297,7 +297,7 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
             {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
             {
                 items.map((item) => {
-                    return <DraggableItem visible={true}
+                    return <DraggableItem removeItem={() => { }} visible={true}
 
                         item={item} canPlaceItem={() => { return false }} placeItem={() => { }} deleteItemRotate={() => { }} highlightCells={() => { }} unHighlightCells={() => { }} key={item.id} deleteItem={() => { }} isSelected={false}
                         onSelect={(itemId) => {

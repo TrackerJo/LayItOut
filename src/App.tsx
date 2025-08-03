@@ -9,14 +9,16 @@ import { CellId, InventoryItem, Item, Section, StaringItem, Template } from './c
 import Toolbox from './Components/toolbox';
 import ChairIcon from './assets/chair.png';
 import RectangleTable from './assets/rectangle_table.png';
+import RoundedTable from './assets/rounded_table.png';
 
 import SectionArea from './Components/section';
 import ForwardIcon from './assets/forward.png';
 
 import LayoutDialog from './Components/layout_dialog';
-import LayoutIcon from './assets/layout_icon.png';
+import LayoutIcon from './assets/layout_icon_white.png';
 import TemplateIcon from './assets/template.png';
 import TemplateDialog from './Components/template_dialog';
+import AddCustomItemDialog from './Components/add_custom_item_dialog';
 
 
 
@@ -32,8 +34,10 @@ function App() {
   const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
 
-    new InventoryItem({ quantity: 60, item: new Item({ id: "1", name: "Chair", cellsLong: 2, cellsTall: 2, icon: ChairIcon }) }), new InventoryItem({ quantity: 4, item: new Item({ id: "2", name: "Table", cellsLong: 8, cellsTall: 4, icon: RectangleTable }) })
+    new InventoryItem({ quantity: 60, item: new Item({ id: "1", name: "Chair", cellsLong: 2, cellsTall: 2, icon: ChairIcon, displayItem: true }) }), new InventoryItem({ quantity: 4, item: new Item({ id: "2", name: "Table", cellsLong: 8, cellsTall: 4, icon: RectangleTable, displayItem: true }) }),
+    new InventoryItem({ quantity: 8, item: new Item({ id: "3", name: "Rounded Table", cellsLong: 4, cellsTall: 4, icon: RoundedTable, displayItem: true }) }),
   ]);
+
   const layoutDialogRef = useRef<HTMLDialogElement>(null);
   const [layoutDialogOpen, setLayoutDialogOpen] = useState<boolean>(false);
   const [layoutSections, setLayoutSections] = useState<Section[]>([]);
@@ -48,6 +52,8 @@ function App() {
   const [mobileCells, setMobileCells] = useState<{ sectionName: string, cells: CellProps[][] }[]>([]);
   const [mobileViewingSection, setMobileViewingSection] = useState<string | null>(null);
 
+  const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
+
   function getSectionByCellId(cellId: CellId, sections: Section[]): Section | null {
     for (const section of sections) {
       if (cellId.x >= section.cellId.x && cellId.x < section.cellId.x + section.cellsLong &&
@@ -59,7 +65,9 @@ function App() {
   }
 
 
+
   useEffect(() => {
+
     const desiredTemplates: Template[] = [
       new Template({
         name: "Template 1",
@@ -196,16 +204,16 @@ function App() {
 
 
 
-    // setLayoutSections([...sections.map((section) => {
-    //   return new Section({
-    //     name: section.name,
-    //     cellId: new CellId({ x: section.cellId.x / 4, y: section.cellId.y / 4 }),
-    //     cellsLong: section.cellsLong / 4,
-    //     cellsTall: section.cellsTall / 4,
-    //     startingItems: []
-    //   })
-    // })
-    // ]);
+    setLayoutSections([...sectionsToGenerate.map((section) => {
+      return new Section({
+        name: section.name,
+        cellId: new CellId({ x: section.cellId.x / 2, y: section.cellId.y / 2 }),
+        cellsLong: section.cellsLong / 2,
+        cellsTall: section.cellsTall / 2,
+        startingItems: []
+      })
+    })
+    ]);
     let currentWidth = width;
     let currentHeight = height;
     if (isMobile) {
@@ -230,8 +238,7 @@ function App() {
         section.cellId.x = 0;
         section.cellId.y = 0;
 
-        section.cellsLong = section.cellsLong;
-        section.cellsTall = section.cellsTall;
+
 
         [...Array((newArea.height / cellSize)).keys()].map((j) => {
           const rowCells: CellProps[] = [];
@@ -254,7 +261,7 @@ function App() {
       setSections(newSections);
       setMobileHeight(mobileHeight);
 
-      setMobileViewingSection(newSections[0].name);
+      setMobileViewingSection(sectionsToGenerate[0] ? sectionsToGenerate[0].name : null);
 
       setTimeout(() => {
         // handleChangeSection(newSections[0].name, newMobileCells, sections);
@@ -575,26 +582,15 @@ function App() {
 
       console.log("Updating item", item.id)
       if (!old.find((i) => i.id == item.id)!.hasMoved) {
-        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-        if (isMobile && !itemRemoved) {
 
-          const newItem = new Item({
-            id: item.name + (Math.random() * 10000).toString(),
-            cellsLong: item.cellsLong,
-            cellsTall: item.cellsTall,
-            initialElement: item.initialElement,
-            name: item.name,
-            icon: item.icon
-          });
-          old = [...old, newItem];
-        }
+
         old.find((i) => i.id == item.id)!.hasMoved = true
       }
       return old;
     })
   }
 
-  function addItem(item: Item) {
+  function addDraggingItem(item: Item) {
     // items.push(item)
     // setItems(items)
     if (items.find((i) => i.name == item.name && !i.hasMoved && !i.starterItem)) {
@@ -603,6 +599,14 @@ function App() {
     setItems((old) => [...old, item])
   }
 
+
+  function removeItem(item: Item) {
+    console.log("Removing item", item.id)
+    setItems((old) => {
+
+      return old.filter((i) => i.id != item.id)
+    })
+  }
 
 
   function deleteItem(item: Item, cell: CellId) {
@@ -680,6 +684,7 @@ function App() {
     // since it's used during rotation to clear the old position
   }
   function highlightCells(startCell: CellId, item: Item) {
+
     const funcCells = isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells;
 
     const newCells: CellProps[][] = Array.from(funcCells)
@@ -791,6 +796,38 @@ function App() {
     document.addEventListener('click', handleDocumentClick);
     return () => document.removeEventListener('click', handleDocumentClick);
   }, [selectedItemId, items]);
+
+  function onDeselectItem(itemId: string) {
+
+    setSelectedItemId(null)
+    setUnselectingItemIds((prev) => [...prev, itemId])
+    console.log("Unselecting item", itemId)
+    setTimeout(() => {
+      setUnselectingItemIds((prev) => prev.filter((id) => id !== itemId))
+    }, 300)
+
+  }
+
+  function onSelectItem(itemId: string) {
+    const item = items.find((i) => i.id === selectedItemId)!;
+    console.log("Unselecting item", selectedItemId)
+    setSelectedItemId(itemId)
+
+    if (!item) return;
+    setUnselectingItemIds((prev) => [...prev, item.id])
+    console.log("Unselecting item", item.id)
+
+    setTimeout(() => {
+      setUnselectingItemIds((prev) => prev.filter((id) => id !== item.id))
+    }, 300)
+
+  }
+
+  function addInventoryItem(inventoryItem: InventoryItem) {
+    setInventoryItems((old) => [...old, inventoryItem])
+  }
+
+
   return (
     <>
 
@@ -798,7 +835,19 @@ function App() {
         <h1 className='title'>LayItOut</h1>
         <br />
         <div className='layout'>
-
+          <Toolbox maxHeight={isMobile ? 200 : height} showAddCustomItem={() => { addCustomItemDialogRef.current?.showModal(); }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
+            new InventoryItem({
+              item: new Item({
+                id: inv.item.id,
+                name: inv.item.name,
+                cellsLong: inv.item.cellsLong,
+                cellsTall: inv.item.cellsTall,
+                icon: inv.item.icon,
+                displayItem: true,
+              })
+              , quantity: inv.quantity
+            })
+          )} />
           {isMobile ? <div className='mobile-areas' style={{ height: mobileHeight + "px" }}>
             <img src={ForwardIcon} onClick={() => {
               const index = sections.findIndex((s) => s.name == mobileViewingSection);
@@ -820,49 +869,17 @@ function App() {
 
             }} className='forward-mobile-areas' /></div>
             : <Area width={width} height={height} cells={flattenCells(cells)} />}
-          <Toolbox addItem={addItem} inventoryItems={inventoryItems.map(inv =>
-            new InventoryItem({
-              item: new Item({
-                id: inv.item.id,
-                name: inv.item.name,
-                cellsLong: inv.item.cellsLong,
-                cellsTall: inv.item.cellsTall,
-                icon: inv.item.icon
-              })
-              , quantity: inv.quantity
-            })
-          )} />
+
         </div>
       </div>
       {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
       {items.map((item) => {
-        return <DraggableItem visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+        return <DraggableItem removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
 
           item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
-          onSelect={(itemId) => {
-            const item = items.find((i) => i.id === selectedItemId)!;
-            console.log("Unselecting item", selectedItemId)
-            setSelectedItemId(itemId)
-
-            if (!item) return;
-            setUnselectingItemIds((prev) => [...prev, item.id])
-            console.log("Unselecting item", item.id)
-
-            setTimeout(() => {
-              setUnselectingItemIds((prev) => prev.filter((id) => id !== item.id))
-            }, 300)
-
-          }}
+          onSelect={onSelectItem}
           isUnselecting={unselectingItemIds.includes(item.id)}
-          onDeselect={() => {
-            setSelectedItemId(null)
-            setUnselectingItemIds((prev) => [...prev, item.id])
-            console.log("Unselecting item", item.id)
-            setTimeout(() => {
-              setUnselectingItemIds((prev) => prev.filter((id) => id !== item.id))
-            }, 300)
-
-          }} />
+          onDeselect={() => onDeselectItem(item.id)} />
       })}
       {isMobile && <div className='layout-icon' onClick={() => {
         layoutDialogRef.current?.showModal();
@@ -889,6 +906,11 @@ function App() {
         setLayoutDialogOpen(false);
 
       }} layoutSections={layoutSections} />
+
+      <AddCustomItemDialog dialogRef={addCustomItemDialogRef} addInventoryItem={addInventoryItem} closeDialog={() => {
+        addCustomItemDialogRef.current?.close();
+
+      }} />
     </>
   )
 }

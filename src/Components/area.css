@@ -19,17 +19,6 @@
     /* position: relative; */
 }
 
-.area::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.02) 0%, rgba(139, 92, 246, 0.02) 100%);
-    border-radius: 16px;
-    pointer-events: none;
-}
 
 .area.invisible {
     display: none !important;
