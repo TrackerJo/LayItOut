@@ -60,7 +60,7 @@ function LayoutDialog({ dialogRef, closeDialog, layoutSections, isOpen }: Layout
             [...Array((currentWidth / cellSize)).keys()].map((i) => {
                 console.log(getSectionByCellId(new CellId({ x: i, y: j })) != null ? "In section" : "Outside section")
                 rowCells.push({
-                    id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "", inSection: false
+                    id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "", inSection: false, size: cellSize
                 })
             })
             newCells.push(rowCells)
@@ -107,7 +107,7 @@ function LayoutDialog({ dialogRef, closeDialog, layoutSections, isOpen }: Layout
 
 
             </div>
-            {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={true} />)}
+            {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
 
         </dialog >
 

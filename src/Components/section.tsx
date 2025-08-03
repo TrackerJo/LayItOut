@@ -4,12 +4,13 @@ import "./section.css";
 
 type SectionAreaProps = {
     section: Section
+    cellSize: number
     visible?: boolean
 }
 
-function SectionArea({ section, visible }: SectionAreaProps) {
+function SectionArea({ section, visible, cellSize }: SectionAreaProps) {
 
-    const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
+
     const [x, setX] = useState(section.cellElement?.offsetLeft ?? 0);
     const [y, setY] = useState(section.cellElement?.offsetTop ?? 0);
     const textRef = useRef<HTMLParagraphElement>(null);

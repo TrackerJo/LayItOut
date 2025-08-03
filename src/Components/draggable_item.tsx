@@ -127,17 +127,17 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
         if (textRef.current) {
             const element = textRef.current;
             const currentWidth = getTextWidth(currentFontSize - 1);
-            console.log("Current text width:", currentWidth);
-            console.log("Paragraph width:", element.offsetWidth);
+
 
             if (currentWidth > element.offsetWidth && fontSize > 6) {
-                console.log("Decreasing font size to:", currentFontSize - 1);
+
                 return decreaseFontSize(currentFontSize - 1);
 
             } else {
                 return currentFontSize - 1;
             }
         }
+        return currentFontSize; // Fallback if textRef is not set
     }
 
     useEffect(() => {

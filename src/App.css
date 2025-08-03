@@ -109,3 +109,30 @@ body:has(.draggable-item.dragging) {
   object-fit: contain;
 
 }
+
+.template-icon {
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+  background-color: #f7f3fb;
+  border-radius: 50%;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template-icon img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+
+}

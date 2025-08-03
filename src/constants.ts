@@ -1,3 +1,5 @@
+
+
 export class CellId {
     x: number;
     y: number;
@@ -80,7 +82,7 @@ export class Section {
     cellsTall: number;
     startingItems: StaringItem[];
     items: Item[];
-    
+
 
     constructor({ name, cellId, cellsLong, cellsTall, startingItems }: {
         name: string,
@@ -96,5 +98,64 @@ export class Section {
         this.startingItems = startingItems;
         this.cellElement = null;
         this.items = [];
+    }
+}
+
+export class Template {
+    name: string;
+    sections: Section[];
+
+    constructor({ name, sections }: { name: string, sections: Section[] }) {
+        this.name = name;
+        this.sections = sections;
+    }
+
+    static toJSON(template: Template): string {
+        return JSON.stringify({
+            name: template.name,
+            sections: template.sections.map(section => ({
+                name: section.name,
+                cellId: section.cellId.toId(),
+                cellsLong: section.cellsLong,
+                cellsTall: section.cellsTall,
+                startingItems: section.startingItems.map(item => ({
+                    cell: item.cell.toId(),
+                    item: {
+                        id: item.item.id,
+                        name: item.item.name,
+                        icon: item.item.icon,
+                        cellsLong: item.item.cellsLong,
+                        cellsTall: item.item.cellsTall,
+                        moveable: item.item.moveable,
+                        starterItem: item.item.starterItem
+                    }
+                }))
+            }))
+        });
+    }
+
+    static fromJSON(json: string): Template {
+        const data = JSON.parse(json);
+        return new Template({
+            name: data.name,
+            sections: data.sections.map((section: any) => new Section({
+                name: section.name,
+                cellId: CellId.fromString(section.cellId),
+                cellsLong: section.cellsLong,
+                cellsTall: section.cellsTall,
+                startingItems: section.startingItems.map((item: any) => new StaringItem({
+                    cell: CellId.fromString(item.cell),
+                    item: new Item({
+                        id: item.item.id,
+                        name: item.item.name,
+                        icon: item.item.icon,
+                        cellsLong: item.item.cellsLong,
+                        cellsTall: item.item.cellsTall,
+                        moveable: item.item.moveable,
+                        starterItem: item.item.starterItem
+                    })
+                }))
+            }))
+        });
     }
 }
