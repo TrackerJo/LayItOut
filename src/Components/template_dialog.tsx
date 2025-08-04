@@ -233,6 +233,7 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
                                 const selectedTemplate = templates.find((t) => t.name === area.templateName)!;
                                 const newTemplate = new Template({
                                     name: selectedTemplate.name,
+                                    id: selectedTemplate.id,
                                     sections: selectedTemplate.sections.map((section) => {
                                         return new Section({
                                             name: section.name,
@@ -256,10 +257,11 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
                                         });
                                     })
                                 });
-                                localStorage.setItem("selectedTemplate", Template.toJSON(newTemplate));
-                                console.log("Selected template", area.templateName);
-                                //reload the page to apply the template
-                                window.location.reload();
+                                //set window tempateName parameter to newTemplate.name
+                                const urlParams = new URLSearchParams(window.location.search);
+                                urlParams.set('templateName', newTemplate.name);
+                                window.location.search = urlParams.toString();
+
                             }}> Select</button>
                         </div>
                     ))}

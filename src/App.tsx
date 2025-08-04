@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 
 
 import './App.css'
-import Area from './Components/area'
+import AreaComponent from './Components/area';
 import type { CellProps } from './Components/cell';
 import DraggableItem from './Components/draggable_item';
-import { CellId, InventoryItem, Item, Section, StaringItem, Template } from './constants';
+import { Area, CellId, InventoryItem, Item, Section, StaringItem, Template } from './constants';
 import Toolbox from './Components/toolbox';
 import ChairIcon from './assets/chair.png';
 import RectangleTable from './assets/rectangle_table.png';
@@ -20,6 +20,9 @@ import TemplateIcon from './assets/template.png';
 import TemplateDialog from './Components/template_dialog';
 import AddCustomItemDialog from './Components/add_custom_item_dialog';
 
+import { getArea, saveAreaTemplates, saveCompanyArea } from './api/firestore';
+import { getLocalArea } from './api/local_firestore';
+
 
 
 function App() {
@@ -32,11 +35,7 @@ function App() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [unselectingItemIds, setUnselectingItemIds] = useState<string[]>([]);
   const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
-
-    new InventoryItem({ quantity: 60, item: new Item({ id: "1", name: "Chair", cellsLong: 2, cellsTall: 2, icon: ChairIcon, displayItem: true }) }), new InventoryItem({ quantity: 4, item: new Item({ id: "2", name: "Table", cellsLong: 8, cellsTall: 4, icon: RectangleTable, displayItem: true }) }),
-    new InventoryItem({ quantity: 8, item: new Item({ id: "3", name: "Rounded Table", cellsLong: 4, cellsTall: 4, icon: RoundedTable, displayItem: true }) }),
-  ]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
   const layoutDialogRef = useRef<HTMLDialogElement>(null);
   const [layoutDialogOpen, setLayoutDialogOpen] = useState<boolean>(false);
@@ -51,6 +50,13 @@ function App() {
   const [mobileAreas, setMobileAreas] = useState<{ width: number, height: number, sectionName: string }[]>([]);
   const [mobileCells, setMobileCells] = useState<{ sectionName: string, cells: CellProps[][] }[]>([]);
   const [mobileViewingSection, setMobileViewingSection] = useState<string | null>(null);
+  const [isCreatingTemplate, setIsCreatingTemplate] = useState<boolean>(false);
+  const [isEditingTemplate, setIsEditingTemplate] = useState<boolean>(false);
+  const [templateName, setTemplateName] = useState<string>("");
+  const [companyId, setCompanyId] = useState<string>("");
+  const [areaId, setAreaId] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
 
@@ -66,137 +72,6 @@ function App() {
 
 
 
-  useEffect(() => {
-
-    const desiredTemplates: Template[] = [
-      new Template({
-        name: "Template 1",
-        sections: [new Section({
-          cellId: new CellId({ x: 0, y: 0 }),
-          cellsLong: 500,
-          cellsTall: 300,
-          startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 2", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
-          name: "Main Area"
-        }),
-        new Section({
-          cellId: new CellId({ x: 0, y: 300 }),
-          cellsLong: 500,
-          cellsTall: 300,
-          startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 3", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
-          name: "Kitchen"
-        }),
-        new Section({
-          cellId: new CellId({ x: 500, y: 300 }),
-          cellsLong: 300,
-          cellsTall: 200,
-          startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 4", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
-          name: "Outdoor Area"
-        }),
-        new Section({
-          cellId: new CellId({ x: 500, y: 0 }),
-          cellsLong: 200,
-          cellsTall: 300,
-          startingItems: [],
-          name: "Bathroom"
-        })
-        ]
-      }), new Template({
-        name: "Template 2",
-        sections: [new Section({
-          cellId: new CellId({ x: 0, y: 0 }),
-          cellsLong: 500,
-          cellsTall: 300,
-          startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 2", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
-          name: "Main Area"
-        }),
-        new Section({
-          cellId: new CellId({ x: 0, y: 300 }),
-          cellsLong: 500,
-          cellsTall: 300,
-          startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 3", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
-          name: "Kitchen"
-        }),
-        new Section({
-          cellId: new CellId({ x: 500, y: 300 }),
-          cellsLong: 300,
-          cellsTall: 200,
-          startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 4", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
-          name: "Outdoor Area"
-        }),
-        new Section({
-          cellId: new CellId({ x: 500, y: 0 }),
-          cellsLong: 200,
-          cellsTall: 300,
-          startingItems: [],
-          name: "Bathroom"
-        })
-        ]
-      }), new Template({
-        name: "Template 3",
-        sections: [new Section({
-          cellId: new CellId({ x: 0, y: 0 }),
-          cellsLong: 500,
-          cellsTall: 300,
-          startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 2", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
-          name: "Main Area"
-        }),
-        new Section({
-          cellId: new CellId({ x: 0, y: 300 }),
-          cellsLong: 500,
-          cellsTall: 300,
-          startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 3", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
-          name: "Kitchen"
-        }),
-        new Section({
-          cellId: new CellId({ x: 500, y: 300 }),
-          cellsLong: 300,
-          cellsTall: 200,
-          startingItems: [new StaringItem({ cell: new CellId({ x: 0, y: 4 }), item: new Item({ id: "Start 4", name: "Kitchen", cellsLong: 8, cellsTall: 8, icon: "custom-Kitchen", starterItem: true, moveable: false }) })],
-          name: "Outdoor Area"
-        }),
-        new Section({
-          cellId: new CellId({ x: 500, y: 0 }),
-          cellsLong: 200,
-          cellsTall: 300,
-          startingItems: [],
-          name: "Hallway"
-        })
-        ]
-      })
-    ];
-    const newTemplates: Template[] = [];
-    for (const template of desiredTemplates) {
-      const newSections: Section[] = [];
-      for (const section of template.sections) {
-        newSections.push(new Section({
-          name: section.name,
-          cellId: new CellId({ x: (section.cellId.x) / (isMobile ? 20 : 10), y: (section.cellId.y) / (isMobile ? 20 : 10) }),
-          cellsLong: section.cellsLong / (isMobile ? 20 : 10),
-          cellsTall: section.cellsTall / (isMobile ? 20 : 10),
-          startingItems: section.startingItems.map((item) => new StaringItem({
-            cell: new CellId({ x: item.cell.x / (isMobile ? 2 : 1), y: item.cell.y / (isMobile ? 2 : 1) }), item: new Item({
-              id: item.item.id,
-              name: item.item.name,
-              cellsLong: item.item.cellsLong / 2,
-              cellsTall: item.item.cellsTall / 2,
-              icon: item.item.icon,
-              starterItem: true,
-              moveable: false
-            })
-          })
-          )
-        }
-        ));
-      }
-
-      newTemplates.push(new Template({
-        name: template.name,
-        sections: newSections
-      }));
-    }
-
-    setTemplates([...newTemplates]);
-  }, [cellSize]);
 
 
   function generateCells(sectionsToGenerate: Section[]) {
@@ -262,7 +137,7 @@ function App() {
       setMobileHeight(mobileHeight);
 
       setMobileViewingSection(sectionsToGenerate[0] ? sectionsToGenerate[0].name : null);
-
+      setLoading(false);
       setTimeout(() => {
         // handleChangeSection(newSections[0].name, newMobileCells, sections);
       }, 300)
@@ -272,13 +147,18 @@ function App() {
 
       for (const section of sectionsToGenerate) {
 
-
+        console.log("Generating cells for section", section.name, "at", section.cellId, "with size", section.cellsLong, "x", section.cellsTall)
+        console.log("Needed section Width:", (section.cellsLong + section.cellId.x) * cellSize, "Current width:", currentWidth)
 
         if ((section.cellsLong + section.cellId.x) * cellSize > currentWidth) {
-          currentWidth += section.cellsLong * cellSize;
+
+          console.log("Added section Width:", section.cellsLong * cellSize + section.cellId.x)
+          currentWidth += (section.cellsLong + section.cellId.x) * cellSize - currentWidth;
         }
+        console.log("Needed section Height:", (section.cellsTall + section.cellId.y) * cellSize, "Current height:", currentHeight)
         if ((section.cellsTall + section.cellId.y) * cellSize > currentHeight) {
-          currentHeight += section.cellsTall * cellSize;
+          console.log("Added section Height:", section.cellsTall * cellSize + section.cellId.y)
+          currentHeight += (section.cellsTall + section.cellId.y) * cellSize - currentHeight;
         }
       }
 
@@ -303,11 +183,11 @@ function App() {
         const newStartingItems: StaringItem[] = []
         const newSections: Section[] = [...sectionsToGenerate];
         for (const section of newSections) {
-          console.log("Adding section", section.name, section.cellId)
+
 
           section.cellElement = document.querySelector(`.App #${section.cellId.toId()}.cell:not(.cell-border)`) as HTMLElement;
 
-          console.log("Section element found", section.cellElement)
+
           newStartingItems.push(...section.startingItems.map((item) => {
             return new StaringItem({
               cell: new CellId({ x: section.cellId.x + item.cell.x, y: section.cellId.y + item.cell.y }),
@@ -325,11 +205,11 @@ function App() {
           }))
 
         }
-        console.log("Setting sections", newSections)
+
         setSections([...newSections]);
 
         for (const startingItem of newStartingItems) {
-          console.log("Placing starting item", startingItem.item.name, startingItem.cell)
+
           for (let i = 0; i < startingItem.item.cellsTall; i++) {
             for (let j = 0; j < startingItem.item.cellsLong; j++) {
               newCells[startingItem.cell.y + i][startingItem.cell.x + j].hasItem = true;
@@ -340,29 +220,213 @@ function App() {
           startingItem.item.initialElement = document.querySelector(`.App #${startingItem.cell.toId()}.cell:not(.cell-border)`) as HTMLElement;
 
 
-          console.log("Adding item to items", startingItem.item.initialElement)
+
           setItems((old) => [...old, startingItem.item])
         }
 
         setCells([...newCells]);
+        setLoading(false);
       }, 100)
 
     }
-    // setSections((old) => {
-    //   return old.map((section) => {
-    //     return new Section({
-    //       name: section.name,
-    //       cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
-    //       cellsLong: section.cellsLong,
-    //       cellsTall: section.cellsTall,
-    //       startingItems: section.startingItems
-    //     })
-    //   })
-    // });
 
 
 
   }
+
+  async function loadArea() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const companyIdParam = urlParams.get('companyId');
+    const areaIdParam = urlParams.get('areaId');
+    const areaId = urlParams.get('areaId') || "";
+    const companyId = urlParams.get('companyId') || "";
+    const templateId = urlParams.get('templateId') || "";
+    const area: Area = await getArea(companyId, areaId);
+    const type = urlParams.get('type') || "";
+    if (type === "create-template") {
+      setIsCreatingTemplate(true);
+
+    } else if (type === "edit-template") {
+      setIsEditingTemplate(true);
+
+      const template = area.templates.find((t) => t.id === templateId);
+      if (template) {
+        setEditingTemplate(template);
+        setTemplateName(template.name);
+      }
+    }
+
+    if (companyIdParam) {
+      setCompanyId(companyIdParam);
+    }
+    if (areaIdParam) {
+      setAreaId(areaIdParam);
+    }
+    setInventoryItems(area.inventoryItems.map(inv => new InventoryItem({
+      item: new Item({
+        id: inv.item.id,
+        name: inv.item.name,
+        cellsLong: inv.item.cellsLong,
+        cellsTall: inv.item.cellsTall,
+        icon: inv.item.icon,
+        initialElement: inv.item.initialElement,
+        moveable: inv.item.moveable,
+        starterItem: inv.item.starterItem,
+        displayItem: true
+      }),
+      quantity: inv.quantity
+    })));
+    const newTemplates: Template[] = [];
+    const newUnmodifiedTemplates: Template[] = [];
+    for (const template of area.templates) {
+      const newSections: Section[] = [];
+      const unmodifiedSections: Section[] = [];
+      for (const section of template.sections) {
+        newSections.push(new Section({
+          name: section.name,
+          cellId: new CellId({ x: (section.cellId.x) / (isMobile ? 20 : 10), y: (section.cellId.y) / (isMobile ? 20 : 10) }),
+          cellsLong: section.cellsLong / (isMobile ? 20 : 10),
+          cellsTall: section.cellsTall / (isMobile ? 20 : 10),
+          startingItems: section.startingItems.map((item) => new StaringItem({
+            cell: new CellId({ x: item.cell.x / (isMobile ? 2 : 1), y: item.cell.y / (isMobile ? 2 : 1) }), item: new Item({
+              id: item.item.id,
+              name: item.item.name,
+              cellsLong: item.item.cellsLong / 2,
+              cellsTall: item.item.cellsTall / 2,
+              icon: item.item.icon,
+              starterItem: true,
+              moveable: item.item.moveable
+            })
+          })
+          )
+        }));
+        unmodifiedSections.push(new Section({
+          name: section.name,
+          cellId: new CellId({ x: (section.cellId.x), y: (section.cellId.y) }),
+          cellsLong: section.cellsLong,
+          cellsTall: section.cellsTall,
+          startingItems: section.startingItems.map((item) => new StaringItem({
+            cell: new CellId({ x: item.cell.x, y: item.cell.y }), item: new Item({
+              id: item.item.id,
+              name: item.item.name,
+              cellsLong: item.item.cellsLong,
+              cellsTall: item.item.cellsTall,
+              icon: item.item.icon,
+              starterItem: true,
+              moveable: item.item.moveable
+            })
+          })
+          )
+        }));
+      }
+
+      newTemplates.push(new Template({
+        name: template.name,
+        sections: newSections,
+        id: template.id
+      }));
+      newUnmodifiedTemplates.push(new Template({
+        name: template.name,
+        sections: unmodifiedSections,
+        id: template.id
+      }));
+    }
+
+    setTemplates([...newTemplates]);
+    const sectionsToGenerate: Section[] = [];
+    const template = templateId === "" ? undefined : newUnmodifiedTemplates.find((t) => t.id === templateId);
+    console.log("TEMPLATE", template, "AREA", area);
+    if (template !== undefined) {
+
+      setLayoutSections([...template.sections]);
+      setSections([...template.sections.map((section) => {
+        return new Section({
+          name: section.name,
+          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
+          cellsLong: section.cellsLong / 10,
+          cellsTall: section.cellsTall / 10,
+          startingItems: section.startingItems,
+          items: section.startingItems.map((i) => new Item({
+            id: i.item.id,
+            name: i.item.name,
+            sectionCell: i.cell,
+            cellsLong: i.item.cellsLong,
+            cellsTall: i.item.cellsTall,
+            icon: i.item.icon,
+            moveable: i.item.moveable,
+            starterItem: i.item.starterItem,
+
+
+          }))
+
+
+        })
+      }
+      )]);
+      sectionsToGenerate.push(...template.sections.map((section) => {
+        return new Section({
+          name: section.name,
+          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
+          cellsLong: section.cellsLong / 10,
+          cellsTall: section.cellsTall / 10,
+          startingItems: section.startingItems,
+          items: section.startingItems.map((i) => new Item({
+            id: i.item.id,
+            name: i.item.name,
+            cellsLong: i.item.cellsLong,
+            cellsTall: i.item.cellsTall,
+            icon: i.item.icon,
+            moveable: i.item.moveable,
+            starterItem: i.item.starterItem,
+
+            sectionCell: i.cell
+
+          }))
+        })
+      }
+      ));
+    } else {
+      setLayoutSections([...area.sections]);
+      setSections([...area.sections.map((section) => {
+        return new Section({
+          name: section.name,
+          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
+          cellsLong: section.cellsLong / 10,
+          cellsTall: section.cellsTall / 10,
+          startingItems: section.startingItems
+        })
+      }
+      )]);
+      sectionsToGenerate.push(...area.sections.map((section) => {
+        return new Section({
+          name: section.name,
+          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
+          cellsLong: section.cellsLong / 10,
+          cellsTall: section.cellsTall / 10,
+          startingItems: section.startingItems
+        })
+      }
+      ));
+    }
+
+
+    generateCells(sectionsToGenerate);
+
+  }
+
+  useEffect(() => {
+
+
+    loadArea();
+
+    // async function test() {
+    //   const area = getLocalArea();
+    //   saveCompanyArea("dMjfwNN0XFes0WxUH8h1", area);
+    // }
+    // test();
+
+
+  }, [])
 
   function handleChangeSection(mobileViewingSection: string, mobileCells: { sectionName: string, cells: CellProps[][] }[], sections: Section[]) {
     if (!isMobile || mobileViewingSection == null) return;
@@ -438,37 +502,7 @@ function App() {
     return flattenedCells
   }
 
-  useEffect(() => {
-    const storedTemplate = localStorage.getItem("selectedTemplate");
-    const sectionsToGenerate: Section[] = [];
-    if (storedTemplate) {
-      const parsedTemplate = Template.fromJSON(storedTemplate);
-      setLayoutSections(parsedTemplate.sections);
-      setSections([...parsedTemplate.sections.map((section) => {
-        return new Section({
-          name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems
-        })
-      }
-      )]);
-      sectionsToGenerate.push(...parsedTemplate.sections.map((section) => {
-        return new Section({
-          name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems
-        })
-      }
-      ));
-    }
-    console.log("Sections to generate", sectionsToGenerate)
-    generateCells(sectionsToGenerate);
 
-  }, [])
 
 
 
@@ -537,6 +571,8 @@ function App() {
     }
     const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(startCell, sections);
     // Add item to section
+    const relativeCell = new CellId({ x: startCell.x - section!.cellId.x, y: startCell.y - section!.cellId.y });
+    item.sectionCell = relativeCell;
     section!.items.push(item);
 
     // Use rotated dimensions for placement
@@ -561,14 +597,14 @@ function App() {
 
     // If the item is being placed, remove it from the inventory
     console.log("Removing item from inventory", item.name)
-    let itemRemoved = false;
+
     if (!item.hasMoved) {
       const index = inventoryItems.findIndex((i) => i.item.name == item.name && !i.item.hasMoved);
       if (index !== -1) {
         const newInventoryItems = [...inventoryItems];
         newInventoryItems[index].quantity -= 1;
         if (newInventoryItems[index].quantity <= 0) {
-          itemRemoved = true;
+
           newInventoryItems.splice(index, 1);
         }
         setInventoryItems(newInventoryItems);
@@ -834,8 +870,104 @@ function App() {
       <div className="App">
         <h1 className='title'>LayItOut</h1>
         <br />
-        <div className='layout'>
-          <Toolbox maxHeight={isMobile ? 200 : height} showAddCustomItem={() => { addCustomItemDialogRef.current?.showModal(); }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
+        {(isCreatingTemplate || isEditingTemplate) && <div className="template-name-row">
+          <label htmlFor="template-name">Template Name:</label>
+          <input type="text" id="template-name" name="template-name" onChange={(e) => setTemplateName(e.target.value)} value={templateName} />
+
+        </div>}
+        {(isCreatingTemplate || isEditingTemplate) && <div className='template-creation'>
+          <button className='action-btn' onClick={() => {
+
+            if (templateName.trim() == "") {
+              alert("Please enter a template name");
+              return;
+            }
+
+            if (templates.some((t) => t.name === templateName && (isEditingTemplate ? t.id !== editingTemplate!.id : true))) {
+              alert("Template with this name already exists");
+              return;
+            }
+
+            if (isEditingTemplate) {
+              const updatedTemplates = templates.map((t) => {
+                if (t.id === editingTemplate!.id) {
+                  console.log("SECTION", sections)
+                  return new Template({
+                    name: templateName,
+                    sections: sections.map((s) => new Section({
+                      name: s.name,
+                      cellId: new CellId({ x: t.sections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 10), y: t.sections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 10) }),
+                      cellsLong: s.cellsLong * (isMobile ? 10 : 10),
+                      cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                      startingItems: s.items.map((i) => new StaringItem({
+                        cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                        item: new Item({
+                          id: i.id,
+                          name: i.name,
+                          cellsLong: i.cellsLong,
+                          cellsTall: i.cellsTall,
+                          icon: i.icon,
+                          starterItem: true,
+                          moveable: i.moveable,
+                        })
+                      }))
+                    })),
+                    id: t.id
+                  });
+                }
+                return new Template({
+                  name: t.name,
+                  sections: t.sections.map((s) => new Section({
+                    name: s.name,
+                    cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
+                    cellsLong: s.cellsLong * (isMobile ? 20 : 10),
+                    cellsTall: s.cellsTall * (isMobile ? 20 : 10),
+                    startingItems: s.startingItems.map((i) => new StaringItem({
+                      cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
+                      item: new Item({
+                        id: i.item.id,
+                        name: i.item.name,
+                        cellsLong: i.item.cellsLong,
+                        cellsTall: i.item.cellsTall,
+                        icon: i.item.icon,
+                        starterItem: i.item.starterItem,
+                        moveable: i.item.moveable,
+                      })
+                    }))
+                  })),
+                  id: t.id
+                });
+              });
+              setLoading(true);
+              saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
+
+                console.log("Template updated successfully");
+                setLoading(false);
+              });
+
+            }
+
+
+          }
+          }>{isCreatingTemplate ? "Create" : "Save"} Template</button>
+          <button className='action-btn' onClick={() => {
+            setIsCreatingTemplate(false);
+            setTemplates([]);
+            setLayoutSections([]);
+            setSections([]);
+            setMobileCells([]);
+            setMobileAreas([]);
+            setMobileViewingSection(null);
+          }}>Cancel</button>
+
+        </div>}
+        {loading && (
+          <>
+            <div className="loader-backdrop"></div>
+            <div className="loader"></div>
+          </>
+        )} <div className='layout'>
+          <Toolbox isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height} showAddCustomItem={() => { addCustomItemDialogRef.current?.showModal(); }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
             new InventoryItem({
               item: new Item({
                 id: inv.item.id,
@@ -858,7 +990,7 @@ function App() {
 
             }} className='back-mobile-areas' />
             {mobileAreas.map((area, index) => (
-              <Area width={area.width} height={area.height} cells={flattenCells(mobileCells.find((c) => c.sectionName == area.sectionName)!.cells)} key={index} id={area.sectionName} visibile={mobileViewingSection == null ? true : area.sectionName == mobileViewingSection} section={area.sectionName} />
+              <AreaComponent width={area.width} height={area.height} cells={flattenCells(mobileCells.find((c) => c.sectionName == area.sectionName)!.cells)} key={index} id={area.sectionName} visibile={mobileViewingSection == null ? true : area.sectionName == mobileViewingSection} section={area.sectionName} />
             ))}
             <img src={ForwardIcon} onClick={() => {
               const index = sections.findIndex((s) => s.name == mobileViewingSection);
@@ -868,7 +1000,7 @@ function App() {
               console.log("Changing viewing section to", sections[nextIndex].name)
 
             }} className='forward-mobile-areas' /></div>
-            : <Area width={width} height={height} cells={flattenCells(cells)} />}
+            : <AreaComponent width={width} height={height} cells={flattenCells(cells)} />}
 
         </div>
       </div>
@@ -881,7 +1013,7 @@ function App() {
           isUnselecting={unselectingItemIds.includes(item.id)}
           onDeselect={() => onDeselectItem(item.id)} />
       })}
-      {isMobile && <div className='layout-icon' onClick={() => {
+      {isMobile && !loading && <div className='layout-icon' onClick={() => {
         layoutDialogRef.current?.showModal();
         setLayoutDialogOpen(true);
         console.log("Showing layout dialog")
@@ -889,14 +1021,14 @@ function App() {
 
         <img src={LayoutIcon} alt="" />
       </div>}
-      <div className='template-icon' onClick={() => {
+      {!loading && !(isCreatingTemplate || isEditingTemplate) && <div className='template-icon' onClick={() => {
         templateDialogRef.current?.showModal();
         setTemplateDialogOpen(true);
         console.log("Showing template dialog")
       }}>
 
         <img src={TemplateIcon} alt="" />
-      </div>
+      </div>}
       <TemplateDialog dialogRef={templateDialogRef} isOpen={templateDialogOpen} closeDialog={() => {
         templateDialogRef.current?.close();
         setTemplateDialogOpen(false);

@@ -167,6 +167,9 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
         if (item.initialElement != null && !item.hasMoved) {
 
             if (item.initialElement && !item.hasMoved) {
+                if (item.initialElement.classList.contains("cell")) {
+                    setCell(item.initialElement);
+                }
                 const toolbox = document.querySelector(".toolbox")!;
                 const scrollLeft = toolbox.scrollLeft;
                 const scrollTop = toolbox.scrollTop;

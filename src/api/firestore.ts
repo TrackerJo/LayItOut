@@ -1,0 +1,51 @@
+import { collection, doc, getDoc, getFirestore, setDoc, updateDoc } from "firebase/firestore";
+import { app } from "./firebase";
+import { getLocalArea, getLocalTemplates } from "./local_firestore";
+import { Area, Section, Template } from "../constants";
+
+const db = getFirestore(app);
+const useLocalFirestore = false;
+const companiesCollection = collection(db, "companies");
+
+
+export async function getArea(companyId: string, areaId: string): Promise<Area> {
+    if (useLocalFirestore) {
+        return Promise.resolve(getLocalArea());
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", areaId);
+        const areaData = await getDoc(areaRef);
+        if (areaData.exists()) {
+            const area = areaData.data();
+            return Area.fromDoc(area);
+        } else {
+            console.error("No such area document!");
+            return getLocalArea();
+        }
+    }
+}
+
+export async function saveCompanyArea(companyId: string, area: Area): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not saving area");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", area.id);
+        await setDoc(areaRef, area.toDoc());
+    }
+}
+
+export async function saveAreaTemplates(companyId: string, areaId: string, templates: Template[]): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not saving template");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", areaId);
+        await updateDoc(areaRef, {
+            templates: templates.map((template) => template.toDoc())
+        });
+    }
+}
+
