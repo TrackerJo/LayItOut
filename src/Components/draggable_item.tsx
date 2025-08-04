@@ -4,6 +4,8 @@ import { CellId, Item } from "../constants";
 import XMark from "../assets/xmark.png";
 import Rotate from "../assets/rotate.png";
 
+
+
 type DraggableItemProps = {
     item: Item,
     canPlaceItem: (startCell: CellId, item: Item) => boolean
@@ -75,24 +77,28 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
         const rotatedDims = getRotatedDimensions(newRotation);
 
         // Create a temporary item with rotated dimensions for validation
-        const tempItem = {
-            ...item,
-            cellsLong: rotatedDims.cellsWide,
-            cellsTall: rotatedDims.cellsTall
-        };
-        console.log("Rotating item", item.id, "to rotation", newRotation, "with tempItem", tempItem);
-        console.log("Current cell:", cell);
-        console.log("Can place item at cell:", canPlaceItem(CellId.fromString(cell?.id || ""), tempItem));
+        const tempItem = Item.fromDoc(item.toDoc());
+        tempItem.cellsLong = rotatedDims.cellsWide;
+        tempItem.cellsTall = rotatedDims.cellsTall;
+        tempItem.initialElement = item.initialElement;
+        tempItem.rotation = newRotation;
+        tempItem.hasMoved = item.hasMoved;
+        let currentCell = cell;
         // Check if rotation is valid at current position
-        if (cell && canPlaceItem(CellId.fromString(cell.id), tempItem)) {
+        if ((!item.hasMoved && item.rotation != 0) || (currentCell && canPlaceItem(CellId.fromString(currentCell.id), tempItem))) {
+            if (currentCell == null) {
+                currentCell = item.initialElement!;
+            }
+            console.log("ROTATE ITEM", item.id, "to rotation:", newRotation, "at cell:", currentCell?.id);
+
             setRotation(newRotation);
-            deleteItemRotate(item, CellId.fromString(cell.id));
-            item.roation = newRotation; // Update item's rotation state
+            deleteItemRotate(item, CellId.fromString(currentCell.id));
+            item.rotation = newRotation; // Update item's rotation state
 
             // Calculate new position based on rotation
             const offset = getRotationOffset(newRotation);
-            const cellLeft = cell.offsetLeft;
-            const cellTop = cell.offsetTop;
+            const cellLeft = currentCell.offsetLeft;
+            const cellTop = currentCell.offsetTop;
 
             setX(cellLeft + offset.x);
             setY(cellTop + offset.y);
@@ -100,7 +106,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             setPrevY(cellTop + offset.y);
 
             // Update the item's dimensions in the grid
-            placeItem(CellId.fromString(cell.id), tempItem, CellId.fromString(cell.id));
+            // placeItem(CellId.fromString(currentCell.id), tempItem, CellId.fromString(currentCell.id));
         }
     };
     function getTextWidth(fontSize: number): number {
@@ -165,10 +171,36 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
     useEffect(() => {
 
         if (item.initialElement != null && !item.hasMoved) {
+            //rotate item if it has a rotation
+            console.log("Item initial element:", item.rotation);
+            if (item.rotation) {
+                setTimeout(() => {
+                    console.log("Rotating item to initial rotation:", item.rotation);
+                    //repeat the rotation logic
+                    for (let i = 0; i < item.rotation; i++) {
+                        console.log("Rotating item", i + 1, "times");
+                        setRotation((prevRotation) => {
+                            const newRotation = (prevRotation + 1) % 4;
+                            const offset = getRotationOffset(newRotation);
+                            const cellLeft = item.initialElement!.offsetLeft;
+                            const cellTop = item.initialElement!.offsetTop;
+
+                            setX(cellLeft + offset.x);
+                            setY(cellTop + offset.y);
+                            setPrevX(cellLeft + offset.x);
+                            setPrevY(cellTop + offset.y);
+                            return newRotation;
+                        });
+                        // rotateItem();
+                        // Delay each rotation by 100ms
+                    }
+                }, 100);
+            }
 
             if (item.initialElement && !item.hasMoved) {
                 if (item.initialElement.classList.contains("cell")) {
-                    setCell(item.initialElement);
+                    console.log("Setting cell to initial element:", item.initialElement.children[0] as HTMLElement);
+                    setCell(item.initialElement.children[0] as HTMLElement);
                 }
                 const toolbox = document.querySelector(".toolbox")!;
                 const scrollLeft = toolbox.scrollLeft;
@@ -188,67 +220,40 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
 
             }
 
-            setInterval(() => {
-                //check if item is being dragged
-                if (isDragging) return;
-                if (itemRef.current) {
-                    if (itemRef.current.classList.contains("dragging")) {
+            // setInterval(() => {
+            //     //check if item is being dragged
+            //     if (isDragging) return;
+            //     if (itemRef.current) {
+            //         if (itemRef.current.classList.contains("dragging")) {
 
-                        return;
-                    }
-                }
-                if (item.initialElement && !item.hasMoved) {
-                    // const toolbox = document.querySelector(".toolbox")!;
-                    // const scrollLeft = toolbox.scrollLeft;
-                    // const scrollTop = toolbox.scrollTop;
-                    // if (item.isDisplayItem) {
-
-                    //     setX(item.initialElement.offsetLeft - scrollLeft);
-                    //     setY(item.initialElement.offsetTop - scrollTop);
-                    //     setPrevX(item.initialElement.offsetLeft - scrollLeft);
-                    //     setPrevY(item.initialElement.offsetTop - scrollTop);
-                    // } else {
-                    setX(item.initialElement.offsetLeft);
-                    setY(item.initialElement.offsetTop);
-                    setPrevX(item.initialElement.offsetLeft);
-                    setPrevY(item.initialElement.offsetTop);
-                    // }
-
-                }
-            }, 10);
-
-            //add scroll event listener to update position
-            // window.document.querySelector(".toolbox")!.addEventListener("scroll", () => {
-            //     console.log("Scroll event detected, updating position");
-            //     //you now need to adjust the x and y position based on the scroll position
-            //     if (item.initialElement && !item.hasMoved && item.isDisplayItem) {
-            //         const toolbox = document.querySelector(".toolbox")!;
-            //         //Check if the item is in the viewport
-            //         const rect = item.initialElement.getBoundingClientRect();
-            //         const toolboxRect = toolbox.getBoundingClientRect();
-            //         const isInViewport = (
-            //             rect.left >= toolboxRect.left &&
-            //             rect.right <= toolboxRect.right &&
-            //             rect.top >= toolboxRect.top &&
-            //             rect.bottom <= toolboxRect.bottom
-            //         );
-            //         // if (!isInViewport) {
-            //         //     console.log("Item is not in viewport, removing it from the toolbox");
-            //         //     setInViewport(false);
-            //         //     // item.initialElement = undefined;
-            //         //     // item.hasMoved = true;
-            //         //     // item.isDisplayItem = false;
-            //         //     // item.id = item.name + (Math.random() * 10000).toString();
-            //         //     // itemRef.current!.id = item.id; // Update the ID of the draggable item
-            //         // } else {
-            //         //     setInViewport(true);
-            //         // }
+            //             return;
+            //         }
             //     }
-            // });
+            //     if (item.initialElement && !item.hasMoved) {
+            //         // const toolbox = document.querySelector(".toolbox")!;
+            //         // const scrollLeft = toolbox.scrollLeft;
+            //         // const scrollTop = toolbox.scrollTop;
+            //         // if (item.isDisplayItem) {
+
+            //         //     setX(item.initialElement.offsetLeft - scrollLeft);
+            //         //     setY(item.initialElement.offsetTop - scrollTop);
+            //         //     setPrevX(item.initialElement.offsetLeft - scrollLeft);
+            //         //     setPrevY(item.initialElement.offsetTop - scrollTop);
+            //         // } else {
+            //         setX(item.initialElement.offsetLeft);
+            //         setY(item.initialElement.offsetTop);
+            //         setPrevX(item.initialElement.offsetLeft);
+            //         setPrevY(item.initialElement.offsetTop);
+            //         // }
+
+            //     }
+            // }, 10);
+
+
         }
 
 
-    }, [item, isDragging]);
+    }, [item]);
 
     const handleResize = () => {
         if (isDragging) return;
@@ -291,6 +296,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
 
             // Calculate the offset from mouse/touch to element when drag starts
             const rect = document.getElementById(item.id)?.getBoundingClientRect();
+
             const initialOffsetX = rect ? rect.left - x : 0;
             const initialOffsetY = rect ? rect.top - y : 0;
 
@@ -302,11 +308,13 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             const handleMove = (clientX: number, clientY: number, target: EventTarget | null) => {
                 // Create item with current rotation for highlighting
                 const rotatedDims = getRotatedDimensions(rotation);
-                const tempItem = {
-                    ...item,
-                    cellsLong: rotatedDims.cellsWide,
-                    cellsTall: rotatedDims.cellsTall
-                };
+                const tempItem = Item.fromDoc(item.toDoc());
+                tempItem.cellsLong = rotatedDims.cellsWide;
+                tempItem.cellsTall = rotatedDims.cellsTall;
+                tempItem.initialElement = item.initialElement;
+                tempItem.rotation = rotation;
+                tempItem.hasMoved = item.hasMoved;
+                tempItem.id = item.id; // Ensure the ID is set for highlighting
 
                 // For touch events, we need to find the element under the touch point
                 let targetElement = target as HTMLElement;
@@ -319,14 +327,22 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                 }
 
                 if (targetElement?.classList?.contains("cell")) {
-                    console.log("Target element:", targetElement.id);
+
                     highlightCells(CellId.fromString(targetElement.id), tempItem);
                 } else {
                     unHighlightCells();
                 }
+                // if (item.starterItem) {
+                //     // setX(clientX);
+                //     // setY(clientY);
+                //     setX(clientX - initialOffsetX)
+                //     setY(clientY - initialOffsetY + 5)
 
+                // } else {
                 setX(clientX - initialOffsetX)
                 setY(clientY - initialOffsetY + 5)
+                // Adjust for touch offset
+                // }
             };
 
             const handleEnd = (clientX: number, clientY: number) => {
@@ -383,6 +399,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                     setPrevY(finalY)
 
                     placeItem(CellId.fromString(targetElement.id), tempItem, cell != null ? CellId.fromString(cell.id) : null);
+                    console.log("Placed item at cell:", targetElement);
                     setCell(targetElement)
                 }
                 setIsDragging(false)

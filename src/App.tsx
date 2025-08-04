@@ -199,7 +199,8 @@ function App() {
                 icon: item.item.icon,
                 initialElement: document.querySelector(`.App #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
                 starterItem: true,
-                moveable: item.item.moveable
+                moveable: item.item.moveable,
+                rotation: item.item.rotation || 0 // Ensure rotation is set
               })
             })
           }))
@@ -209,9 +210,20 @@ function App() {
         setSections([...newSections]);
 
         for (const startingItem of newStartingItems) {
+          const getRotatedDimensions = (rotation: number) => {
+            const isRotated = rotation % 2 === 1; // 90° or 270°
+            return {
+              cellsLong: isRotated ? startingItem.item.cellsTall : startingItem.item.cellsLong,
+              cellsTall: isRotated ? startingItem.item.cellsLong : startingItem.item.cellsTall
+            };
+          };
 
-          for (let i = 0; i < startingItem.item.cellsTall; i++) {
-            for (let j = 0; j < startingItem.item.cellsLong; j++) {
+          // Get the current rotation from the item
+          const rotation = startingItem.item.rotation || 0;
+          const rotatedDims = getRotatedDimensions(rotation);
+
+          for (let i = 0; i < rotatedDims.cellsTall; i++) {
+            for (let j = 0; j < rotatedDims.cellsLong; j++) {
               newCells[startingItem.cell.y + i][startingItem.cell.x + j].hasItem = true;
               newCells[startingItem.cell.y + i][startingItem.cell.x + j].itemId = startingItem.item.id;
             }
@@ -355,6 +367,7 @@ function App() {
             icon: i.item.icon,
             moveable: i.item.moveable,
             starterItem: i.item.starterItem,
+            rotation: i.item.rotation,
 
 
           }))
@@ -378,6 +391,7 @@ function App() {
             icon: i.item.icon,
             moveable: i.item.moveable,
             starterItem: i.item.starterItem,
+            rotation: i.item.rotation,
 
             sectionCell: i.cell
 
@@ -393,7 +407,19 @@ function App() {
           cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
           cellsLong: section.cellsLong / 10,
           cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems
+          startingItems: section.startingItems,
+          items: section.startingItems.map((i) => new Item({
+            id: i.item.id,
+            name: i.item.name,
+            sectionCell: i.cell,
+            cellsLong: i.item.cellsLong,
+            cellsTall: i.item.cellsTall,
+            icon: i.item.icon,
+            moveable: i.item.moveable,
+            starterItem: i.item.starterItem,
+            rotation: i.item.rotation,
+
+          }))
         })
       }
       )]);
@@ -403,12 +429,24 @@ function App() {
           cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
           cellsLong: section.cellsLong / 10,
           cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems
+          startingItems: section.startingItems,
+          items: section.startingItems.map((i) => new Item({
+            id: i.item.id,
+            name: i.item.name,
+            sectionCell: i.cell,
+            cellsLong: i.item.cellsLong,
+            cellsTall: i.item.cellsTall,
+            icon: i.item.icon,
+            moveable: i.item.moveable,
+            starterItem: i.item.starterItem,
+            rotation: i.item.rotation,
+
+          }))
         })
       }
       ));
     }
-
+    console.log("SECTIONS TO GENERATE", sectionsToGenerate);
 
     generateCells(sectionsToGenerate);
 
@@ -419,11 +457,11 @@ function App() {
 
     loadArea();
 
-    // async function test() {
-    //   const area = getLocalArea();
-    //   saveCompanyArea("dMjfwNN0XFes0WxUH8h1", area);
-    // }
-    // test();
+    async function test() {
+      const area = getLocalArea();
+      saveCompanyArea("dMjfwNN0XFes0WxUH8h1", area);
+    }
+    test();
 
 
   }, [])
@@ -658,7 +696,7 @@ function App() {
     };
 
     // Get the current rotation from the item
-    const rotation = item.roation || 0;
+    const rotation = item.rotation || 0;
     const rotatedDims = getRotatedDimensions(rotation);
 
     // Use rotated dimensions for deletion
@@ -689,8 +727,8 @@ function App() {
   }
 
   function deleteItemRotate(item: Item, cell: CellId) {
-    const newCells: CellProps[][] = Array.from(cells)
-    console.log("DELETING ITEM ROTATE", item.id, item.roation)
+    const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
+    console.log("DELETING ITEM ROTATE", item.id, item.rotation)
 
     // Helper function to get rotated dimensions
     const getRotatedDimensions = (rotation: number) => {
@@ -702,18 +740,19 @@ function App() {
     };
 
     // Get the current rotation from the item
-    const rotation = item.roation || 0;
+    const rotation = item.rotation || 0;
     const rotatedDims = getRotatedDimensions(rotation);
 
     // Use rotated dimensions for deletion
     for (let i = 0; i < rotatedDims.cellsTall; i++) {
       for (let j = 0; j < rotatedDims.cellsWide; j++) {
+        console.log("Deleting cell", cell.y + i, cell.x + j)
         newCells[cell.y + i][cell.x + j].hasItem = false;
         newCells[cell.y + i][cell.x + j].itemId = "";
+
       }
     }
-
-    setCells(newCells);
+    setCells([...newCells]);
     console.log("DELETING ITEM", item.id)
 
     // This function should only clear the grid cells, not remove the item
@@ -724,11 +763,9 @@ function App() {
     const funcCells = isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells;
 
     const newCells: CellProps[][] = Array.from(funcCells)
-    console.log("HIGHLIGHTING CELLS", startCell, item)
-    console.log("Function Cells", funcCells)
-    console.log("d", funcCells[startCell.y])
+
     if (funcCells[startCell.y] == undefined) {
-      console.log("Start cell is out of bounds, unhighlighting cells d")
+
       unHighlightCells();
       return;
     }
@@ -736,7 +773,7 @@ function App() {
     // Reset all cells to not hovered
     newCells.forEach(row => row.forEach(cell => { cell.mouseOver = false; cell.canPlaceItem = false; cell.mouseOverLocation = "" }));
     // Highlight the cells that the item would occupy
-    console.log("Highlighting cells for item", item.name, "Cells Long", item.cellsLong, "Cells Tall", item.cellsTall)
+
     for (let i = 0; i < item.cellsTall; i++) {
       for (let j = 0; j < item.cellsLong; j++) {
         if (startCell.y + i < newCells.length && startCell.x + j < newCells[startCell.y + i].length) {

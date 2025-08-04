@@ -30,20 +30,21 @@ export class Item {
     hasMoved: boolean;
     initialElement?: HTMLElement;
     moveable: boolean;
-    roation: number;
+    rotation: number;
     starterItem: boolean;
     isDisplayItem: boolean;
     sectionCell?: CellId;
 
 
-    constructor({ id, cellsLong, cellsTall, initialElement, name, icon, moveable, starterItem, displayItem, sectionCell }: {
+    constructor({ id, cellsLong, cellsTall, initialElement, name, icon, moveable, starterItem, displayItem, sectionCell, rotation }: {
         id: string, cellsLong: number, cellsTall: number, initialElement?: HTMLElement,
         name: string,
         icon: string,
         moveable?: boolean,
         starterItem?: boolean,
         displayItem?: boolean,
-        sectionCell?: CellId
+        sectionCell?: CellId,
+        rotation?: number
     }) {
         this.id = id;
         this.cellsLong = cellsLong;
@@ -53,13 +54,70 @@ export class Item {
 
         this.name = name;
         this.icon = icon;
-        this.roation = 0;
+        this.rotation = rotation || 0; // Ensure rotation is handled
         this.moveable = moveable ?? true;
         this.starterItem = starterItem ?? false;
         this.isDisplayItem = displayItem ?? false;
         this.sectionCell = sectionCell;
 
 
+    }
+
+    static fromDoc(data: DocumentData): Item {
+        return new Item({
+            id: data.id,
+            name: data.name,
+            icon: data.icon,
+            cellsLong: data.cellsLong,
+            cellsTall: data.cellsTall,
+            moveable: data.moveable,
+            starterItem: data.starterItem,
+            displayItem: data.displayItem || false,
+            rotation: data.rotation || 0, // Ensure rotation is handled
+        });
+    }
+
+    static fromJSON(data: any): Item {
+        return new Item({
+            id: data.id,
+            name: data.name,
+            icon: data.icon,
+            cellsLong: data.cellsLong,
+            cellsTall: data.cellsTall,
+            moveable: data.moveable,
+            starterItem: data.starterItem,
+            displayItem: data.displayItem || false,
+            rotation: data.rotation || 0, // Ensure rotation is handled
+        });
+    }
+
+    toJSON(): object {
+        return {
+            id: this.id,
+            name: this.name,
+            icon: this.icon,
+            cellsLong: this.cellsLong,
+            cellsTall: this.cellsTall,
+            moveable: this.moveable,
+            starterItem: this.starterItem,
+            displayItem: this.isDisplayItem,
+            rotation: this.rotation || 0 // Ensure rotation is included
+        };
+    }
+
+    toDoc(): DocumentData {
+        return {
+            id: this.id,
+            name: this.name,
+            icon: this.icon,
+            cellsLong: this.cellsLong,
+            cellsTall: this.cellsTall,
+            moveable: this.moveable,
+            starterItem: this.starterItem,
+            displayItem: this.isDisplayItem,
+
+            rotation: this.rotation || 0 // Ensure rotation is included
+        };
     }
 
 }
@@ -75,16 +133,7 @@ export class InventoryItem {
 
     static fromDoc(data: DocumentData): InventoryItem {
         return new InventoryItem({
-            item: new Item({
-                id: data.item.id,
-                name: data.item.name,
-                icon: data.item.icon,
-                cellsLong: data.item.cellsLong,
-                cellsTall: data.item.cellsTall,
-                moveable: data.item.moveable,
-                starterItem: data.item.starterItem,
-                displayItem: data.item.displayItem || false
-            }),
+            item: Item.fromDoc(data.item),
             quantity: data.quantity
         });
 
@@ -92,48 +141,21 @@ export class InventoryItem {
 
     static fromJSON(data: any): InventoryItem {
         return new InventoryItem({
-            item: new Item({
-                id: data.item.id,
-                name: data.item.name,
-                icon: data.item.icon,
-                cellsLong: data.item.cellsLong,
-                cellsTall: data.item.cellsTall,
-                moveable: data.item.moveable,
-                starterItem: data.item.starterItem,
-                displayItem: data.item.displayItem || false
-            }),
+            item: Item.fromJSON(data.item),
             quantity: data.quantity
         });
     }
 
     toJSON(): object {
         return {
-            item: {
-                id: this.item.id,
-                name: this.item.name,
-                icon: this.item.icon,
-                cellsLong: this.item.cellsLong,
-                cellsTall: this.item.cellsTall,
-                moveable: this.item.moveable,
-                starterItem: this.item.starterItem,
-                displayItem: this.item.isDisplayItem
-            },
+            item: this.item.toJSON(),
             quantity: this.quantity
         };
     }
 
     toDoc(): DocumentData {
         return {
-            item: {
-                id: this.item.id,
-                name: this.item.name,
-                icon: this.item.icon,
-                cellsLong: this.item.cellsLong,
-                cellsTall: this.item.cellsTall,
-                moveable: this.item.moveable,
-                starterItem: this.item.starterItem,
-                displayItem: this.item.isDisplayItem
-            },
+            item: this.item.toDoc(),
             quantity: this.quantity
         };
     }
@@ -186,17 +208,7 @@ export class Section {
             cellsTall: data.cellsTall,
             startingItems: data.startingItems.map((item: any) => new StaringItem({
                 cell: CellId.fromString(item.cell),
-                item: new Item({
-                    id: item.item.id,
-                    name: item.item.name,
-                    icon: item.item.icon,
-                    cellsLong: item.item.cellsLong,
-                    cellsTall: item.item.cellsTall,
-                    moveable: item.item.moveable,
-                    starterItem: item.item.starterItem,
-                    displayItem: item.item.displayItem || false
-
-                })
+                item: Item.fromJSON(item.item)
             }))
         });
     }
@@ -209,16 +221,7 @@ export class Section {
             cellsTall: data.cellsTall,
             startingItems: data.startingItems ? data.startingItems.map((item: any) => new StaringItem({
                 cell: CellId.fromString(item.cell),
-                item: new Item({
-                    id: item.item.id,
-                    name: item.item.name,
-                    icon: item.item.icon,
-                    cellsLong: item.item.cellsLong,
-                    cellsTall: item.item.cellsTall,
-                    moveable: item.item.moveable,
-                    starterItem: item.item.starterItem,
-                    displayItem: item.item.displayItem || false
-                })
+                item: Item.fromDoc(item.item)
             })) : []
         });
     }
@@ -231,16 +234,7 @@ export class Section {
             cellsTall: this.cellsTall,
             startingItems: this.startingItems.map(item => ({
                 cell: item.cell.toId(),
-                item: {
-                    id: item.item.id,
-                    name: item.item.name,
-                    icon: item.item.icon,
-                    cellsLong: item.item.cellsLong,
-                    cellsTall: item.item.cellsTall,
-                    moveable: item.item.moveable,
-                    starterItem: item.item.starterItem,
-                    displayItem: item.item.isDisplayItem
-                }
+                item: item.item.toJSON()
             }))
         };
     }
@@ -253,16 +247,7 @@ export class Section {
             cellsTall: this.cellsTall,
             startingItems: this.startingItems.map(item => ({
                 cell: item.cell.toId(),
-                item: {
-                    id: item.item.id,
-                    name: item.item.name,
-                    icon: item.item.icon,
-                    cellsLong: item.item.cellsLong,
-                    cellsTall: item.item.cellsTall,
-                    moveable: item.item.moveable,
-                    starterItem: item.item.starterItem,
-                    displayItem: item.item.isDisplayItem
-                }
+                item: item.item.toDoc()
             }))
         };
     }
