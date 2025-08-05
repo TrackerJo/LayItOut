@@ -137,10 +137,11 @@ function App() {
       setMobileHeight(mobileHeight);
 
       setMobileViewingSection(sectionsToGenerate[0] ? sectionsToGenerate[0].name : null);
-      setLoading(false);
       setTimeout(() => {
-        // handleChangeSection(newSections[0].name, newMobileCells, sections);
-      }, 300)
+        setLoading(false);
+
+      }, 500)
+
 
     } else {
       const newCells: CellProps[][] = [];
@@ -237,7 +238,10 @@ function App() {
         }
 
         setCells([...newCells]);
-        setLoading(false);
+        setTimeout(() => {
+          setLoading(false);
+
+        }, 500)
       }, 100)
 
     }
@@ -482,8 +486,19 @@ function App() {
     console.log("Section element found", newSection.cellElement)
     for (const startingItem of newSection.startingItems) {
       console.log("Placing starting item", startingItem.item.name, startingItem.cell)
-      for (let i = 0; i < startingItem.item.cellsTall; i++) {
-        for (let j = 0; j < startingItem.item.cellsLong; j++) {
+      const getRotatedDimensions = (rotation: number) => {
+        const isRotated = rotation % 2 === 1; // 90° or 270°
+        return {
+          cellsLong: isRotated ? startingItem.item.cellsTall : startingItem.item.cellsLong,
+          cellsTall: isRotated ? startingItem.item.cellsLong : startingItem.item.cellsTall
+        };
+      };
+
+      // Get the current rotation from the item
+      const rotation = startingItem.item.rotation || 0;
+      const rotatedDims = getRotatedDimensions(rotation);
+      for (let i = 0; i < rotatedDims.cellsTall; i++) {
+        for (let j = 0; j < rotatedDims.cellsLong; j++) {
           const mobileSection = mobileCells.find((m) => m.sectionName === newSection.name);
           mobileSection!.cells[startingItem.cell.y + i][startingItem.cell.x + j].hasItem = true;
           mobileSection!.cells[startingItem.cell.y + i][startingItem.cell.x + j].itemId = startingItem.item.id;
@@ -502,7 +517,8 @@ function App() {
         icon: startingItem.item.icon,
         initialElement: startingItem.item.initialElement,
         starterItem: true,
-        moveable: startingItem.item.moveable
+        moveable: startingItem.item.moveable,
+        rotation: startingItem.item.rotation,
       }));
     }
 
@@ -525,7 +541,8 @@ function App() {
         icon: item.icon,
         initialElement: item.initialElement,
         starterItem: true,
-        moveable: item.moveable
+        moveable: item.moveable,
+        rotation: item.rotation,
       }))];
     }
 
