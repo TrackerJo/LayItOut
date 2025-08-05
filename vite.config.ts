@@ -20,6 +20,7 @@ export default defineConfig({
       input: {
         index: resolve(root, 'index.html'),
         layout: resolve(root, 'Layout', 'index.html'),
+        login: resolve(root, 'Login', 'index.html'),
 
       }
     }

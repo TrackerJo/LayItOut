@@ -374,3 +374,36 @@ export class Area {
         };
     }
 }
+
+export class Company {
+    name: string;
+    id: string;
+    code: string;
+    users: string[];
+
+    constructor({ name, id, code, users }: { name: string, id: string, code: string, users: string[] }) {
+        this.name = name;
+        this.id = id;
+        this.code = code;
+        this.users = users;
+    }
+
+    static fromDoc(data: DocumentData): Company {
+        return new Company({
+            name: data.name,
+            id: data.id,
+            code: data.code,
+            users: data.users || []
+        });
+    }
+
+    toDoc(): DocumentData {
+        return {
+            name: this.name,
+            id: this.id,
+            code: this.code,
+            users: this.users || []
+        };
+    }
+
+}

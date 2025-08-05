@@ -1,7 +1,7 @@
-import { collection, doc, getDoc, getFirestore, setDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc } from "firebase/firestore";
 import { app } from "./firebase";
 import { getLocalArea, getLocalTemplates } from "./local_firestore";
-import { Area, Section, Template } from "../constants";
+import { Area, Company, Section, Template } from "../constants";
 
 const db = getFirestore(app);
 const useLocalFirestore = false;
@@ -49,3 +49,27 @@ export async function saveAreaTemplates(companyId: string, areaId: string, templ
     }
 }
 
+export async function getCompanies(): Promise<Company[]> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, returning empty companies list");
+        return Promise.resolve([]);
+    } else {
+        const companiesSnapshot = await getDocs(companiesCollection);
+        const companies: Company[] = [];
+        companiesSnapshot.forEach((doc) => {
+            const data = doc.data();
+            companies.push(Company.fromDoc(data));
+        });
+        return companies;
+    }
+}
+
+export async function updateCompany(company: Company): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not updating company");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, company.id);
+        await setDoc(companyRef, company.toDoc());
+    }
+}

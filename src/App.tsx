@@ -3,8 +3,9 @@ import "./index.css";
 import "./App.css";
 import PersonIcon from "./assets/person.png";
 import PlusIcon from "./assets/plus.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Area } from "./constants";
+import { isLoggedIn } from "./api/auth";
 
 createRoot(document.getElementById('root')!).render(
 
@@ -17,6 +18,11 @@ function App() {
     const [selectedNav, setSelectedNav] = useState<string>("designs");
     const [designs, setDesigns] = useState<[]>([]);
     const [areas, setAreas] = useState<Area[]>([]);
+
+    useEffect(() => {
+        isLoggedIn(() => { })
+    }, []);
+
     return (
         <>
             <div className="App">
