@@ -60,7 +60,7 @@ export async function isLoggedIn(setIsLoggedIn: (isLoggedIn: boolean) => void) {
             console.log(window.location.pathname);
             if (window.location.pathname.includes("/Login/")) {
                 //Set the url to the home page
-                window.location.href = "/";
+                window.location.href = "/LayItOut/";
             }
         } else {
             setIsLoggedIn(false);
@@ -68,7 +68,7 @@ export async function isLoggedIn(setIsLoggedIn: (isLoggedIn: boolean) => void) {
                 return;
             }
             //Set the url to the login page
-            window.location.href = "/Login/?redirect=" + window.location.pathname + window.location.search.replace(/&/g, '~');
+            window.location.href = "/LayItOut/Login/?redirect=" + window.location.pathname + window.location.search.replace(/&/g, '~');
         }
     });
 

@@ -21,6 +21,7 @@ export default defineConfig({
         index: resolve(root, 'index.html'),
         layout: resolve(root, 'Layout', 'index.html'),
         login: resolve(root, 'Login', 'index.html'),
+        print: resolve(root, 'Print', 'index.html'),
 
       }
     }

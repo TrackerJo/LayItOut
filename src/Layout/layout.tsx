@@ -57,9 +57,12 @@ function Layout() {
   const [mobileViewingSection, setMobileViewingSection] = useState<string | null>(null);
   const [isCreatingTemplate, setIsCreatingTemplate] = useState<boolean>(false);
   const [isEditingTemplate, setIsEditingTemplate] = useState<boolean>(false);
+  const [isViewingDesign, setIsViewingDesign] = useState<boolean>(false);
+  const [designName, setDesignName] = useState<string>("");
   const [templateName, setTemplateName] = useState<string>("");
   const [companyId, setCompanyId] = useState<string>("");
   const [areaId, setAreaId] = useState<string>("");
+  const [designId, setDesignId] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
@@ -275,6 +278,13 @@ function Layout() {
         setEditingTemplate(template);
         setTemplateName(template.name);
       }
+    } else if (type === "view-design") {
+      setIsViewingDesign(true);
+      const designName = urlParams.get('designName') || "";
+      setDesignName(designName);
+      const designId = urlParams.get('designId') || "";
+      setDesignId(designId);
+
     }
 
     if (companyIdParam) {
@@ -316,7 +326,8 @@ function Layout() {
               cellsTall: item.item.cellsTall / 2,
               icon: item.item.icon,
               starterItem: true,
-              moveable: item.item.moveable
+              moveable: item.item.moveable,
+              rotation: item.item.rotation || 0, // Ensure rotation is set
             })
           })
           )
@@ -334,7 +345,8 @@ function Layout() {
               cellsTall: item.item.cellsTall,
               icon: item.item.icon,
               starterItem: true,
-              moveable: item.item.moveable
+              moveable: item.item.moveable,
+              rotation: item.item.rotation || 0, // Ensure rotation is set
             })
           })
           )
@@ -934,6 +946,9 @@ function Layout() {
           <input type="text" id="template-name" name="template-name" onChange={(e) => setTemplateName(e.target.value)} value={templateName} />
 
         </div>}
+        {isViewingDesign && <div className='design-name-row'>
+          <label htmlFor="design-name">Design Name: {designName}</label>
+        </div>}
         {(isCreatingTemplate || isEditingTemplate) && <div className='template-creation'>
           <button className='action-btn' onClick={() => {
 
@@ -1020,13 +1035,16 @@ function Layout() {
           }}>Cancel</button>
 
         </div>}
+
         {loading && (
           <>
             <div className="loader-backdrop"></div>
             <div className="loader"></div>
           </>
         )} <div className='layout'>
-          <Toolbox isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height} showAddCustomItem={() => { addCustomItemDialogRef.current?.showModal(); }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
+
+
+          {!isViewingDesign && <Toolbox isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height} showAddCustomItem={() => { addCustomItemDialogRef.current?.showModal(); }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
             new InventoryItem({
               item: new Item({
                 id: inv.item.id,
@@ -1038,7 +1056,7 @@ function Layout() {
               })
               , quantity: inv.quantity
             })
-          )} />
+          )} />}
           {isMobile ? <div className='mobile-areas' style={{ height: mobileHeight + "px" }}>
             <img src={ForwardIcon} onClick={() => {
               const index = sections.findIndex((s) => s.name == mobileViewingSection);
@@ -1062,10 +1080,17 @@ function Layout() {
             : <AreaComponent width={width} height={height} cells={flattenCells(cells)} />}
 
         </div>
+        {isViewingDesign && <div className='design-view'>
+          <button className='action-btn' onClick={() => {
+            window.location.href = `/LayItOut/Print/?companyId=${companyId}&areaId=${areaId}&designName=${designName}&designId=${designId}`;
+          }}>Print</button>
+
+        </div>}
       </div>
+
       {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
       {items.map((item) => {
-        return <DraggableItem removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+        return <DraggableItem cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
 
           item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
           onSelect={onSelectItem}
@@ -1080,7 +1105,7 @@ function Layout() {
 
         <img src={LayoutIcon} alt="" />
       </div>}
-      {!loading && !(isCreatingTemplate || isEditingTemplate) && <div className='template-icon' onClick={() => {
+      {!loading && !(isCreatingTemplate || isEditingTemplate || isViewingDesign) && <div className='template-icon' onClick={() => {
         templateDialogRef.current?.showModal();
         setTemplateDialogOpen(true);
         console.log("Showing template dialog")

@@ -27,7 +27,7 @@ function Login() {
     const [loggingIn, setLoggingIn] = useState<boolean>(false);
 
     useEffect(() => {
-        isLoggedIn(() => { });
+        // isLoggedIn(() => { });
         async function fetchCompanies() {
             const response = await getCompanies();
             setCompanies(response);

@@ -147,6 +147,7 @@
 @media (max-width: 768px) {
     .title {
         padding: 0 !important;
+        
     }
 
     .dashboard {

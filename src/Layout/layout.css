@@ -1,5 +1,3 @@
-
-
 body:has(.draggable-item.dragging) {
   cursor: grabbing !important;
 }
@@ -24,9 +22,27 @@ body:has(.draggable-item.dragging) {
     align-items: center;
     justify-content: center;
 
+
+
   }
+
+
 }
 
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column-reverse !important;
+    align-items: center;
+    justify-content: center;
+    height: unset !important;
+    margin-top: 10px;
+  }
+
+  .design-view {
+    margin-top: 20px !important;
+
+  }
+}
 
 
 .mobile-areas {
@@ -141,4 +157,17 @@ body:has(.draggable-item.dragging) {
   justify-content: center;
   padding-bottom: 16px;
   gap: 16px;
+
+}
+
+.design-view {
+  margin-top: 10px;
+
+}
+
+.design-name-row {
+  color: rgba(59, 130, 246, 0.9);
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 10px;
 }

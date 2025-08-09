@@ -13,13 +13,14 @@ type ToolboxProps = {
 
     maxHeight?: number,
     isCreatingTemplate: boolean,
-    isEditingTemplate: boolean
+    isEditingTemplate: boolean,
+    isViewingDesign: boolean
 }
 
-function Toolbox({ inventoryItems, addDraggingItem, maxHeight, removeItem, showAddCustomItem, isCreatingTemplate, isEditingTemplate }: ToolboxProps) {
+function Toolbox({ inventoryItems, addDraggingItem, maxHeight, removeItem, showAddCustomItem, isCreatingTemplate, isEditingTemplate, isViewingDesign }: ToolboxProps) {
     return (<div className="toolbox" style={{ maxHeight: maxHeight ? `${maxHeight}px` : '200px' }}>
         {inventoryItems.map((item) => <DisplayItem inventoryItem={item} addDraggingItem={addDraggingItem} removeItem={removeItem} />)}
-        {!(isCreatingTemplate || isEditingTemplate) && <div className="add-item" onClick={() => {
+        {!(isCreatingTemplate || isEditingTemplate || isViewingDesign) && <div className="add-item" onClick={() => {
             showAddCustomItem();
 
         }}>

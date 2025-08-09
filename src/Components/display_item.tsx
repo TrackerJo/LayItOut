@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Item, type CellId, type InventoryItem } from "../constants"
 import "./display_item.css"
-import DraggableItem from "./draggable_item"
+
 
 type DisplayItemProps = {
     inventoryItem: InventoryItem

@@ -133,3 +133,14 @@ input:-webkit-autofill:active {
     transition: background-color 5000s ease-in-out 0s;
     box-shadow: inset 0 0 20px 20px rgba(59, 130, 246, 0.3);
 }
+
+@media (max-width: 768px) {
+    .login-container {
+        width: 80vw;
+    }
+
+    .title {
+        padding-top: 0rem;
+        position: relative !important;
+    }
+}

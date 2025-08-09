@@ -19,10 +19,12 @@ type DraggableItemProps = {
     unHighlightCells: () => void,
     removeItem: (item: Item) => void,
     isUnselecting: boolean
-    visible?: boolean
+    visible?: boolean,
+    isViewingDesign: boolean,
+    cellSize: number
 }
 
-function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible, removeItem }: DraggableItemProps) {
+function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible, removeItem, isViewingDesign, cellSize }: DraggableItemProps) {
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
     const textRef = useRef<HTMLParagraphElement>(null);
@@ -33,7 +35,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
     const [cell, setCell] = useState<HTMLElement | null>(null);
     const [canRotate, setCanRotate] = useState<boolean>(true);
     const [fontSize, setFontSize] = useState<number>(12); // Default font size
-    const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
+
     const itemRef = useRef<HTMLDivElement>(null);
     const [inViewport, setInViewport] = useState<boolean>(true);
 
@@ -202,21 +204,12 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                     console.log("Setting cell to initial element:", item.initialElement.children[0] as HTMLElement);
                     setCell(item.initialElement.children[0] as HTMLElement);
                 }
-                const toolbox = document.querySelector(".toolbox")!;
-                const scrollLeft = toolbox.scrollLeft;
-                const scrollTop = toolbox.scrollTop;
-                if (item.isDisplayItem) {
 
-                    setX(item.initialElement.offsetLeft - scrollLeft);
-                    setY(item.initialElement.offsetTop - scrollTop);
-                    setPrevX(item.initialElement.offsetLeft - scrollLeft);
-                    setPrevY(item.initialElement.offsetTop - scrollTop);
-                } else {
-                    setX(item.initialElement.offsetLeft);
-                    setY(item.initialElement.offsetTop);
-                    setPrevX(item.initialElement.offsetLeft);
-                    setPrevY(item.initialElement.offsetTop);
-                }
+                setX(item.initialElement.offsetLeft);
+                setY(item.initialElement.offsetTop);
+                setPrevX(item.initialElement.offsetLeft);
+                setPrevY(item.initialElement.offsetTop);
+
 
             }
 
@@ -490,8 +483,8 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                         transformOrigin: 'center center',
                         fontSize: `${fontSize}px`
                     }}
-                    onMouseDown={item.moveable ? () => setIsDragging(true) : undefined}
-                    onTouchStart={item.moveable ? (e) => {
+                    onMouseDown={item.moveable && !isViewingDesign ? () => setIsDragging(true) : undefined}
+                    onTouchStart={item.moveable && !isViewingDesign ? (e) => {
                         e.preventDefault();
                         setIsDragging(true);
                     } : undefined}

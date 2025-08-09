@@ -109,7 +109,8 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
                                 icon: item.item.icon,
                                 initialElement: document.querySelector(`.template-dialog #${template.name.split(" ").join("-")} #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
                                 starterItem: true,
-                                moveable: false
+                                moveable: item.item.moveable,
+                                rotation: item.item.rotation || 0 // Ensure rotation is set
                             })
                         })
                     }))
@@ -139,7 +140,8 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
                         icon: startingItem.item.icon,
                         initialElement: startingItem.item.initialElement,
                         starterItem: true,
-                        moveable: false
+                        moveable: startingItem.item.moveable,
+                        rotation: startingItem.item.rotation || 0 // Ensure rotation is set
                     }));
 
                 }
@@ -299,7 +301,7 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
             {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
             {
                 items.map((item) => {
-                    return <DraggableItem removeItem={() => { }} visible={true}
+                    return <DraggableItem cellSize={isMobile ? 5 : 10} isViewingDesign={true} removeItem={() => { }} visible={true}
 
                         item={item} canPlaceItem={() => { return false }} placeItem={() => { }} deleteItemRotate={() => { }} highlightCells={() => { }} unHighlightCells={() => { }} key={item.id} deleteItem={() => { }} isSelected={false}
                         onSelect={(itemId) => {
