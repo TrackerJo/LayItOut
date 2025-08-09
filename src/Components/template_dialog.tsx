@@ -13,9 +13,10 @@ type TemplateDialogProps = {
     closeDialog: () => void;
     templates: Template[];
     isOpen: boolean;
+    isViewingArea;
 };
 
-function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateDialogProps) {
+function TemplateDialog({ dialogRef, closeDialog, templates, isOpen, isViewingArea }: TemplateDialogProps) {
 
     const [sections, setSections] = useState<Section[]>([]);
     // const [templates, setTemplates] = useState<Template[]>([...templates]);
@@ -37,6 +38,7 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
 
 
     function generateTemplates(whichTemplates: Template[], items: Item[], sections: Section[]) {
+
         const templateAreas: { width: number, height: number, templateName: string, cells: CellProps[][] }[] = [];
         const templatesToGenerate = templates.filter((template) => whichTemplates.some((t) => t.name === template.name));
         //sort by viewingTemplates order
@@ -149,7 +151,7 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
 
 
             }
-            setItems((old) => [...old, ...newItems]);
+            setItems((old) => [...newItems]);
 
             setSections([...newSections]);
         }, 100)
@@ -193,6 +195,20 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
         return flattenedCells
     }
 
+    function showItem(item: Item, viewingTemplates: string[]): boolean {
+        if (templates.length == 1) return true
+        const templatesViewing = templates.filter((t) => viewingTemplates.includes(t.name));
+        console.log("Viewing templates", templatesViewing);
+        for (const template of templatesViewing) {
+            for (const section of template.sections) {
+                if (section.startingItems.some((i) => i.item.id == item.id)) {
+                    return true;
+                }
+            }
+        }
+        return false
+    }
+
     return (
         <dialog ref={dialogRef} className="template-dialog">
             <div className="template-dialog-div" >
@@ -232,39 +248,45 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
                             />
                             <h3>{area.templateName}</h3>
                             <button className='template-select-btn' onClick={() => {
-                                const selectedTemplate = templates.find((t) => t.name === area.templateName)!;
-                                const newTemplate = new Template({
-                                    name: selectedTemplate.name,
-                                    id: selectedTemplate.id,
-                                    sections: selectedTemplate.sections.map((section) => {
-                                        return new Section({
-                                            name: section.name,
-                                            cellId: new CellId({ x: section.cellId.x * (isMobile ? 20 : 10), y: section.cellId.y * (isMobile ? 20 : 10) }),
-                                            cellsLong: section.cellsLong * (isMobile ? 20 : 10),
-                                            cellsTall: section.cellsTall * (isMobile ? 20 : 10),
-                                            startingItems: section.startingItems.map((item) => {
-                                                return new StaringItem({
-                                                    cell: new CellId({ x: item.cell.x * (isMobile ? 2 : 1), y: item.cell.y * (isMobile ? 2 : 1) }),
-                                                    item: new Item({
-                                                        id: item.item.id,
-                                                        name: item.item.name,
-                                                        icon: item.item.icon,
-                                                        cellsLong: item.item.cellsLong * 2,
-                                                        cellsTall: item.item.cellsTall * 2,
-                                                        starterItem: item.item.starterItem,
-                                                        moveable: item.item.moveable
-                                                    })
-                                                });
-                                            })
-                                        });
-                                    })
-                                });
-                                //set window tempateName parameter to newTemplate.name
-                                const urlParams = new URLSearchParams(window.location.search);
-                                urlParams.set('templateName', newTemplate.name);
-                                window.location.search = urlParams.toString();
-
-                            }}> Select</button>
+                                if (isViewingArea) {
+                                    const urlParams = new URLSearchParams(window.location.search);
+                                    const companyIdParam = urlParams.get('companyId');
+                                    const areaIdParam = urlParams.get('areaId');
+                                    window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=edit-template&templateId=${templates.find((temp) => temp.name == area.templateName)!.id}`
+                                } else {
+                                    const selectedTemplate = templates.find((t) => t.name === area.templateName)!;
+                                    const newTemplate = new Template({
+                                        name: selectedTemplate.name,
+                                        id: selectedTemplate.id,
+                                        sections: selectedTemplate.sections.map((section) => {
+                                            return new Section({
+                                                name: section.name,
+                                                cellId: new CellId({ x: section.cellId.x * (isMobile ? 20 : 10), y: section.cellId.y * (isMobile ? 20 : 10) }),
+                                                cellsLong: section.cellsLong * (isMobile ? 20 : 10),
+                                                cellsTall: section.cellsTall * (isMobile ? 20 : 10),
+                                                startingItems: section.startingItems.map((item) => {
+                                                    return new StaringItem({
+                                                        cell: new CellId({ x: item.cell.x * (isMobile ? 2 : 1), y: item.cell.y * (isMobile ? 2 : 1) }),
+                                                        item: new Item({
+                                                            id: item.item.id,
+                                                            name: item.item.name,
+                                                            icon: item.item.icon,
+                                                            cellsLong: item.item.cellsLong * 2,
+                                                            cellsTall: item.item.cellsTall * 2,
+                                                            starterItem: item.item.starterItem,
+                                                            moveable: item.item.moveable
+                                                        })
+                                                    });
+                                                })
+                                            });
+                                        })
+                                    });
+                                    //set window tempateName parameter to newTemplate.name
+                                    const urlParams = new URLSearchParams(window.location.search);
+                                    urlParams.set('templateName', newTemplate.name);
+                                    window.location.search = urlParams.toString();
+                                }
+                            }}>{isViewingArea ? "Edit" : "Select"}</button>
                         </div>
                     ))}
                     {templates.length > 1 && templates.filter((t) => !viewingTemplates.includes(t.name)).length > 0 && <img src={ForwardIcon} onClick={() => {
@@ -292,7 +314,12 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
 
                     }} className='forward-mobile-areas' />}
                 </div>
-
+                {isViewingArea && <><button className='action-btn' onClick={() => {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const companyIdParam = urlParams.get('companyId');
+                    const areaIdParam = urlParams.get('areaId');
+                    window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=create-template`
+                }}>Create new Template</button> <br /></>}
                 <br />
                 <button className='template-dialog-close' onClick={closeDialog}>Close</button>
 
@@ -301,7 +328,7 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen }: TemplateD
             {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
             {
                 items.map((item) => {
-                    return <DraggableItem cellSize={isMobile ? 5 : 10} isViewingDesign={true} removeItem={() => { }} visible={true}
+                    return <DraggableItem cellSize={isMobile ? 5 : 10} isViewingDesign={true} removeItem={() => { }} visible={showItem(item, viewingTemplates)}
 
                         item={item} canPlaceItem={() => { return false }} placeItem={() => { }} deleteItemRotate={() => { }} highlightCells={() => { }} unHighlightCells={() => { }} key={item.id} deleteItem={() => { }} isSelected={false}
                         onSelect={(itemId) => {

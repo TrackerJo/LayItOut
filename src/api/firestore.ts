@@ -73,3 +73,20 @@ export async function updateCompany(company: Company): Promise<void> {
         await setDoc(companyRef, company.toDoc());
     }
 }
+
+export async function getCompanyAreas(companyId: string): Promise<Area[]> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, returning local areas");
+        return Promise.resolve([getLocalArea()]);
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areasCollection = collection(companyRef, "areas");
+        const areasSnapshot = await getDocs(areasCollection);
+        const areas: Area[] = [];
+        areasSnapshot.forEach((doc) => {
+            const data = doc.data();
+            areas.push(Area.fromDoc(data));
+        });
+        return areas;
+    }
+}

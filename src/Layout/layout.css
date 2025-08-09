@@ -2,6 +2,9 @@ body:has(.draggable-item.dragging) {
   cursor: grabbing !important;
 }
 
+body {
+  overflow: scroll;
+}
 
 
 .layout {
@@ -28,6 +31,12 @@ body:has(.draggable-item.dragging) {
 
 
 }
+
+/* #capture {
+  width: 100vw;
+  height: 100vh;
+
+} */
 
 @media (max-width: 768px) {
   .layout {

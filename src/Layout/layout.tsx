@@ -58,6 +58,7 @@ function Layout() {
   const [isCreatingTemplate, setIsCreatingTemplate] = useState<boolean>(false);
   const [isEditingTemplate, setIsEditingTemplate] = useState<boolean>(false);
   const [isViewingDesign, setIsViewingDesign] = useState<boolean>(false);
+  const [isViewingArea, setIsViewingArea] = useState<boolean>(false);
   const [designName, setDesignName] = useState<string>("");
   const [templateName, setTemplateName] = useState<string>("");
   const [companyId, setCompanyId] = useState<string>("");
@@ -248,6 +249,18 @@ function Layout() {
         setCells([...newCells]);
         setTimeout(() => {
           setLoading(false);
+          // setTimeout(() => {
+          //   const element = document.getElementById('capture');
+
+          //   // Export to PNG
+          //   domtoimage
+          //     .toPng(element)
+          //     .then(imgUrl => {
+          //       const img = new Image();
+          //       img.src = imgUrl;
+          //       document.body.appendChild(img);
+          //     })
+          // }, 500)
 
         }, 500)
       }, 100)
@@ -285,6 +298,8 @@ function Layout() {
       const designId = urlParams.get('designId') || "";
       setDesignId(designId);
 
+    } else if (type === "view-area") {
+      setIsViewingArea(true)
     }
 
     if (companyIdParam) {
@@ -482,7 +497,7 @@ function Layout() {
       const area = getLocalArea();
       saveCompanyArea("dMjfwNN0XFes0WxUH8h1", area);
     }
-    test();
+    // test();
 
 
   }, [])
@@ -938,7 +953,7 @@ function Layout() {
   return (
     <>
 
-      <div className="App">
+      <div className="App" >
         <h1 className='title'>LayItOut</h1>
         <br />
         {(isCreatingTemplate || isEditingTemplate) && <div className="template-name-row">
@@ -983,6 +998,7 @@ function Layout() {
                           icon: i.icon,
                           starterItem: true,
                           moveable: i.moveable,
+                          rotation: i.rotation
                         })
                       }))
                     })),
@@ -1001,11 +1017,12 @@ function Layout() {
                       item: new Item({
                         id: i.item.id,
                         name: i.item.name,
-                        cellsLong: i.item.cellsLong,
-                        cellsTall: i.item.cellsTall,
+                        cellsLong: i.item.cellsLong * 2,
+                        cellsTall: i.item.cellsTall * 2,
                         icon: i.item.icon,
                         starterItem: i.item.starterItem,
                         moveable: i.item.moveable,
+                        rotation: i.item.rotation
                       })
                     }))
                   })),
@@ -1017,6 +1034,69 @@ function Layout() {
 
                 console.log("Template updated successfully");
                 setLoading(false);
+                const urlParams = new URLSearchParams(window.location.search);
+                const companyIdParam = urlParams.get('companyId');
+                const areaIdParam = urlParams.get('areaId');
+                window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
+              });
+
+            } else {
+              const newTemplate = new Template({
+                name: templateName,
+                sections: sections.map((s) => new Section({
+                  name: s.name,
+                  cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
+                  cellsLong: s.cellsLong * (isMobile ? 10 : 10),
+                  cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                  startingItems: s.items.map((i) => new StaringItem({
+                    cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                    item: new Item({
+                      id: i.id,
+                      name: i.name,
+                      cellsLong: i.cellsLong,
+                      cellsTall: i.cellsTall,
+                      icon: i.icon,
+                      starterItem: true,
+                      moveable: i.moveable,
+                      rotation: i.rotation
+                    })
+                  }))
+                })),
+                id: templateName + (Math.random() * 10000).toString()
+              });
+
+              const updatedTemplates = [...templates.map((t) => new Template({
+                name: t.name,
+                sections: t.sections.map((s) => new Section({
+                  name: s.name,
+                  cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
+                  cellsLong: s.cellsLong * (isMobile ? 20 : 10),
+                  cellsTall: s.cellsTall * (isMobile ? 20 : 10),
+                  startingItems: s.startingItems.map((i) => new StaringItem({
+                    cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
+                    item: new Item({
+                      id: i.item.id,
+                      name: i.item.name,
+                      cellsLong: i.item.cellsLong * 2,
+                      cellsTall: i.item.cellsTall * 2,
+                      icon: i.item.icon,
+                      starterItem: i.item.starterItem,
+                      moveable: i.item.moveable,
+                      rotation: i.item.rotation
+                    })
+                  }))
+                })),
+                id: t.id
+              })), newTemplate];
+              setLoading(true);
+              saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
+
+                console.log("Template updated successfully");
+                setLoading(false);
+                const urlParams = new URLSearchParams(window.location.search);
+                const companyIdParam = urlParams.get('companyId');
+                const areaIdParam = urlParams.get('areaId');
+                window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
               });
 
             }
@@ -1086,34 +1166,40 @@ function Layout() {
           }}>Print</button>
 
         </div>}
+      </div >
+      <div id='capture'>
+        {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
+        {items.map((item) => {
+          return <DraggableItem cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+
+            item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
+            onSelect={onSelectItem}
+            isUnselecting={unselectingItemIds.includes(item.id)}
+            onDeselect={() => onDeselectItem(item.id)} />
+        })}
       </div>
 
-      {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
-      {items.map((item) => {
-        return <DraggableItem cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+      {
+        isMobile && !loading && <div className='layout-icon' onClick={() => {
+          layoutDialogRef.current?.showModal();
+          setLayoutDialogOpen(true);
+          console.log("Showing layout dialog")
+        }}>
 
-          item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
-          onSelect={onSelectItem}
-          isUnselecting={unselectingItemIds.includes(item.id)}
-          onDeselect={() => onDeselectItem(item.id)} />
-      })}
-      {isMobile && !loading && <div className='layout-icon' onClick={() => {
-        layoutDialogRef.current?.showModal();
-        setLayoutDialogOpen(true);
-        console.log("Showing layout dialog")
-      }}>
+          <img src={LayoutIcon} alt="" />
+        </div>
+      }
+      {
+        !loading && !(isCreatingTemplate || isEditingTemplate || isViewingDesign) && <div className='template-icon' onClick={() => {
+          templateDialogRef.current?.showModal();
+          setTemplateDialogOpen(true);
+          console.log("Showing template dialog")
+        }}>
 
-        <img src={LayoutIcon} alt="" />
-      </div>}
-      {!loading && !(isCreatingTemplate || isEditingTemplate || isViewingDesign) && <div className='template-icon' onClick={() => {
-        templateDialogRef.current?.showModal();
-        setTemplateDialogOpen(true);
-        console.log("Showing template dialog")
-      }}>
-
-        <img src={TemplateIcon} alt="" />
-      </div>}
-      <TemplateDialog dialogRef={templateDialogRef} isOpen={templateDialogOpen} closeDialog={() => {
+          <img src={TemplateIcon} alt="" />
+        </div>
+      }
+      <TemplateDialog isViewingArea={isViewingArea} dialogRef={templateDialogRef} isOpen={templateDialogOpen} closeDialog={() => {
         templateDialogRef.current?.close();
         setTemplateDialogOpen(false);
       }} templates={templates} />

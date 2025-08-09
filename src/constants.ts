@@ -318,20 +318,23 @@ export class Area {
     sections: Section[];
     templates: Template[];
     inventoryItems: InventoryItem[];
+    previewImage: string;
 
-    constructor({ name, sections, templates, inventoryItems, id: string }: {
+    constructor({ name, sections, templates, inventoryItems, id, previewImage }: {
         name: string,
         sections: Section[],
         templates: Template[],
         inventoryItems: InventoryItem[],
-        id: string
+        id: string,
+        previewImage: string
 
     }) {
         this.name = name;
         this.sections = sections;
         this.templates = templates;
         this.inventoryItems = inventoryItems;
-        this.id = string;
+        this.id = id;
+        this.previewImage = previewImage;
     }
 
     static fromDoc(data: DocumentData): Area {
@@ -340,7 +343,8 @@ export class Area {
             id: data.id,
             sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : [],
             templates: data.templates ? data.templates.map((template: any) => Template.fromDoc(template)) : [],
-            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromDoc(item)) : []
+            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromDoc(item)) : [],
+            previewImage: data.previewImage || ""
         });
     }
 
@@ -350,7 +354,8 @@ export class Area {
             id: data.id,
             sections: data.sections ? data.sections.map((section: any) => Section.fromJSON(section)) : [],
             templates: data.templates ? data.templates.map((template: any) => Template.fromJSON(template)) : [],
-            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromJSON(item)) : []
+            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromJSON(item)) : [],
+            previewImage: data.previewImage || ""
         });
     }
 
@@ -360,7 +365,8 @@ export class Area {
             id: this.id,
             sections: this.sections.map(section => section.toJSON()),
             templates: this.templates.map(template => template.toJSON()),
-            inventoryItems: this.inventoryItems.map(item => item.toJSON())
+            inventoryItems: this.inventoryItems.map(item => item.toJSON()),
+            previewImage: this.previewImage
         };
     }
 
@@ -370,7 +376,8 @@ export class Area {
             id: this.id,
             sections: this.sections.map(section => section.toJSON()),
             templates: this.templates.map(template => template.toDoc()),
-            inventoryItems: this.inventoryItems.map(item => item.toDoc())
+            inventoryItems: this.inventoryItems.map(item => item.toDoc()),
+            previewImage: this.previewImage || ""
         };
     }
 }
