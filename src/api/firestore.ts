@@ -1,7 +1,7 @@
-import { collection, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc } from "firebase/firestore";
 import { app } from "./firebase";
 import { getLocalArea, getLocalTemplates } from "./local_firestore";
-import { Area, Company, Section, Template } from "../constants";
+import { Area, Company, Design, Section, Template } from "../constants";
 
 const db = getFirestore(app);
 const useLocalFirestore = false;
@@ -88,5 +88,68 @@ export async function getCompanyAreas(companyId: string): Promise<Area[]> {
             areas.push(Area.fromDoc(data));
         });
         return areas;
+    }
+}
+
+export async function getAreaDesigns(companyId: string, areaId: string): Promise<Design[]> {
+
+    const companyRef = doc(companiesCollection, companyId);
+    const areaRef = doc(companyRef, "areas", areaId);
+    const designsRef = collection(areaRef, "designs");
+    const designsSnapshot = await getDocs(designsRef);
+    const designs: Design[] = [];
+    designsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        designs.push(Design.fromDoc(data));
+    });
+    return designs;
+
+}
+
+export async function getAreaDesign(companyId: string, areaId: string, designId: string): Promise<Design | null> {
+    console.log("Fetching design", designId, "for area", areaId, "in company", companyId);
+    const companyRef = doc(companiesCollection, companyId);
+    const areaRef = doc(companyRef, "areas", areaId);
+    const designRef = doc(areaRef, "designs", designId);
+    const designData = await getDoc(designRef);
+    if (designData.exists()) {
+        return Design.fromDoc(designData.data());
+    }
+    return null;
+}
+
+export async function createAreaDesign(companyId: string, areaId: string, design: Design): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not creating design");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", areaId);
+        const designRef = doc(areaRef, "designs", design.id);
+        await setDoc(designRef, design.toDoc());
+    }
+}
+
+export async function deleteDesign(companyId: string, areaId: string, designId: string): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not deleting design");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", areaId);
+        const designRef = doc(areaRef, "designs", designId);
+        await deleteDoc(designRef);
+    }
+}
+
+export async function updateAreaDesign(companyId: string, areaId: string, design: Design): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not updating design");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", areaId);
+        const designRef = doc(areaRef, "designs", design.id);
+        await setDoc(designRef, design.toDoc());
     }
 }

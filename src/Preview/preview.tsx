@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 
-import './layout.css'
+import './preview.css'
 import '../index.css'
 import AreaComponent from '../Components/area';
 import type { CellProps } from '../Components/cell';
@@ -31,7 +31,7 @@ createRoot(document.getElementById('root')!).render(
 
 
 function Layout() {
-  const [isMobile, setIsMobile] = useState<boolean>(/Mobi|Android/i.test(navigator.userAgent));
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const [width, setWidth] = useState<number>(0);
   const [height, setHeight] = useState<number>(0);
   const [cells, setCells] = useState<CellProps[][]>([]);
@@ -39,7 +39,7 @@ function Layout() {
   const [mobileHeight, setMobileHeight] = useState<number>(0);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [unselectingItemIds, setUnselectingItemIds] = useState<string[]>([]);
-  const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
+  const cellSize = 10;
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
   const layoutDialogRef = useRef<HTMLDialogElement>(null);
@@ -252,7 +252,7 @@ function Layout() {
         setCells([...newCells]);
         setTimeout(() => {
           setLoading(false);
-
+          takeScreenshot(newSections, sectionsToGenerate);
 
         }, 500)
       }, 100)
@@ -261,6 +261,22 @@ function Layout() {
 
 
 
+  }
+
+  async function takeScreenshot(sections: Section[], layoutSections: Section[]) {
+
+    setLoading(true);
+    setTakingPhoto(true);
+    setTimeout(async () => {
+      const element = document.getElementById('capture');
+
+      // Export to PNG
+      const imgUrl = await domtoimage
+        .toPng(element);
+      setTakingPhoto(false);
+      localStorage.setItem("screenshot", imgUrl);
+      window.close();
+    }, 500)
   }
 
   async function loadArea() {
@@ -394,157 +410,62 @@ function Layout() {
     const sectionsToGenerate: Section[] = [];
     const template = templateId === "" ? undefined : newUnmodifiedTemplates.find((t) => t.id === templateId);
     console.log("TEMPLATE", template, "AREA", area);
-    if (isDesign) {
-      const design = await getAreaDesign(companyId, areaId, urlParams.get('designId') || "");
-      if (design === null) {
-
-        window.location.href = "/LayItOut/DNF/";
-        return;
-      }
-      setLayoutSections([...design.sections]);
-      setSections([...design.sections.map((section) => {
-        return new Section({
-          name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems,
-          items: section.startingItems.map((i) => new Item({
-            id: i.item.id,
-            name: i.item.name,
-            sectionCell: i.cell,
-            cellsLong: i.item.cellsLong,
-            cellsTall: i.item.cellsTall,
-            icon: i.item.icon,
-            moveable: i.item.moveable,
-            starterItem: i.item.starterItem,
-            rotation: i.item.rotation,
-
-          }))
-        })
-      }
-      )]);
-      sectionsToGenerate.push(...design.sections.map((section) => {
-        return new Section({
-          name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems,
-          items: section.startingItems.map((i) => new Item({
-            id: i.item.id,
-            name: i.item.name,
-            sectionCell: i.cell,
-            cellsLong: i.item.cellsLong,
-            cellsTall: i.item.cellsTall,
-            icon: i.item.icon,
-            moveable: i.item.moveable,
-            starterItem: i.item.starterItem,
-            rotation: i.item.rotation,
-
-          }))
-        })
-      }
-      ));
-
-    } else if (template !== undefined) {
-
-      setLayoutSections([...template.sections]);
-      setSections([...template.sections.map((section) => {
-        return new Section({
-          name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems,
-          items: section.startingItems.map((i) => new Item({
-            id: i.item.id,
-            name: i.item.name,
-            sectionCell: i.cell,
-            cellsLong: i.item.cellsLong,
-            cellsTall: i.item.cellsTall,
-            icon: i.item.icon,
-            moveable: i.item.moveable,
-            starterItem: i.item.starterItem,
-            rotation: i.item.rotation,
+    let screenshotSections = localStorage.getItem('screenshotSections');
+    console.log("Screenshot sections from localStorage", screenshotSections);
+    screenshotSections = screenshotSections?.split("LAYOUTSEPARATOR") || "";
+    const screenshotSectionsObjects = [] as Section[];
+    for (const sectionString of screenshotSections) {
 
 
-          }))
-
-
-        })
-      }
-      )]);
-      sectionsToGenerate.push(...template.sections.map((section) => {
-        return new Section({
-          name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems,
-          items: section.startingItems.map((i) => new Item({
-            id: i.item.id,
-            name: i.item.name,
-            cellsLong: i.item.cellsLong,
-            cellsTall: i.item.cellsTall,
-            icon: i.item.icon,
-            moveable: i.item.moveable,
-            starterItem: i.item.starterItem,
-            rotation: i.item.rotation,
-
-            sectionCell: i.cell
-
-          }))
-        })
-      }
-      ));
-    } else {
-      setLayoutSections([...area.sections]);
-      setSections([...area.sections.map((section) => {
-        return new Section({
-          name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems,
-          items: section.startingItems.map((i) => new Item({
-            id: i.item.id,
-            name: i.item.name,
-            sectionCell: i.cell,
-            cellsLong: i.item.cellsLong,
-            cellsTall: i.item.cellsTall,
-            icon: i.item.icon,
-            moveable: i.item.moveable,
-            starterItem: i.item.starterItem,
-            rotation: i.item.rotation,
-
-          }))
-        })
-      }
-      )]);
-      sectionsToGenerate.push(...area.sections.map((section) => {
-        return new Section({
-          name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
-          startingItems: section.startingItems,
-          items: section.startingItems.map((i) => new Item({
-            id: i.item.id,
-            name: i.item.name,
-            sectionCell: i.cell,
-            cellsLong: i.item.cellsLong,
-            cellsTall: i.item.cellsTall,
-            icon: i.item.icon,
-            moveable: i.item.moveable,
-            starterItem: i.item.starterItem,
-            rotation: i.item.rotation,
-
-          }))
-        })
-      }
-      ));
+      screenshotSectionsObjects.push(Section.fromJSON(sectionString));
     }
+    setLayoutSections([...screenshotSectionsObjects]);
+    setSections([...screenshotSectionsObjects.map((section) => {
+      return new Section({
+        name: section.name,
+        cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
+        cellsLong: section.cellsLong / 10,
+        cellsTall: section.cellsTall / 10,
+        startingItems: section.startingItems,
+        items: section.startingItems.map((i) => new Item({
+          id: i.item.id,
+          name: i.item.name,
+          sectionCell: i.cell,
+          cellsLong: i.item.cellsLong,
+          cellsTall: i.item.cellsTall,
+          icon: i.item.icon,
+          moveable: i.item.moveable,
+          starterItem: i.item.starterItem,
+          rotation: i.item.rotation,
+
+        }))
+      })
+    }
+    )]);
+    sectionsToGenerate.push(...screenshotSectionsObjects.map((section) => {
+      return new Section({
+        name: section.name,
+        cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
+        cellsLong: section.cellsLong / 10,
+        cellsTall: section.cellsTall / 10,
+        startingItems: section.startingItems,
+        items: section.startingItems.map((i) => new Item({
+          id: i.item.id,
+          name: i.item.name,
+          sectionCell: i.cell,
+          cellsLong: i.item.cellsLong,
+          cellsTall: i.item.cellsTall,
+          icon: i.item.icon,
+          moveable: i.item.moveable,
+          starterItem: i.item.starterItem,
+          rotation: i.item.rotation,
+
+        }))
+      })
+    }
+    ));
+
+
     console.log("SECTIONS TO GENERATE", sectionsToGenerate);
 
     generateCells(sectionsToGenerate);
@@ -1042,139 +963,23 @@ function Layout() {
 
             if (isEditingTemplate) {
               setLoading(true);
-
+              setTakingPhoto(true);
               setTimeout(async () => {
-                const url = window.location.origin + "/LayItOut/Preview/" + window.location.search;
-                const screenshotSections = sections.map((s) => new Section({
-                  name: s.name,
-                  cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
-                  cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                  cellsTall: s.cellsTall * (isMobile ? 10 : 10),
-                  startingItems: s.items.map((i) => new StaringItem({
-                    cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
-                    item: new Item({
-                      id: i.id,
-                      name: i.name,
-                      cellsLong: i.cellsLong,
-                      cellsTall: i.cellsTall,
-                      icon: i.icon,
-                      starterItem: true,
-                      moveable: i.moveable,
-                      rotation: i.rotation
-                    })
-                  }))
-                }));
-                localStorage.setItem('screenshotSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-                console.log("Screenshot sections saved to localStorage", screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-                localStorage.setItem('screenshot', '');
-                window.addEventListener('storage', async (event) => {
-                  console.log("Storage event", event);
-                  if (event.key === 'screenshot') {
-                    const updatedTemplates = templates.map((t) => {
-                      if (t.id === editingTemplate!.id) {
-                        console.log("SECTION", sections)
-                        return new Template({
-                          name: templateName,
-                          previewImage: event.newValue!,
-                          sections: sections.map((s) => new Section({
-                            name: s.name,
-                            cellId: new CellId({ x: t.sections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 10), y: t.sections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 10) }),
-                            cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                            cellsTall: s.cellsTall * (isMobile ? 10 : 10),
-                            startingItems: s.items.map((i) => new StaringItem({
-                              cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
-                              item: new Item({
-                                id: i.id,
-                                name: i.name,
-                                cellsLong: i.cellsLong,
-                                cellsTall: i.cellsTall,
-                                icon: i.icon,
-                                starterItem: true,
-                                moveable: i.moveable,
-                                rotation: i.rotation
-                              })
-                            }))
-                          })),
-                          id: t.id
-                        });
-                      }
-                      return new Template({
-                        name: t.name,
-                        previewImage: t.previewImage,
-                        sections: t.sections.map((s) => new Section({
-                          name: s.name,
-                          cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
-                          cellsLong: s.cellsLong * (isMobile ? 20 : 10),
-                          cellsTall: s.cellsTall * (isMobile ? 20 : 10),
-                          startingItems: s.startingItems.map((i) => new StaringItem({
-                            cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
-                            item: new Item({
-                              id: i.item.id,
-                              name: i.item.name,
-                              cellsLong: i.item.cellsLong * 2,
-                              cellsTall: i.item.cellsTall * 2,
-                              icon: i.item.icon,
-                              starterItem: i.item.starterItem,
-                              moveable: i.item.moveable,
-                              rotation: i.item.rotation
-                            })
-                          }))
-                        })),
-                        id: t.id
-                      });
-                    });
+                const element = document.getElementById('capture');
 
-                    saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
-
-                      console.log("Template updated successfully");
-                      setLoading(false);
-                      const urlParams = new URLSearchParams(window.location.search);
-                      const companyIdParam = urlParams.get('companyId');
-                      const areaIdParam = urlParams.get('areaId');
-                      window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
-                    });
-                  }
-                })
-                // open the url in the background
-                window.open(url, '_blank');
-              }, 500)
-
-            } else {
-              setLoading(true);
-
-              setTimeout(async () => {
-                const url = window.location.origin + "/LayItOut/Preview/" + window.location.search;
-                const screenshotSections = sections.map((s) => new Section({
-                  name: s.name,
-                  cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
-                  cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                  cellsTall: s.cellsTall * (isMobile ? 10 : 10),
-                  startingItems: s.items.map((i) => new StaringItem({
-                    cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
-                    item: new Item({
-                      id: i.id,
-                      name: i.name,
-                      cellsLong: i.cellsLong,
-                      cellsTall: i.cellsTall,
-                      icon: i.icon,
-                      starterItem: true,
-                      moveable: i.moveable,
-                      rotation: i.rotation
-                    })
-                  }))
-                }));
-                localStorage.setItem('screenshotSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-                console.log("Screenshot sections saved to localStorage", screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-                localStorage.setItem('screenshot', '');
-                window.addEventListener('storage', async (event) => {
-                  console.log("Storage event", event);
-                  if (event.key === 'screenshot') {
-                    const newTemplate = new Template({
+                // Export to PNG
+                const imgUrl = await domtoimage
+                  .toPng(element);
+                setTakingPhoto(false);
+                const updatedTemplates = templates.map((t) => {
+                  if (t.id === editingTemplate!.id) {
+                    console.log("SECTION", sections)
+                    return new Template({
                       name: templateName,
-                      previewImage: event.newValue!,
+                      previewImage: imgUrl,
                       sections: sections.map((s) => new Section({
                         name: s.name,
-                        cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
+                        cellId: new CellId({ x: t.sections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 10), y: t.sections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 10) }),
                         cellsLong: s.cellsLong * (isMobile ? 10 : 10),
                         cellsTall: s.cellsTall * (isMobile ? 10 : 10),
                         startingItems: s.items.map((i) => new StaringItem({
@@ -1191,48 +996,115 @@ function Layout() {
                           })
                         }))
                       })),
-                      id: templateName + (Math.random() * 10000).toString()
-                    });
-
-                    const updatedTemplates = [...templates.map((t) => new Template({
-                      name: t.name,
-                      previewImage: t.previewImage,
-                      sections: t.sections.map((s) => new Section({
-                        name: s.name,
-                        cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
-                        cellsLong: s.cellsLong * (isMobile ? 20 : 10),
-                        cellsTall: s.cellsTall * (isMobile ? 20 : 10),
-                        startingItems: s.startingItems.map((i) => new StaringItem({
-                          cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
-                          item: new Item({
-                            id: i.item.id,
-                            name: i.item.name,
-                            cellsLong: i.item.cellsLong * 2,
-                            cellsTall: i.item.cellsTall * 2,
-                            icon: i.item.icon,
-                            starterItem: i.item.starterItem,
-                            moveable: i.item.moveable,
-                            rotation: i.item.rotation
-                          })
-                        }))
-                      })),
                       id: t.id
-                    })), newTemplate];
-
-                    saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
-
-                      console.log("Template updated successfully");
-                      setLoading(false);
-                      const urlParams = new URLSearchParams(window.location.search);
-                      const companyIdParam = urlParams.get('companyId');
-                      const areaIdParam = urlParams.get('areaId');
-                      window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
                     });
                   }
-                })
+                  return new Template({
+                    name: t.name,
+                    previewImage: t.previewImage,
+                    sections: t.sections.map((s) => new Section({
+                      name: s.name,
+                      cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
+                      cellsLong: s.cellsLong * (isMobile ? 20 : 10),
+                      cellsTall: s.cellsTall * (isMobile ? 20 : 10),
+                      startingItems: s.startingItems.map((i) => new StaringItem({
+                        cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
+                        item: new Item({
+                          id: i.item.id,
+                          name: i.item.name,
+                          cellsLong: i.item.cellsLong * 2,
+                          cellsTall: i.item.cellsTall * 2,
+                          icon: i.item.icon,
+                          starterItem: i.item.starterItem,
+                          moveable: i.item.moveable,
+                          rotation: i.item.rotation
+                        })
+                      }))
+                    })),
+                    id: t.id
+                  });
+                });
 
-                // open the url in the background
-                window.open(url, '_blank');
+                saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
+
+                  console.log("Template updated successfully");
+                  setLoading(false);
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const companyIdParam = urlParams.get('companyId');
+                  const areaIdParam = urlParams.get('areaId');
+                  window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
+                });
+              })
+
+            } else {
+              setLoading(true);
+              setTakingPhoto(true);
+              setTimeout(async () => {
+                const element = document.getElementById('capture');
+
+                // Export to PNG
+                const imgUrl = await domtoimage
+                  .toPng(element);
+                setTakingPhoto(false);
+                const newTemplate = new Template({
+                  name: templateName,
+                  previewImage: imgUrl,
+                  sections: sections.map((s) => new Section({
+                    name: s.name,
+                    cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
+                    cellsLong: s.cellsLong * (isMobile ? 10 : 10),
+                    cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                    startingItems: s.items.map((i) => new StaringItem({
+                      cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                      item: new Item({
+                        id: i.id,
+                        name: i.name,
+                        cellsLong: i.cellsLong,
+                        cellsTall: i.cellsTall,
+                        icon: i.icon,
+                        starterItem: true,
+                        moveable: i.moveable,
+                        rotation: i.rotation
+                      })
+                    }))
+                  })),
+                  id: templateName + (Math.random() * 10000).toString()
+                });
+
+                const updatedTemplates = [...templates.map((t) => new Template({
+                  name: t.name,
+                  previewImage: t.previewImage,
+                  sections: t.sections.map((s) => new Section({
+                    name: s.name,
+                    cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
+                    cellsLong: s.cellsLong * (isMobile ? 20 : 10),
+                    cellsTall: s.cellsTall * (isMobile ? 20 : 10),
+                    startingItems: s.startingItems.map((i) => new StaringItem({
+                      cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
+                      item: new Item({
+                        id: i.item.id,
+                        name: i.item.name,
+                        cellsLong: i.item.cellsLong * 2,
+                        cellsTall: i.item.cellsTall * 2,
+                        icon: i.item.icon,
+                        starterItem: i.item.starterItem,
+                        moveable: i.item.moveable,
+                        rotation: i.item.rotation
+                      })
+                    }))
+                  })),
+                  id: t.id
+                })), newTemplate];
+
+                saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
+
+                  console.log("Template updated successfully");
+                  setLoading(false);
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const companyIdParam = urlParams.get('companyId');
+                  const areaIdParam = urlParams.get('areaId');
+                  window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
+                });
               }, 500)
 
 
@@ -1255,74 +1127,44 @@ function Layout() {
         {(isClientEditingDesign) && <div className='template-creation'>
           <button className='action-btn' onClick={() => {
             setLoading(true);
-
+            setTakingPhoto(true);
             setTimeout(async () => {
-              //open url in new tab
-              const url = window.location.origin + "/LayItOut/Preview/" + window.location.search;
-              const screenshotSections = sections.map((s) => new Section({
-                name: s.name,
-                cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
-                cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                cellsTall: s.cellsTall * (isMobile ? 10 : 10),
-                startingItems: s.items.map((i) => new StaringItem({
-                  cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
-                  item: new Item({
-                    id: i.id,
-                    name: i.name,
-                    cellsLong: i.cellsLong,
-                    cellsTall: i.cellsTall,
-                    icon: i.icon,
-                    starterItem: true,
-                    moveable: i.moveable,
-                    rotation: i.rotation
-                  })
-                }))
-              }));
-              localStorage.setItem('screenshotSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-              console.log("Screenshot sections saved to localStorage", screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-              localStorage.setItem('screenshot', '');
-              window.addEventListener('storage', async (event) => {
-                console.log("Storage event", event);
-                if (event.key === 'screenshot') {
-                  const updatedDesign = new Design({
-                    name: designName,
-                    previewImage: event.newValue!,
-                    areaId: areaId,
-                    sections: sections.map((s) => new Section({
-                      name: s.name,
-                      cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
-                      cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                      cellsTall: s.cellsTall * (isMobile ? 10 : 10),
-                      startingItems: s.items.map((i) => new StaringItem({
-                        cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
-                        item: new Item({
-                          id: i.id,
-                          name: i.name,
-                          cellsLong: i.cellsLong,
-                          cellsTall: i.cellsTall,
-                          icon: i.icon,
-                          starterItem: true,
-                          moveable: i.moveable,
-                          rotation: i.rotation
-                        })
-                      }))
-                    })),
-                    id: designId
-                  });
-                  updateAreaDesign(companyId, areaId, updatedDesign).then(() => {
-                    console.log("Design updated successfully");
-                    setLoading(false);
+              const element = document.getElementById('capture');
 
-                  });
-                }
-              })
-              // open the url in the background
+              // Export to PNG
+              const imgUrl = await domtoimage
+                .toPng(element);
+              setTakingPhoto(false);
+              const updatedDesign = new Design({
+                name: designName,
+                previewImage: imgUrl,
+                areaId: areaId,
+                sections: sections.map((s) => new Section({
+                  name: s.name,
+                  cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
+                  cellsLong: s.cellsLong * (isMobile ? 10 : 10),
+                  cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                  startingItems: s.items.map((i) => new StaringItem({
+                    cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                    item: new Item({
+                      id: i.id,
+                      name: i.name,
+                      cellsLong: i.cellsLong,
+                      cellsTall: i.cellsTall,
+                      icon: i.icon,
+                      starterItem: true,
+                      moveable: i.moveable,
+                      rotation: i.rotation
+                    })
+                  }))
+                })),
+                id: designId
+              });
+              updateAreaDesign(companyId, areaId, updatedDesign).then(() => {
+                console.log("Design updated successfully");
+                setLoading(false);
 
-              window.open(url, '_blank');
-
-
-
-
+              });
             }, 500)
 
           }

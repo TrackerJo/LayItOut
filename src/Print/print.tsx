@@ -256,12 +256,14 @@ function Print() {
       newTemplates.push(new Template({
         name: template.name,
         sections: newSections,
-        id: template.id
+        id: template.id,
+        previewImage: template.previewImage
       }));
       newUnmodifiedTemplates.push(new Template({
         name: template.name,
         sections: unmodifiedSections,
-        id: template.id
+        id: template.id,
+        previewImage: template.previewImage
       }));
     }
 
@@ -369,7 +371,7 @@ function Print() {
 
         </div>
       </div>
-      {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
+      {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
       {items.map((item) => {
         return <DraggableItem cellSize={cellSize} isViewingDesign={true} removeItem={() => { }} visible={true}
 

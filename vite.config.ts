@@ -22,6 +22,8 @@ export default defineConfig({
         layout: resolve(root, 'Layout', 'index.html'),
         login: resolve(root, 'Login', 'index.html'),
         print: resolve(root, 'Print', 'index.html'),
+        dnf: resolve(root, 'DNF', 'index.html'),
+        preview: resolve(root, 'Preview', 'index.html'),
 
       }
     }

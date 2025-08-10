@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import type { Section } from "../constants";
 import "./section.css";
 
@@ -6,9 +6,10 @@ type SectionAreaProps = {
     section: Section
     cellSize: number
     visible?: boolean
+    takingPhoto: boolean
 }
 
-function SectionArea({ section, visible, cellSize }: SectionAreaProps) {
+function SectionArea({ section, visible, cellSize, takingPhoto }: SectionAreaProps) {
 
 
     const [x, setX] = useState(section.cellElement?.offsetLeft ?? 0);
@@ -66,6 +67,21 @@ function SectionArea({ section, visible, cellSize }: SectionAreaProps) {
 
         }, 100);
     }, []);
+
+
+    useEffect(() => {
+        if (takingPhoto) {
+            if (textRef.current) {
+                setFontSize(decreaseFontSize(48));
+            }
+            // Reset font size when taking a photo
+        } else {
+            if (textRef.current) {
+                setFontSize(decreaseFontSize(16));
+
+            }
+        }
+    }, [takingPhoto]);
 
     const handleResize = () => {
         if (section.cellElement == null) return;

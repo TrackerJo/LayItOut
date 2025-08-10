@@ -257,18 +257,21 @@ export class Template {
     name: string;
     sections: Section[];
     id: string;
+    previewImage: string;
 
-    constructor({ name, sections, id }: { name: string, sections: Section[], id: string }) {
+    constructor({ name, sections, id, previewImage }: { name: string, sections: Section[], id: string, previewImage: string }) {
         this.name = name;
         this.sections = sections;
         this.id = id;
+        this.previewImage = previewImage;
     }
 
     toJSON(): string {
         return JSON.stringify({
             name: this.name,
             id: this.id,
-            sections: this.sections.map(section => section.toJSON())
+            sections: this.sections.map(section => section.toJSON()),
+            previewImage: this.previewImage
         });
     }
 
@@ -277,6 +280,7 @@ export class Template {
             name: this.name,
             id: this.id,
             sections: this.sections.map(section => section.toDoc()),
+            previewImage: this.previewImage
         };
     }
 
@@ -287,7 +291,8 @@ export class Template {
         return new Template({
             name: data.name,
             id: data.id,
-            sections: data.sections.map((section: any) => Section.fromJSON(section))
+            sections: data.sections.map((section: any) => Section.fromJSON(section)),
+            previewImage: data.previewImage
 
         });
     }
@@ -296,7 +301,8 @@ export class Template {
         return new Template({
             name: data.name,
             id: data.id,
-            sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : []
+            sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : [],
+            previewImage: data.previewImage
         });
     }
 }
@@ -413,4 +419,46 @@ export class Company {
         };
     }
 
+}
+
+export class Design {
+    id: string;
+    name: string;
+    areaId: string;
+    previewImage: string;
+    sections: Section[];
+
+    constructor({ id, name, areaId, previewImage, sections }: {
+        id: string,
+        name: string,
+        areaId: string,
+        previewImage: string,
+        sections: Section[]
+    }) {
+        this.id = id;
+        this.name = name;
+        this.areaId = areaId;
+        this.previewImage = previewImage;
+        this.sections = sections;
+    }
+
+    static fromDoc(data: DocumentData): Design {
+        return new Design({
+            id: data.id,
+            name: data.name,
+            areaId: data.areaId,
+            previewImage: data.previewImage || "",
+            sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : []
+        });
+    }
+
+    toDoc(): DocumentData {
+        return {
+            id: this.id,
+            name: this.name,
+            areaId: this.areaId,
+            previewImage: this.previewImage || "",
+            sections: this.sections.map(section => section.toDoc())
+        };
+    }
 }

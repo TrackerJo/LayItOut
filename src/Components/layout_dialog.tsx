@@ -107,7 +107,7 @@ function LayoutDialog({ dialogRef, closeDialog, layoutSections, isOpen }: Layout
 
 
             </div>
-            {sections.map((section) => <SectionArea section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
+            {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
 
         </dialog >
 
