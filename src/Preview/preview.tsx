@@ -92,16 +92,7 @@ function Layout() {
 
 
 
-    setLayoutSections([...sectionsToGenerate.map((section) => {
-      return new Section({
-        name: section.name,
-        cellId: new CellId({ x: section.cellId.x / 2, y: section.cellId.y / 2 }),
-        cellsLong: section.cellsLong / 2,
-        cellsTall: section.cellsTall / 2,
-        startingItems: []
-      })
-    })
-    ]);
+
     let currentWidth = width;
     let currentHeight = height;
     if (isMobile) {
@@ -162,17 +153,17 @@ function Layout() {
       for (const section of sectionsToGenerate) {
 
         console.log("Generating cells for section", section.name, "at", section.cellId, "with size", section.cellsLong, "x", section.cellsTall)
-        console.log("Needed section Width:", (section.cellsLong + section.cellId.x) * cellSize, "Current width:", currentWidth)
+        console.log("Needed section Width:", (section.cellsLong + section.cellId.x), "Current width:", currentWidth)
 
-        if ((section.cellsLong + section.cellId.x) * cellSize > currentWidth) {
+        if ((section.cellsLong + section.cellId.x) > currentWidth) {
 
-          console.log("Added section Width:", section.cellsLong * cellSize + section.cellId.x)
-          currentWidth += (section.cellsLong + section.cellId.x) * cellSize - currentWidth;
+          console.log("Added section Width:", section.cellsLong + section.cellId.x)
+          currentWidth += (section.cellsLong + section.cellId.x) - currentWidth;
         }
-        console.log("Needed section Height:", (section.cellsTall + section.cellId.y) * cellSize, "Current height:", currentHeight)
-        if ((section.cellsTall + section.cellId.y) * cellSize > currentHeight) {
-          console.log("Added section Height:", section.cellsTall * cellSize + section.cellId.y)
-          currentHeight += (section.cellsTall + section.cellId.y) * cellSize - currentHeight;
+        console.log("Needed section Height:", (section.cellsTall + section.cellId.y), "Current height:", currentHeight)
+        if ((section.cellsTall + section.cellId.y) > currentHeight) {
+          console.log("Added section Height:", section.cellsTall + section.cellId.y)
+          currentHeight += (section.cellsTall + section.cellId.y) - currentHeight;
         }
       }
 
@@ -181,9 +172,9 @@ function Layout() {
       setHeight(currentHeight);
 
 
-      [...Array((currentHeight / cellSize)).keys()].map((j) => {
+      [...Array((currentHeight)).keys()].map((j) => {
         const rowCells: CellProps[] = [];
-        [...Array((currentWidth / cellSize)).keys()].map((i) => {
+        [...Array((currentWidth)).keys()].map((i) => {
 
           rowCells.push({
             id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "", inSection: getSectionByCellId(new CellId({ x: i, y: j }), sectionsToGenerate) != null, size: cellSize
@@ -298,13 +289,13 @@ function Layout() {
 
       screenshotSectionsObjects.push(Section.fromJSON(sectionString));
     }
-    setLayoutSections([...screenshotSectionsObjects]);
+
     setSections([...screenshotSectionsObjects.map((section) => {
       return new Section({
         name: section.name,
-        cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-        cellsLong: section.cellsLong / 10,
-        cellsTall: section.cellsTall / 10,
+        cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+        cellsLong: section.cellsLong,
+        cellsTall: section.cellsTall,
         startingItems: section.startingItems,
         items: section.startingItems.map((i) => new Item({
           id: i.item.id,
@@ -324,9 +315,9 @@ function Layout() {
     sectionsToGenerate.push(...screenshotSectionsObjects.map((section) => {
       return new Section({
         name: section.name,
-        cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-        cellsLong: section.cellsLong / 10,
-        cellsTall: section.cellsTall / 10,
+        cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+        cellsLong: section.cellsLong,
+        cellsTall: section.cellsTall,
         startingItems: section.startingItems,
         items: section.startingItems.map((i) => new Item({
           id: i.item.id,
@@ -849,7 +840,7 @@ function Layout() {
               console.log("Changing viewing section to", sections[nextIndex].name)
 
             }} className='forward-mobile-areas' /></div>
-            : <AreaComponent width={width} height={height} cells={flattenCells(cells)} />}
+            : <AreaComponent width={width * cellSize} height={height * cellSize} cells={flattenCells(cells)} />}
 
         </div>
 

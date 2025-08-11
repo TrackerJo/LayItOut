@@ -1,4 +1,4 @@
-import { use, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 
 import './layout.css'
@@ -22,7 +22,7 @@ import AddCustomItemDialog from '../Components/add_custom_item_dialog';
 import { getArea, getAreaDesign, saveAreaTemplates, saveCompanyArea, updateAreaDesign } from '../api/firestore';
 import { getLocalArea } from '../api/local_firestore';
 import { createRoot } from 'react-dom/client';
-import { generatePreviewImage } from '../api/functions';
+
 
 createRoot(document.getElementById('root')!).render(
 
@@ -72,6 +72,7 @@ function Layout() {
   const [loading, setLoading] = useState<boolean>(true);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [takingPhoto, setTakingPhoto] = useState<boolean>(false);
+  const [areaPreview, setAreaPreview] = useState<string | null>(null);
 
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
 
@@ -97,9 +98,9 @@ function Layout() {
     setLayoutSections([...sectionsToGenerate.map((section) => {
       return new Section({
         name: section.name,
-        cellId: new CellId({ x: section.cellId.x / 2, y: section.cellId.y / 2 }),
-        cellsLong: section.cellsLong / 2,
-        cellsTall: section.cellsTall / 2,
+        cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+        cellsLong: section.cellsLong,
+        cellsTall: section.cellsTall,
         startingItems: []
       })
     })
@@ -182,30 +183,33 @@ function Layout() {
       for (const section of sectionsToGenerate) {
 
         console.log("Generating cells for section", section.name, "at", section.cellId, "with size", section.cellsLong, "x", section.cellsTall)
-        console.log("Needed section Width:", (section.cellsLong + section.cellId.x) * cellSize, "Current width:", currentWidth)
+        console.log("Needed section Width:", (section.cellsLong + section.cellId.x), "Current width:", currentWidth)
 
-        if ((section.cellsLong + section.cellId.x) * cellSize > currentWidth) {
+        if ((section.cellsLong + section.cellId.x) > currentWidth) {
 
-          console.log("Added section Width:", section.cellsLong * cellSize + section.cellId.x)
-          currentWidth += (section.cellsLong + section.cellId.x) * cellSize - currentWidth;
+          console.log("Added section Width:", section.cellsLong + section.cellId.x)
+          currentWidth += (section.cellsLong + section.cellId.x) - currentWidth;
         }
-        console.log("Needed section Height:", (section.cellsTall + section.cellId.y) * cellSize, "Current height:", currentHeight)
-        if ((section.cellsTall + section.cellId.y) * cellSize > currentHeight) {
-          console.log("Added section Height:", section.cellsTall * cellSize + section.cellId.y)
-          currentHeight += (section.cellsTall + section.cellId.y) * cellSize - currentHeight;
+        console.log("Needed section Height:", (section.cellsTall + section.cellId.y), "Current height:", currentHeight)
+        if ((section.cellsTall + section.cellId.y) > currentHeight) {
+          console.log("Added section Height:", section.cellsTall + section.cellId.y)
+          currentHeight += (section.cellsTall + section.cellId.y) - currentHeight;
         }
       }
+
+
 
 
       setWidth(currentWidth);
       setHeight(currentHeight);
       setTotalWidth(currentWidth);
       setTotalHeight(currentHeight);
+      console.log("Final width:", currentWidth, "Final height:", currentHeight);
 
 
-      [...Array((currentHeight / cellSize)).keys()].map((j) => {
+      [...Array((currentHeight)).keys()].map((j) => {
         const rowCells: CellProps[] = [];
-        [...Array((currentWidth / cellSize)).keys()].map((i) => {
+        [...Array((currentWidth)).keys()].map((i) => {
 
           rowCells.push({
             id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "", inSection: getSectionByCellId(new CellId({ x: i, y: j }), sectionsToGenerate) != null, size: cellSize
@@ -294,6 +298,7 @@ function Layout() {
     const companyId = urlParams.get('companyId') || "";
     const templateId = urlParams.get('templateId') || "";
     const area: Area = await getArea(companyId, areaId);
+    setAreaPreview(area.previewImage || null);
     const type = urlParams.get('type') || "";
     let isDesign = false;
     if (type === "create-template") {
@@ -361,15 +366,15 @@ function Layout() {
       for (const section of template.sections) {
         newSections.push(new Section({
           name: section.name,
-          cellId: new CellId({ x: (section.cellId.x) / (isMobile ? 20 : 10), y: (section.cellId.y) / (isMobile ? 20 : 10) }),
-          cellsLong: section.cellsLong / (isMobile ? 20 : 10),
-          cellsTall: section.cellsTall / (isMobile ? 20 : 10),
+          cellId: new CellId({ x: (section.cellId.x), y: (section.cellId.y) }),
+          cellsLong: section.cellsLong,
+          cellsTall: section.cellsTall,
           startingItems: section.startingItems.map((item) => new StaringItem({
-            cell: new CellId({ x: item.cell.x / (isMobile ? 2 : 1), y: item.cell.y / (isMobile ? 2 : 1) }), item: new Item({
+            cell: new CellId({ x: item.cell.x, y: item.cell.y }), item: new Item({
               id: item.item.id,
               name: item.item.name,
-              cellsLong: item.item.cellsLong / 2,
-              cellsTall: item.item.cellsTall / 2,
+              cellsLong: item.item.cellsLong,
+              cellsTall: item.item.cellsTall,
               icon: item.item.icon,
               starterItem: true,
               moveable: item.item.moveable,
@@ -428,9 +433,9 @@ function Layout() {
       setSections([...design.sections.map((section) => {
         return new Section({
           name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
+          cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+          cellsLong: section.cellsLong,
+          cellsTall: section.cellsTall,
           startingItems: section.startingItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
@@ -450,9 +455,9 @@ function Layout() {
       sectionsToGenerate.push(...design.sections.map((section) => {
         return new Section({
           name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
+          cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+          cellsLong: section.cellsLong,
+          cellsTall: section.cellsTall,
           startingItems: section.startingItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
@@ -476,9 +481,9 @@ function Layout() {
       setSections([...template.sections.map((section) => {
         return new Section({
           name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
+          cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+          cellsLong: section.cellsLong,
+          cellsTall: section.cellsTall,
           startingItems: section.startingItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
@@ -501,9 +506,9 @@ function Layout() {
       sectionsToGenerate.push(...template.sections.map((section) => {
         return new Section({
           name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
+          cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+          cellsLong: section.cellsLong,
+          cellsTall: section.cellsTall,
           startingItems: section.startingItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
@@ -526,9 +531,9 @@ function Layout() {
       setSections([...area.sections.map((section) => {
         return new Section({
           name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
+          cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+          cellsLong: section.cellsLong,
+          cellsTall: section.cellsTall,
           startingItems: section.startingItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
@@ -548,9 +553,9 @@ function Layout() {
       sectionsToGenerate.push(...area.sections.map((section) => {
         return new Section({
           name: section.name,
-          cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-          cellsLong: section.cellsLong / 10,
-          cellsTall: section.cellsTall / 10,
+          cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+          cellsLong: section.cellsLong,
+          cellsTall: section.cellsTall,
           startingItems: section.startingItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
@@ -1143,12 +1148,12 @@ function Layout() {
               setLoading(true);
 
               setTimeout(async () => {
-                const url = window.location.origin + "/LayItOut/Preview/" + window.location.search;
+
                 const screenshotSections = sections.map((s) => new Section({
                   name: s.name,
-                  cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
-                  cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                  cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                  cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
+                  cellsLong: s.cellsLong,
+                  cellsTall: s.cellsTall,
                   startingItems: s.items.map((i) => new StaringItem({
                     cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                     item: new Item({
@@ -1179,7 +1184,7 @@ function Layout() {
                           previewImage: event.newValue!,
                           sections: sections.map((s) => new Section({
                             name: s.name,
-                            cellId: new CellId({ x: t.sections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 10), y: t.sections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 10) }),
+                            cellId: new CellId({ x: t.sections.find((se) => se.name == s.name)!.cellId.x, y: t.sections.find((se) => se.name == s.name)!.cellId.y }),
                             cellsLong: s.cellsLong * (isMobile ? 10 : 10),
                             cellsTall: s.cellsTall * (isMobile ? 10 : 10),
                             startingItems: s.items.map((i) => new StaringItem({
@@ -1204,16 +1209,16 @@ function Layout() {
                         previewImage: t.previewImage,
                         sections: t.sections.map((s) => new Section({
                           name: s.name,
-                          cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
-                          cellsLong: s.cellsLong * (isMobile ? 20 : 10),
-                          cellsTall: s.cellsTall * (isMobile ? 20 : 10),
+                          cellId: new CellId({ x: s.cellId.x, y: s.cellId.y }),
+                          cellsLong: s.cellsLong,
+                          cellsTall: s.cellsTall,
                           startingItems: s.startingItems.map((i) => new StaringItem({
-                            cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
+                            cell: new CellId({ x: i.cell.x, y: i.cell.y }),
                             item: new Item({
                               id: i.item.id,
                               name: i.item.name,
-                              cellsLong: i.item.cellsLong * 2,
-                              cellsTall: i.item.cellsTall * 2,
+                              cellsLong: i.item.cellsLong,
+                              cellsTall: i.item.cellsTall,
                               icon: i.item.icon,
                               starterItem: i.item.starterItem,
                               moveable: i.item.moveable,
@@ -1244,12 +1249,12 @@ function Layout() {
               setLoading(true);
 
               setTimeout(async () => {
-                const url = window.location.origin + "/LayItOut/Preview/" + window.location.search;
+
                 const screenshotSections = sections.map((s) => new Section({
                   name: s.name,
-                  cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
-                  cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                  cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                  cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
+                  cellsLong: s.cellsLong,
+                  cellsTall: s.cellsTall,
                   startingItems: s.items.map((i) => new StaringItem({
                     cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                     item: new Item({
@@ -1277,9 +1282,9 @@ function Layout() {
                       previewImage: event.newValue!,
                       sections: sections.map((s) => new Section({
                         name: s.name,
-                        cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
-                        cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                        cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                        cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
+                        cellsLong: s.cellsLong,
+                        cellsTall: s.cellsTall,
                         startingItems: s.items.map((i) => new StaringItem({
                           cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                           item: new Item({
@@ -1302,16 +1307,16 @@ function Layout() {
                       previewImage: t.previewImage,
                       sections: t.sections.map((s) => new Section({
                         name: s.name,
-                        cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
-                        cellsLong: s.cellsLong * (isMobile ? 20 : 10),
-                        cellsTall: s.cellsTall * (isMobile ? 20 : 10),
+                        cellId: new CellId({ x: s.cellId.x, y: s.cellId.y }),
+                        cellsLong: s.cellsLong,
+                        cellsTall: s.cellsTall,
                         startingItems: s.startingItems.map((i) => new StaringItem({
-                          cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
+                          cell: new CellId({ x: i.cell.x, y: i.cell.y }),
                           item: new Item({
                             id: i.item.id,
                             name: i.item.name,
-                            cellsLong: i.item.cellsLong * 2,
-                            cellsTall: i.item.cellsTall * 2,
+                            cellsLong: i.item.cellsLong,
+                            cellsTall: i.item.cellsTall,
                             icon: i.item.icon,
                             starterItem: i.item.starterItem,
                             moveable: i.item.moveable,
@@ -1345,13 +1350,10 @@ function Layout() {
           }
           }>{isCreatingTemplate ? "Create" : "Save"} Template</button>
           <button className='action-btn' onClick={() => {
-            setIsCreatingTemplate(false);
-            setTemplates([]);
-            setLayoutSections([]);
-            setSections([]);
-            setMobileCells([]);
-            setMobileAreas([]);
-            setMobileViewingSection(null);
+            const urlParams = new URLSearchParams(window.location.search);
+            const companyIdParam = urlParams.get('companyId');
+            const areaIdParam = urlParams.get('areaId');
+            window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
           }}>Cancel</button>
 
         </div>}
@@ -1361,7 +1363,7 @@ function Layout() {
 
             setTimeout(async () => {
               //open url in new tab
-              const url = window.location.origin + "/LayItOut/Preview/" + window.location.search;
+
               const screenshotSections = sections.map((s) => new Section({
                 name: s.name,
                 cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
@@ -1395,9 +1397,9 @@ function Layout() {
                     areaId: areaId,
                     sections: sections.map((s) => new Section({
                       name: s.name,
-                      cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
-                      cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                      cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                      cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
+                      cellsLong: s.cellsLong,
+                      cellsTall: s.cellsTall,
                       startingItems: s.items.map((i) => new StaringItem({
                         cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                         item: new Item({
@@ -1449,7 +1451,7 @@ function Layout() {
         )} <div className='layout'>
 
 
-          {!isViewingDesign && <Toolbox isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height} showAddCustomItem={() => { addCustomItemDialogRef.current?.showModal(); }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
+          {!isViewingDesign && <Toolbox isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height * cellSize} showAddCustomItem={() => { addCustomItemDialogRef.current?.showModal(); }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
             new InventoryItem({
               item: new Item({
                 id: inv.item.id,
@@ -1482,7 +1484,7 @@ function Layout() {
               console.log("Changing viewing section to", sections[nextIndex].name)
 
             }} className='forward-mobile-areas' /></div>
-            : <AreaComponent width={width} height={height} cells={flattenCells(cells)} />}
+            : <AreaComponent width={width * cellSize} height={height * cellSize} cells={flattenCells(cells)} />}
 
         </div>
         {isViewingDesign && <div className='design-view'>
@@ -1528,18 +1530,17 @@ function Layout() {
         templateDialogRef.current?.close();
         setTemplateDialogOpen(false);
       }} templates={templates} />
-      < LayoutDialog dialogRef={layoutDialogRef} isOpen={layoutDialogOpen} closeDialog={() => {
+      < LayoutDialog dialogRef={layoutDialogRef} closeDialog={() => {
         layoutDialogRef.current?.close();
         setLayoutDialogOpen(false);
-
-      }} layoutSections={layoutSections} />
+      }} areaPreview={areaPreview || ""} />
 
       <AddCustomItemDialog dialogRef={addCustomItemDialogRef} addInventoryItem={addInventoryItem} closeDialog={() => {
         addCustomItemDialogRef.current?.close();
 
       }} />
 
-      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src='http://localhost:5173/LayItOut/Preview/' width={totalWidth + 20} height={totalHeight + 20}></iframe>}
+      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src='http://localhost:5173/LayItOut/Preview/' width={totalWidth * cellSize + 20} height={totalHeight * cellSize + 20}></iframe>}
     </>
   )
 }
