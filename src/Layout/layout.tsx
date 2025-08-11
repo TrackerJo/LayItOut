@@ -746,6 +746,7 @@ function Layout() {
     // Add item to section
     const relativeCell = new CellId({ x: startCell.x - section!.cellId.x, y: startCell.y - section!.cellId.y });
     item.sectionCell = relativeCell;
+    console.log("Adding item to section", section!.name, "at", relativeCell, item)
     section!.items.push(item);
 
     // Use rotated dimensions for placement
@@ -849,11 +850,15 @@ function Layout() {
         mobileSection.cells = newCells.map(row => row.map(cell => ({ ...cell }))); // Create a new array to trigger re-render
         setMobileCells([...mobileCells]);
       }
+
       setMobileCells((old) => old.map((m) => m.sectionName === mobileViewingSection ? { ...m, cells: newCells } : m));
 
     } else {
       setCells(newCells);
     }
+    const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(cell, sections);
+    //remove item from section
+    section!.items = section!.items.filter((i) => i.id != item.id);
     console.log("DELETING ITEM", item.id)
     setItems((old) => {
       console.log()
@@ -911,6 +916,13 @@ function Layout() {
       setCells(newCells);
     }
     console.log("DELETING ITEM", item.id)
+    // Remove the item from the items list
+    const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(cell, sections);
+    section!.items = section!.items.filter((i) => i.id != item.id);
+    const relativeCell = new CellId({ x: cell.x - section!.cellId.x, y: cell.y - section!.cellId.y });
+
+    item.sectionCell = relativeCell;
+    section!.items.push(item);
 
     // This function should only clear the grid cells, not remove the item
     // since it's used during rotation to clear the old position
@@ -1527,7 +1539,7 @@ function Layout() {
 
       }} />
 
-      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src='https://trackerjo.github.io/LayItOut/Preview/' width={totalWidth + 20} height={totalHeight + 20}></iframe>}
+      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src='http://localhost:5173/LayItOut/Preview/' width={totalWidth + 20} height={totalHeight + 20}></iframe>}
     </>
   )
 }
