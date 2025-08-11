@@ -69,7 +69,6 @@ function Layout() {
   const [loading, setLoading] = useState<boolean>(true);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [takingPhoto, setTakingPhoto] = useState<boolean>(false);
-  const [tookScreenshot, setTookScreenshot] = useState<boolean>(false);
 
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
 
@@ -276,9 +275,7 @@ function Layout() {
         .toPng(element);
       setTakingPhoto(false);
       localStorage.setItem("screenshot", imgUrl);
-      setTookScreenshot(true);
-      setLoading(false);
-
+      window.close();
     }, 500)
   }
 
@@ -817,7 +814,242 @@ function Layout() {
     <>
 
       <div className="App" >
+        <h1 className='title'>LayItOut</h1>
+        <br />
+        {(isCreatingTemplate || isEditingTemplate) && <div className="template-name-row">
+          <label htmlFor="template-name">Template Name:</label>
+          <input type="text" id="template-name" name="template-name" onChange={(e) => setTemplateName(e.target.value)} value={templateName} />
 
+        </div>}
+        {isViewingDesign && <div className='design-name-row'>
+          <label htmlFor="design-name">Design Name: {designName}</label>
+        </div>}
+        {(isCreatingTemplate || isEditingTemplate) && <div className='template-creation'>
+          <button className='action-btn' onClick={() => {
+
+            if (templateName.trim() == "") {
+              alert("Please enter a template name");
+              return;
+            }
+
+            if (templates.some((t) => t.name === templateName && (isEditingTemplate ? t.id !== editingTemplate!.id : true))) {
+              alert("Template with this name already exists");
+              return;
+            }
+
+            if (isEditingTemplate) {
+              setLoading(true);
+              setTakingPhoto(true);
+              setTimeout(async () => {
+                const element = document.getElementById('capture');
+
+                // Export to PNG
+                const imgUrl = await domtoimage
+                  .toPng(element);
+                setTakingPhoto(false);
+                const updatedTemplates = templates.map((t) => {
+                  if (t.id === editingTemplate!.id) {
+                    console.log("SECTION", sections)
+                    return new Template({
+                      name: templateName,
+                      previewImage: imgUrl,
+                      sections: sections.map((s) => new Section({
+                        name: s.name,
+                        cellId: new CellId({ x: t.sections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 10), y: t.sections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 10) }),
+                        cellsLong: s.cellsLong * (isMobile ? 10 : 10),
+                        cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                        startingItems: s.items.map((i) => new StaringItem({
+                          cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                          item: new Item({
+                            id: i.id,
+                            name: i.name,
+                            cellsLong: i.cellsLong,
+                            cellsTall: i.cellsTall,
+                            icon: i.icon,
+                            starterItem: true,
+                            moveable: i.moveable,
+                            rotation: i.rotation
+                          })
+                        }))
+                      })),
+                      id: t.id
+                    });
+                  }
+                  return new Template({
+                    name: t.name,
+                    previewImage: t.previewImage,
+                    sections: t.sections.map((s) => new Section({
+                      name: s.name,
+                      cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
+                      cellsLong: s.cellsLong * (isMobile ? 20 : 10),
+                      cellsTall: s.cellsTall * (isMobile ? 20 : 10),
+                      startingItems: s.startingItems.map((i) => new StaringItem({
+                        cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
+                        item: new Item({
+                          id: i.item.id,
+                          name: i.item.name,
+                          cellsLong: i.item.cellsLong * 2,
+                          cellsTall: i.item.cellsTall * 2,
+                          icon: i.item.icon,
+                          starterItem: i.item.starterItem,
+                          moveable: i.item.moveable,
+                          rotation: i.item.rotation
+                        })
+                      }))
+                    })),
+                    id: t.id
+                  });
+                });
+
+                saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
+
+                  console.log("Template updated successfully");
+                  setLoading(false);
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const companyIdParam = urlParams.get('companyId');
+                  const areaIdParam = urlParams.get('areaId');
+                  window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
+                });
+              })
+
+            } else {
+              setLoading(true);
+              setTakingPhoto(true);
+              setTimeout(async () => {
+                const element = document.getElementById('capture');
+
+                // Export to PNG
+                const imgUrl = await domtoimage
+                  .toPng(element);
+                setTakingPhoto(false);
+                const newTemplate = new Template({
+                  name: templateName,
+                  previewImage: imgUrl,
+                  sections: sections.map((s) => new Section({
+                    name: s.name,
+                    cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
+                    cellsLong: s.cellsLong * (isMobile ? 10 : 10),
+                    cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                    startingItems: s.items.map((i) => new StaringItem({
+                      cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                      item: new Item({
+                        id: i.id,
+                        name: i.name,
+                        cellsLong: i.cellsLong,
+                        cellsTall: i.cellsTall,
+                        icon: i.icon,
+                        starterItem: true,
+                        moveable: i.moveable,
+                        rotation: i.rotation
+                      })
+                    }))
+                  })),
+                  id: templateName + (Math.random() * 10000).toString()
+                });
+
+                const updatedTemplates = [...templates.map((t) => new Template({
+                  name: t.name,
+                  previewImage: t.previewImage,
+                  sections: t.sections.map((s) => new Section({
+                    name: s.name,
+                    cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
+                    cellsLong: s.cellsLong * (isMobile ? 20 : 10),
+                    cellsTall: s.cellsTall * (isMobile ? 20 : 10),
+                    startingItems: s.startingItems.map((i) => new StaringItem({
+                      cell: new CellId({ x: i.cell.x * (isMobile ? 2 : 1), y: i.cell.y * (isMobile ? 2 : 1) }),
+                      item: new Item({
+                        id: i.item.id,
+                        name: i.item.name,
+                        cellsLong: i.item.cellsLong * 2,
+                        cellsTall: i.item.cellsTall * 2,
+                        icon: i.item.icon,
+                        starterItem: i.item.starterItem,
+                        moveable: i.item.moveable,
+                        rotation: i.item.rotation
+                      })
+                    }))
+                  })),
+                  id: t.id
+                })), newTemplate];
+
+                saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
+
+                  console.log("Template updated successfully");
+                  setLoading(false);
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const companyIdParam = urlParams.get('companyId');
+                  const areaIdParam = urlParams.get('areaId');
+                  window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
+                });
+              }, 500)
+
+
+            }
+
+
+          }
+          }>{isCreatingTemplate ? "Create" : "Save"} Template</button>
+          <button className='action-btn' onClick={() => {
+            setIsCreatingTemplate(false);
+            setTemplates([]);
+            setLayoutSections([]);
+            setSections([]);
+            setMobileCells([]);
+            setMobileAreas([]);
+            setMobileViewingSection(null);
+          }}>Cancel</button>
+
+        </div>}
+        {(isClientEditingDesign) && <div className='template-creation'>
+          <button className='action-btn' onClick={() => {
+            setLoading(true);
+            setTakingPhoto(true);
+            setTimeout(async () => {
+              const element = document.getElementById('capture');
+
+              // Export to PNG
+              const imgUrl = await domtoimage
+                .toPng(element);
+              setTakingPhoto(false);
+              const updatedDesign = new Design({
+                name: designName,
+                previewImage: imgUrl,
+                areaId: areaId,
+                sections: sections.map((s) => new Section({
+                  name: s.name,
+                  cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
+                  cellsLong: s.cellsLong * (isMobile ? 10 : 10),
+                  cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                  startingItems: s.items.map((i) => new StaringItem({
+                    cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                    item: new Item({
+                      id: i.id,
+                      name: i.name,
+                      cellsLong: i.cellsLong,
+                      cellsTall: i.cellsTall,
+                      icon: i.icon,
+                      starterItem: true,
+                      moveable: i.moveable,
+                      rotation: i.rotation
+                    })
+                  }))
+                })),
+                id: designId
+              });
+              updateAreaDesign(companyId, areaId, updatedDesign).then(() => {
+                console.log("Design updated successfully");
+                setLoading(false);
+
+              });
+            }, 500)
+
+          }
+          }>Save</button>
+          <button className='action-btn' onClick={() => {
+
+          }}>Submit</button>
+
+        </div>}
 
 
         {loading && (
@@ -828,7 +1060,19 @@ function Layout() {
         )} <div className='layout'>
 
 
-
+          {!isViewingDesign && <Toolbox isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height} showAddCustomItem={() => { addCustomItemDialogRef.current?.showModal(); }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
+            new InventoryItem({
+              item: new Item({
+                id: inv.item.id,
+                name: inv.item.name,
+                cellsLong: inv.item.cellsLong,
+                cellsTall: inv.item.cellsTall,
+                icon: inv.item.icon,
+                displayItem: true,
+              })
+              , quantity: inv.quantity
+            })
+          )} />}
           {isMobile ? <div className='mobile-areas' style={{ height: mobileHeight + "px" }}>
             <img src={ForwardIcon} onClick={() => {
               const index = sections.findIndex((s) => s.name == mobileViewingSection);
@@ -852,9 +1096,12 @@ function Layout() {
             : <AreaComponent width={width} height={height} cells={flattenCells(cells)} />}
 
         </div>
+        {isViewingDesign && <div className='design-view'>
+          <button className='action-btn' onClick={() => {
+            window.location.href = `/LayItOut/Print/?companyId=${companyId}&areaId=${areaId}&designName=${designName}&designId=${designId}`;
+          }}>Print</button>
 
-
-
+        </div>}
       </div >
       <div id={takingPhoto ? 'capture' : ''}>
         {sections.map((section) => <SectionArea takingPhoto={takingPhoto} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
@@ -868,8 +1115,40 @@ function Layout() {
         })}
       </div>
 
+      {
+        isMobile && !loading && <div className='layout-icon' onClick={() => {
+          layoutDialogRef.current?.showModal();
+          setLayoutDialogOpen(true);
+          console.log("Showing layout dialog")
+        }}>
 
+          <img src={LayoutIcon} alt="" />
+        </div>
+      }
+      {
+        !loading && !(isCreatingTemplate || isEditingTemplate || isViewingDesign) && <div className='template-icon' onClick={() => {
+          templateDialogRef.current?.showModal();
+          setTemplateDialogOpen(true);
+          console.log("Showing template dialog")
+        }}>
 
+          <img src={TemplateIcon} alt="" />
+        </div>
+      }
+      <TemplateDialog isViewingArea={isViewingArea} dialogRef={templateDialogRef} isOpen={templateDialogOpen} closeDialog={() => {
+        templateDialogRef.current?.close();
+        setTemplateDialogOpen(false);
+      }} templates={templates} />
+      < LayoutDialog dialogRef={layoutDialogRef} isOpen={layoutDialogOpen} closeDialog={() => {
+        layoutDialogRef.current?.close();
+        setLayoutDialogOpen(false);
+
+      }} layoutSections={layoutSections} />
+
+      <AddCustomItemDialog dialogRef={addCustomItemDialogRef} addInventoryItem={addInventoryItem} closeDialog={() => {
+        addCustomItemDialogRef.current?.close();
+
+      }} />
     </>
   )
 }

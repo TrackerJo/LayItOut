@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 
 
 import './layout.css'
@@ -22,6 +22,7 @@ import AddCustomItemDialog from '../Components/add_custom_item_dialog';
 import { getArea, getAreaDesign, saveAreaTemplates, saveCompanyArea, updateAreaDesign } from '../api/firestore';
 import { getLocalArea } from '../api/local_firestore';
 import { createRoot } from 'react-dom/client';
+import { generatePreviewImage } from '../api/functions';
 
 createRoot(document.getElementById('root')!).render(
 
@@ -34,6 +35,8 @@ function Layout() {
   const [isMobile, setIsMobile] = useState<boolean>(/Mobi|Android/i.test(navigator.userAgent));
   const [width, setWidth] = useState<number>(0);
   const [height, setHeight] = useState<number>(0);
+  const [totalWidth, setTotalWidth] = useState<number>(0);
+  const [totalHeight, setTotalHeight] = useState<number>(0);
   const [cells, setCells] = useState<CellProps[][]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [mobileHeight, setMobileHeight] = useState<number>(0);
@@ -104,6 +107,24 @@ function Layout() {
     let currentWidth = width;
     let currentHeight = height;
     if (isMobile) {
+      for (const section of sectionsToGenerate) {
+
+        console.log("Generating cells for section", section.name, "at", section.cellId, "with size", section.cellsLong, "x", section.cellsTall)
+        console.log("Needed section Width:", (section.cellsLong + section.cellId.x) * cellSize, "Current width:", currentWidth)
+
+        if ((section.cellsLong + section.cellId.x) * cellSize > currentWidth) {
+
+          console.log("Added section Width:", section.cellsLong * cellSize + section.cellId.x)
+          currentWidth += (section.cellsLong + section.cellId.x) * cellSize - currentWidth;
+        }
+        console.log("Needed section Height:", (section.cellsTall + section.cellId.y) * cellSize, "Current height:", currentHeight)
+        if ((section.cellsTall + section.cellId.y) * cellSize > currentHeight) {
+          console.log("Added section Height:", section.cellsTall * cellSize + section.cellId.y)
+          currentHeight += (section.cellsTall + section.cellId.y) * cellSize - currentHeight;
+        }
+      }
+      setTotalHeight(currentHeight * 2);
+      setTotalWidth(currentWidth * 2);
       let mobileHeight = 0;
       const newMobileCells: { sectionName: string, cells: CellProps[][] }[] = [];
       const newSections: Section[] = [];
@@ -178,6 +199,8 @@ function Layout() {
 
       setWidth(currentWidth);
       setHeight(currentHeight);
+      setTotalWidth(currentWidth);
+      setTotalHeight(currentHeight);
 
 
       [...Array((currentHeight / cellSize)).keys()].map((j) => {
@@ -1012,6 +1035,35 @@ function Layout() {
     setInventoryItems((old) => [...old, inventoryItem])
   }
 
+  const preventScroll = (e: Event) => {
+    console.log("Preventing scroll");
+    e.preventDefault();
+    e.stopPropagation();
+    window.scrollTo(0, 0);
+
+  };
+
+
+  useEffect(() => {
+    //disable scrolling on body when taking photo
+
+    if (takingPhoto) {
+
+      window.addEventListener('scroll', preventScroll);
+      window.addEventListener('touchmove', preventScroll, { passive: false });
+
+
+    } else {
+      window.removeEventListener('scroll', preventScroll);
+      window.removeEventListener('touchmove', preventScroll);
+    }
+    return () => {
+      window.removeEventListener('scroll', preventScroll);
+      window.removeEventListener('touchmove', preventScroll);
+    }
+  }, [takingPhoto]);
+
+
 
   return (
     <>
@@ -1027,6 +1079,7 @@ function Layout() {
         {isViewingDesign && <div className='design-name-row'>
           <label htmlFor="design-name">Design Name: {designName}</label>
         </div>}
+
         {(isCreatingTemplate || isEditingTemplate) && <div className='template-creation'>
           <button className='action-btn' onClick={() => {
 
@@ -1067,9 +1120,11 @@ function Layout() {
                 localStorage.setItem('screenshotSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
                 console.log("Screenshot sections saved to localStorage", screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
                 localStorage.setItem('screenshot', '');
+                setTakingPhoto(true);
                 window.addEventListener('storage', async (event) => {
                   console.log("Storage event", event);
                   if (event.key === 'screenshot') {
+                    setTakingPhoto(false);
                     const updatedTemplates = templates.map((t) => {
                       if (t.id === editingTemplate!.id) {
                         console.log("SECTION", sections)
@@ -1136,7 +1191,7 @@ function Layout() {
                   }
                 })
                 // open the url in the background
-                window.open(url, '_blank');
+
               }, 500)
 
             } else {
@@ -1166,9 +1221,11 @@ function Layout() {
                 localStorage.setItem('screenshotSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
                 console.log("Screenshot sections saved to localStorage", screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
                 localStorage.setItem('screenshot', '');
+                setTakingPhoto(true);
                 window.addEventListener('storage', async (event) => {
                   console.log("Storage event", event);
                   if (event.key === 'screenshot') {
+                    setTakingPhoto(false);
                     const newTemplate = new Template({
                       name: templateName,
                       previewImage: event.newValue!,
@@ -1232,7 +1289,7 @@ function Layout() {
                 })
 
                 // open the url in the background
-                window.open(url, '_blank');
+
               }, 500)
 
 
@@ -1281,9 +1338,11 @@ function Layout() {
               localStorage.setItem('screenshotSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
               console.log("Screenshot sections saved to localStorage", screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
               localStorage.setItem('screenshot', '');
+              setTakingPhoto(true);
               window.addEventListener('storage', async (event) => {
                 console.log("Storage event", event);
                 if (event.key === 'screenshot') {
+                  setTakingPhoto(false);
                   const updatedDesign = new Design({
                     name: designName,
                     previewImage: event.newValue!,
@@ -1318,7 +1377,7 @@ function Layout() {
               })
               // open the url in the background
 
-              window.open(url, '_blank');
+
 
 
 
@@ -1336,8 +1395,10 @@ function Layout() {
 
         {loading && (
           <>
-            <div className="loader-backdrop"></div>
-            <div className="loader"></div>
+            <div className="loader-backdrop">
+              <div className="loader"></div>
+
+            </div>
           </>
         )} <div className='layout'>
 
@@ -1385,8 +1446,8 @@ function Layout() {
 
         </div>}
       </div >
-      <div id={takingPhoto ? 'capture' : ''}>
-        {sections.map((section) => <SectionArea takingPhoto={takingPhoto} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
+      <div >
+        {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
         {items.map((item) => {
           return <DraggableItem cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
 
@@ -1431,6 +1492,8 @@ function Layout() {
         addCustomItemDialogRef.current?.close();
 
       }} />
+
+      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src='https://trackerjo.github.io/LayItOut/Preview/' width={totalWidth + 20} height={totalHeight + 20}></iframe>}
     </>
   )
 }

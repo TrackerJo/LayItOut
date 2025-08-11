@@ -5,7 +5,7 @@ import PersonIcon from "./assets/person.png";
 import PlusIcon from "./assets/plus.png";
 import { useEffect, useRef, useState } from "react";
 import type { Area, Design } from "./constants";
-import { isLoggedIn } from "./api/auth";
+import { isLoggedIn, logout } from "./api/auth";
 import { createAreaDesign, deleteDesign, getAreaDesigns, getCompanyAreas } from "./api/firestore";
 import AreaTile from "./Components/area_tile";
 import CreateDesignDialog from "./Components/create_design_dialog";
@@ -29,6 +29,10 @@ function App() {
         isLoggedIn(() => { })
         async function fetchContent() {
             const companyId = localStorage.getItem("companyId");
+            if (!companyId) {
+                logout();
+                return;
+            }
             const areasResponse = await getCompanyAreas(companyId!);
             const designsResponse: Design[] = [];
             const designsArrays = await Promise.all(
