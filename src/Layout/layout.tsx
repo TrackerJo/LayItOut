@@ -819,7 +819,7 @@ function Layout() {
 
 
   function deleteItem(item: Item, cell: CellId) {
-    const newCells: CellProps[][] = Array.from(cells)
+    const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
 
     // Helper function to get rotated dimensions
     const getRotatedDimensions = (rotation: number) => {
@@ -842,7 +842,18 @@ function Layout() {
       }
     }
 
-    setCells(newCells);
+    if (isMobile) {
+      // Update the mobile cells
+      const mobileSection = mobileCells.find((m) => m.sectionName === mobileViewingSection);
+      if (mobileSection) {
+        mobileSection.cells = newCells.map(row => row.map(cell => ({ ...cell }))); // Create a new array to trigger re-render
+        setMobileCells([...mobileCells]);
+      }
+      setMobileCells((old) => old.map((m) => m.sectionName === mobileViewingSection ? { ...m, cells: newCells } : m));
+
+    } else {
+      setCells(newCells);
+    }
     console.log("DELETING ITEM", item.id)
     setItems((old) => {
       console.log()
@@ -887,7 +898,18 @@ function Layout() {
 
       }
     }
-    setCells([...newCells]);
+    if (isMobile) {
+      // Update the mobile cells
+      const mobileSection = mobileCells.find((m) => m.sectionName === mobileViewingSection);
+      if (mobileSection) {
+        mobileSection.cells = newCells.map(row => row.map(cell => ({ ...cell }))); // Create a new array to trigger re-render
+        setMobileCells([...mobileCells]);
+      }
+      setMobileCells((old) => old.map((m) => m.sectionName === mobileViewingSection ? { ...m, cells: newCells } : m));
+
+    } else {
+      setCells(newCells);
+    }
     console.log("DELETING ITEM", item.id)
 
     // This function should only clear the grid cells, not remove the item

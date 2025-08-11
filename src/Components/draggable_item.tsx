@@ -73,7 +73,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
     };
 
     const rotateItem = () => {
-        if (!item.hasMoved) return; // Can't rotate items that haven't been placed
+        // Can't rotate items that haven't been placed
 
         const newRotation = (rotation + 1);
         const rotatedDims = getRotatedDimensions(newRotation);
