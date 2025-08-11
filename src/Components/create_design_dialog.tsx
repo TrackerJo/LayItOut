@@ -34,7 +34,8 @@ function CreateDesignDialog({ dialogRef, closeDialog, createDesign, areas }: Cre
             areaId: selectedArea.id,
             sections: selectedArea.sections,
             previewImage: selectedArea.previewImage,
-            
+            inventoryItems: [...selectedArea.inventoryItems],
+
         });
 
         await createDesign(newDesign);

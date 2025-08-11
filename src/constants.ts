@@ -427,19 +427,22 @@ export class Design {
     areaId: string;
     previewImage: string;
     sections: Section[];
+    inventoryItems: InventoryItem[];
 
-    constructor({ id, name, areaId, previewImage, sections }: {
+    constructor({ id, name, areaId, previewImage, sections, inventoryItems }: {
         id: string,
         name: string,
         areaId: string,
         previewImage: string,
-        sections: Section[]
+        sections: Section[],
+        inventoryItems: InventoryItem[]
     }) {
         this.id = id;
         this.name = name;
         this.areaId = areaId;
         this.previewImage = previewImage;
         this.sections = sections;
+        this.inventoryItems = inventoryItems;
     }
 
     static fromDoc(data: DocumentData): Design {
@@ -448,7 +451,8 @@ export class Design {
             name: data.name,
             areaId: data.areaId,
             previewImage: data.previewImage || "",
-            sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : []
+            sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : [],
+            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromDoc(item)) : []
         });
     }
 
@@ -458,7 +462,8 @@ export class Design {
             name: this.name,
             areaId: this.areaId,
             previewImage: this.previewImage || "",
-            sections: this.sections.map(section => section.toDoc())
+            sections: this.sections.map(section => section.toDoc()),
+            inventoryItems: this.inventoryItems.map(item => item.toDoc())
         };
     }
 }

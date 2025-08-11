@@ -77,17 +77,17 @@ function Print() {
     for (const section of sectionsToGenerate) {
 
       console.log("Generating cells for section", section.name, "at", section.cellId, "with size", section.cellsLong, "x", section.cellsTall)
-      console.log("Needed section Width:", (section.cellsLong + section.cellId.x) * cellSize, "Current width:", currentWidth)
+      console.log("Needed section Width:", (section.cellsLong + section.cellId.x), "Current width:", currentWidth)
 
-      if ((section.cellsLong + section.cellId.x) * cellSize > currentWidth) {
+      if ((section.cellsLong + section.cellId.x) > currentWidth) {
 
-        console.log("Added section Width:", section.cellsLong * cellSize + section.cellId.x)
-        currentWidth += (section.cellsLong + section.cellId.x) * cellSize - currentWidth;
+        console.log("Added section Width:", section.cellsLong + section.cellId.x)
+        currentWidth += (section.cellsLong + section.cellId.x) - currentWidth;
       }
-      console.log("Needed section Height:", (section.cellsTall + section.cellId.y) * cellSize, "Current height:", currentHeight)
-      if ((section.cellsTall + section.cellId.y) * cellSize > currentHeight) {
-        console.log("Added section Height:", section.cellsTall * cellSize + section.cellId.y)
-        currentHeight += (section.cellsTall + section.cellId.y) * cellSize - currentHeight;
+      console.log("Needed section Height:", (section.cellsTall + section.cellId.y), "Current height:", currentHeight)
+      if ((section.cellsTall + section.cellId.y) > currentHeight) {
+        console.log("Added section Height:", section.cellsTall + section.cellId.y)
+        currentHeight += (section.cellsTall + section.cellId.y) - currentHeight;
       }
     }
 
@@ -96,9 +96,9 @@ function Print() {
     setHeight(currentHeight);
 
 
-    [...Array((currentHeight / cellSize)).keys()].map((j) => {
+    [...Array((currentHeight)).keys()].map((j) => {
       const rowCells: CellProps[] = [];
-      [...Array((currentWidth / cellSize)).keys()].map((i) => {
+      [...Array((currentWidth)).keys()].map((i) => {
 
         rowCells.push({
           id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "", inSection: getSectionByCellId(new CellId({ x: i, y: j }), sectionsToGenerate) != null, size: cellSize
@@ -189,96 +189,39 @@ function Print() {
 
   async function loadArea() {
     const urlParams = new URLSearchParams(window.location.search);
-    const companyIdParam = urlParams.get('companyId');
-    const areaIdParam = urlParams.get('areaId');
-    const areaId = urlParams.get('areaId') || "";
-    const companyId = urlParams.get('companyId') || "";
-    const designNameParam = urlParams.get('designName') || "Layout";
-
-    const area: Area = await getArea(companyId, areaId);
-
-
-
-    if (companyIdParam) {
-      setCompanyId(companyIdParam);
+    const companyId = urlParams.get("companyId");
+    const areaId = urlParams.get("areaId");
+    const designName = urlParams.get("designName");
+    const designId = urlParams.get("designId");
+    if (!companyId || !areaId || !designName || !designId) {
+      alert("Invalid URL parameters");
+      return;
     }
-    if (areaIdParam) {
-      setAreaId(areaIdParam);
-    }
-    if (designNameParam) {
-      setDesignName(designNameParam);
-    }
-
-    const newTemplates: Template[] = [];
-    const newUnmodifiedTemplates: Template[] = [];
-    for (const template of area.templates) {
-      const newSections: Section[] = [];
-      const unmodifiedSections: Section[] = [];
-      for (const section of template.sections) {
-        newSections.push(new Section({
-          name: section.name,
-          cellId: new CellId({ x: (section.cellId.x) / (isMobile ? 20 : 10), y: (section.cellId.y) / (isMobile ? 20 : 10) }),
-          cellsLong: section.cellsLong / (isMobile ? 20 : 10),
-          cellsTall: section.cellsTall / (isMobile ? 20 : 10),
-          startingItems: section.startingItems.map((item) => new StaringItem({
-            cell: new CellId({ x: item.cell.x / (isMobile ? 2 : 1), y: item.cell.y / (isMobile ? 2 : 1) }), item: new Item({
-              id: item.item.id,
-              name: item.item.name,
-              cellsLong: item.item.cellsLong / 2,
-              cellsTall: item.item.cellsTall / 2,
-              icon: item.item.icon,
-              starterItem: true,
-              moveable: item.item.moveable
-            })
-          })
-          )
-        }));
-        unmodifiedSections.push(new Section({
-          name: section.name,
-          cellId: new CellId({ x: (section.cellId.x), y: (section.cellId.y) }),
-          cellsLong: section.cellsLong,
-          cellsTall: section.cellsTall,
-          startingItems: section.startingItems.map((item) => new StaringItem({
-            cell: new CellId({ x: item.cell.x, y: item.cell.y }), item: new Item({
-              id: item.item.id,
-              name: item.item.name,
-              cellsLong: item.item.cellsLong,
-              cellsTall: item.item.cellsTall,
-              icon: item.item.icon,
-              starterItem: true,
-              moveable: item.item.moveable
-            })
-          })
-          )
-        }));
-      }
-
-      newTemplates.push(new Template({
-        name: template.name,
-        sections: newSections,
-        id: template.id,
-        previewImage: template.previewImage
-      }));
-      newUnmodifiedTemplates.push(new Template({
-        name: template.name,
-        sections: unmodifiedSections,
-        id: template.id,
-        previewImage: template.previewImage
-      }));
-    }
+    setCompanyId(companyId);
+    setAreaId(areaId);
+    setDesignName(designName);
 
 
     const sectionsToGenerate: Section[] = [];
 
 
+    let screenshotSections = localStorage.getItem("printSections");
+    console.log("Screenshot sections from localStorage", screenshotSections);
+    screenshotSections = screenshotSections?.split("LAYOUTSEPARATOR") || "";
+    const screenshotSectionsObjects = [] as Section[];
+    for (const sectionString of screenshotSections) {
+      console.log("Section string", sectionString);
 
 
-    setSections([...area.sections.map((section) => {
+      screenshotSectionsObjects.push(Section.fromJSON(sectionString));
+    }
+
+    setSections([...screenshotSectionsObjects.map((section) => {
       return new Section({
         name: section.name,
-        cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-        cellsLong: section.cellsLong / 10,
-        cellsTall: section.cellsTall / 10,
+        cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+        cellsLong: section.cellsLong,
+        cellsTall: section.cellsTall,
         startingItems: section.startingItems,
         items: section.startingItems.map((i) => new Item({
           id: i.item.id,
@@ -295,12 +238,12 @@ function Print() {
       })
     }
     )]);
-    sectionsToGenerate.push(...area.sections.map((section) => {
+    sectionsToGenerate.push(...screenshotSectionsObjects.map((section) => {
       return new Section({
         name: section.name,
-        cellId: new CellId({ x: section.cellId.x / 10, y: section.cellId.y / 10 }),
-        cellsLong: section.cellsLong / 10,
-        cellsTall: section.cellsTall / 10,
+        cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
+        cellsLong: section.cellsLong,
+        cellsTall: section.cellsTall,
         startingItems: section.startingItems,
         items: section.startingItems.map((i) => new Item({
           id: i.item.id,
@@ -317,6 +260,7 @@ function Print() {
       })
     }
     ));
+
 
     console.log("SECTIONS TO GENERATE", sectionsToGenerate);
 
@@ -367,7 +311,7 @@ function Print() {
           </>
         )} <div className='layout'>
 
-          <AreaComponent width={width} height={height} cells={flattenCells(cells)} />
+          <AreaComponent width={width * cellSize} height={height * cellSize} cells={flattenCells(cells)} />
 
         </div>
       </div>

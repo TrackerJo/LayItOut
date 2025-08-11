@@ -429,6 +429,20 @@ function Layout() {
         window.location.href = "/LayItOut/DNF/";
         return;
       }
+      setInventoryItems(design.inventoryItems.map(inv => new InventoryItem({
+        item: new Item({
+          id: inv.item.id,
+          name: inv.item.name,
+          cellsLong: inv.item.cellsLong,
+          cellsTall: inv.item.cellsTall,
+          icon: inv.item.icon,
+          initialElement: inv.item.initialElement,
+          moveable: inv.item.moveable,
+          starterItem: inv.item.starterItem,
+          displayItem: true
+        }),
+        quantity: inv.quantity
+      })));
       setLayoutSections([...design.sections]);
       setSections([...design.sections.map((section) => {
         return new Section({
@@ -1366,9 +1380,9 @@ function Layout() {
 
               const screenshotSections = sections.map((s) => new Section({
                 name: s.name,
-                cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
-                cellsLong: s.cellsLong * (isMobile ? 10 : 10),
-                cellsTall: s.cellsTall * (isMobile ? 10 : 10),
+                cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
+                cellsLong: s.cellsLong,
+                cellsTall: s.cellsTall,
                 startingItems: s.items.map((i) => new StaringItem({
                   cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                   item: new Item({
@@ -1395,6 +1409,7 @@ function Layout() {
                     name: designName,
                     previewImage: event.newValue!,
                     areaId: areaId,
+                    inventoryItems: inventoryItems,
                     sections: sections.map((s) => new Section({
                       name: s.name,
                       cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
@@ -1489,6 +1504,26 @@ function Layout() {
         </div>
         {isViewingDesign && <div className='design-view'>
           <button className='action-btn' onClick={() => {
+            const screenshotSections = sections.map((s) => new Section({
+              name: s.name,
+              cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
+              cellsLong: s.cellsLong,
+              cellsTall: s.cellsTall,
+              startingItems: s.items.map((i) => new StaringItem({
+                cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                item: new Item({
+                  id: i.id,
+                  name: i.name,
+                  cellsLong: i.cellsLong,
+                  cellsTall: i.cellsTall,
+                  icon: i.icon,
+                  starterItem: true,
+                  moveable: i.moveable,
+                  rotation: i.rotation
+                })
+              }))
+            }));
+            localStorage.setItem('printSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
             window.location.href = `/LayItOut/Print/?companyId=${companyId}&areaId=${areaId}&designName=${designName}&designId=${designId}`;
           }}>Print</button>
 
@@ -1540,7 +1575,7 @@ function Layout() {
 
       }} />
 
-      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src='http://localhost:5173/LayItOut/Preview/' width={totalWidth * cellSize + 20} height={totalHeight * cellSize + 20}></iframe>}
+      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src='https://trackerjo.github.io/LayItOut/Preview/' width={totalWidth * cellSize + 20} height={totalHeight * cellSize + 20}></iframe>}
     </>
   )
 }
