@@ -490,7 +490,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                     } : undefined}
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (!item.hasMoved) return;
+
                         if (isSelected) {
                             onDeselect();
                         } else {

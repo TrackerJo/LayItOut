@@ -971,13 +971,25 @@ function Layout() {
   }
 
   function unHighlightCells() {
+    console.log("Unhighlighting cells")
     const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
     newCells.forEach(row => row.forEach(cell => {
       cell.mouseOver = false;
       cell.canPlaceItem = false;
       cell.mouseOverLocation = "";
     }));
-    setCells(newCells);
+    if (isMobile) {
+      // Update the mobile cells
+      const mobileSection = mobileCells.find((m) => m.sectionName === mobileViewingSection);
+      if (mobileSection) {
+        mobileSection.cells = newCells.map(row => row.map(cell => ({ ...cell }))); // Create a new array to trigger re-render
+        setMobileCells([...mobileCells]);
+      }
+      setMobileCells((old) => old.map((m) => m.sectionName === mobileViewingSection ? { ...m, cells: newCells } : m));
+
+    } else {
+      setCells(newCells);
+    }
   }
 
   useEffect(() => {
