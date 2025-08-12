@@ -20,9 +20,9 @@ export function getLocalArea(): Area {
         ],
         sections:
             [new Section({
-                cellId: new CellId({ x: 0, y: 200 }),
-                cellsLong: 500,
-                cellsTall: 300,
+                cellId: new CellId({ x: 0, y: 20 }),
+                cellsLong: 50,
+                cellsTall: 30,
                 startingItems: [
                     // new StaringItem({ cell: new CellId({ x: 0, y: 0 }), item: new Item({ id: "Table2", name: "Table", cellsLong: 8, cellsTall: 4, icon: "https://github.com/TrackerJo/LayItOut/blob/main/src/assets/rectangle_Table.png?raw=true", starterItem: true, rotation: 1 }) }),
                 ],
@@ -30,30 +30,30 @@ export function getLocalArea(): Area {
             }),
 
             new Section({
-                cellId: new CellId({ x: 500, y: 200 }),
-                cellsLong: 300,
-                cellsTall: 200,
+                cellId: new CellId({ x: 50, y: 20 }),
+                cellsLong: 30,
+                cellsTall: 20,
                 startingItems: [],
                 name: "Outdoor Area"
             }),
             new Section({
-                cellId: new CellId({ x: 400, y: 0 }),
-                cellsLong: 100,
-                cellsTall: 200,
+                cellId: new CellId({ x: 40, y: 0 }),
+                cellsLong: 10,
+                cellsTall: 20,
                 startingItems: [],
                 name: "Hallway"
             }),
             new Section({
-                cellId: new CellId({ x: 500, y: 0 }),
-                cellsLong: 300,
-                cellsTall: 200,
+                cellId: new CellId({ x: 50, y: 0 }),
+                cellsLong: 30,
+                cellsTall: 20,
                 startingItems: [],
                 name: "Veranda"
             }),
             new Section({
-                cellId: new CellId({ x: 0, y: 500 }),
-                cellsLong: 300,
-                cellsTall: 100,
+                cellId: new CellId({ x: 0, y: 50 }),
+                cellsLong: 30,
+                cellsTall: 10,
                 startingItems: [],
                 name: "Kitchen"
             }),

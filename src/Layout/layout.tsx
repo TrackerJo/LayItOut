@@ -73,6 +73,7 @@ function Layout() {
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [takingPhoto, setTakingPhoto] = useState<boolean>(false);
   const [areaPreview, setAreaPreview] = useState<string | null>(null);
+  const [canSave, setCanSave] = useState<boolean>(false);
 
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
 
@@ -746,7 +747,7 @@ function Layout() {
 
   function placeItem(startCell: CellId, item: Item, removeCell: CellId | null) {
     const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
-
+    setCanSave(true);
     if (removeCell != null) {
       console.log("Removing item")
       const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(removeCell, sections);
@@ -840,7 +841,7 @@ function Layout() {
 
   function deleteItem(item: Item, cell: CellId) {
     const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
-
+    setCanSave(true);
     // Helper function to get rotated dimensions
     const getRotatedDimensions = (rotation: number) => {
       const isRotated = rotation % 2 === 1; // 90° or 270°
@@ -899,7 +900,7 @@ function Layout() {
   function deleteItemRotate(item: Item, cell: CellId) {
     const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
     console.log("DELETING ITEM ROTATE", item.id, item.rotation)
-
+    setCanSave(true);
     // Helper function to get rotated dimensions
     const getRotatedDimensions = (rotation: number) => {
       const isRotated = rotation % 2 === 1; // 90° or 270°
@@ -1372,7 +1373,7 @@ function Layout() {
 
         </div>}
         {(isClientEditingDesign) && <div className='template-creation'>
-          <button className='action-btn' onClick={() => {
+          {canSave && <button className='action-btn' onClick={() => {
             setLoading(true);
 
             setTimeout(async () => {
@@ -1448,7 +1449,7 @@ function Layout() {
             }, 500)
 
           }
-          }>Save</button>
+          }>Save</button>}
           <button className='action-btn' onClick={() => {
 
           }}>Submit</button>
@@ -1527,7 +1528,22 @@ function Layout() {
             window.location.href = `/LayItOut/Print/?companyId=${companyId}&areaId=${areaId}&designName=${designName}&designId=${designId}`;
           }}>Print</button>
 
+          <button className='action-btn' onClick={() => {
+
+            window.location.href = `/LayItOut/`;
+          }}>Back</button>
+
         </div>}
+        {isViewingArea && <div className='design-view'>
+
+
+          <button className='action-btn' onClick={() => {
+
+            window.location.href = `/LayItOut/`;
+          }}>Back</button>
+
+        </div>}
+
       </div >
       <div >
         {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}

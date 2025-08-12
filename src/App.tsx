@@ -10,6 +10,7 @@ import { createAreaDesign, deleteDesign, getAreaDesigns, getCompanyAreas } from 
 import AreaTile from "./Components/area_tile";
 import CreateDesignDialog from "./Components/create_design_dialog";
 import DesignTile from "./Components/design_tile";
+import AccountDialog from "./Components/account_dialog";
 
 createRoot(document.getElementById('root')!).render(
 
@@ -24,6 +25,7 @@ function App() {
     const [areas, setAreas] = useState<Area[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
+    const accountDialogRef = useRef<HTMLDialogElement>(null);
     const createDesignRef = useRef<HTMLDialogElement>(null);
     useEffect(() => {
         isLoggedIn(() => { })
@@ -70,7 +72,9 @@ function App() {
                 <div className="dashboard">
                     <div className="sidebar">
                         <div className="account-div">
-                            <img src={PersonIcon} alt="Account Icon" className="account-icon" />
+                            <img src={PersonIcon} alt="Account Icon" className="account-icon" onClick={() => {
+                                accountDialogRef.current?.showModal();
+                            }} />
 
                         </div>
                         <div className="nav-buttons">
@@ -132,6 +136,7 @@ function App() {
                 createDesignRef.current?.close();
             }} />
 
+            <AccountDialog dialogRef={accountDialogRef} closeDialog={() => accountDialogRef.current?.close()} />
         </>
     );
 }
