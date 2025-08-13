@@ -1,10 +1,7 @@
-import { use, useEffect, useState, type RefObject } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 import './template_dialog.css';
-import { CellId, Item, Section, StaringItem, Template } from '../constants';
-import type { CellProps } from './cell';
-import SectionArea from './section';
-import Area from './area';
-import DraggableItem from './draggable_item';
+import { Template } from '../constants';
+
 import ForwardIcon from '../assets/forward.png';
 import { saveAreaTemplates } from '../api/firestore';
 
@@ -15,9 +12,10 @@ type TemplateDialogProps = {
     templates: Template[];
     isOpen: boolean;
     isViewingArea: boolean;
+    selectTemplate?: (template: Template) => void;
 };
 
-function TemplateDialog({ dialogRef, closeDialog, templates, isOpen, isViewingArea }: TemplateDialogProps) {
+function TemplateDialog({ dialogRef, closeDialog, templates, isOpen, isViewingArea, selectTemplate }: TemplateDialogProps) {
 
 
     const [isMobile, setIsMobile] = useState<boolean>(/Mobi|Android/i.test(navigator.userAgent));
@@ -102,38 +100,9 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen, isViewingAr
                                         const areaIdParam = urlParams.get('areaId');
                                         window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=edit-template&templateId=${allTemplates.find((t) => t.name == temp)!.id}`
                                     } else {
-                                        const selectedTemplate = allTemplates.find((t) => t.name === temp)!;
-                                        const newTemplate = new Template({
-                                            name: selectedTemplate.name,
-                                            id: selectedTemplate.id,
-                                            previewImage: selectedTemplate.previewImage,
-                                            sections: selectedTemplate.sections.map((section) => {
-                                                return new Section({
-                                                    name: section.name,
-                                                    cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
-                                                    cellsLong: section.cellsLong,
-                                                    cellsTall: section.cellsTall,
-                                                    startingItems: section.startingItems.map((item) => {
-                                                        return new StaringItem({
-                                                            cell: new CellId({ x: item.cell.x, y: item.cell.y }),
-                                                            item: new Item({
-                                                                id: item.item.id,
-                                                                name: item.item.name,
-                                                                icon: item.item.icon,
-                                                                cellsLong: item.item.cellsLong,
-                                                                cellsTall: item.item.cellsTall,
-                                                                starterItem: item.item.starterItem,
-                                                                moveable: item.item.moveable
-                                                            })
-                                                        });
-                                                    })
-                                                });
-                                            })
-                                        });
-                                        //set window tempateName parameter to newTemplate.name
-                                        const urlParams = new URLSearchParams(window.location.search);
-                                        urlParams.set('templateName', newTemplate.name);
-                                        window.location.search = urlParams.toString();
+                                        closeDialog();
+
+                                        if (selectTemplate) selectTemplate(allTemplates.find((t) => t.name === temp)!);
                                     }
                                 }}>{isViewingArea ? "Edit" : "Select"}</button>
                                 {isViewingArea && <button className='action-btn' onClick={() => {

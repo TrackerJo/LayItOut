@@ -148,24 +148,16 @@ body:has(.draggable-item.dragging) {
   print-color-adjust: exact !important;
 }
 
-html,
-body {
-  width: 100% !important;
-  height: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: white !important;
-  overflow: visible !important;
-}
+
 
 .App {
   width: 100% !important;
   height: auto !important;
   display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  align-items: start !important;
+
   margin: 0 !important;
-  padding: 20px !important;
+  padding: 0px !important;
   background: white !important;
   overflow: visible !important;
 
@@ -179,7 +171,7 @@ body {
   width: auto !important;
   height: auto !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: left !important;
   justify-content: center !important;
   margin: 0 !important;
   padding: 10px !important;
@@ -215,19 +207,25 @@ body {
 
 /* Hide cells but keep their space */
 .cell {
-  visibility: hidden !important;
-  border: none !important;
+  /* visibility: hidden !important;*/
+  /* background: white !important; */
 }
 
 .cell-border {
-  visibility: hidden !important;
-  border: none !important;
+  /* visibility: hidden !important; */
+
+
+
+  /* background: white !important; */
+
 }
+
+
 
 /* Section styling for print - ensure they're positioned correctly */
 .section {
-  background: rgba(240, 240, 240, 0.3) !important;
-  border: 2px solid #000 !important;
+  background: transparent !important;
+
   box-shadow: none !important;
   border-radius: 0 !important;
 
@@ -249,7 +247,7 @@ body {
 
 /* Draggable items for print */
 .draggable-item {
-  border: 2px solid #000 !important;
+  border: none !important;
   box-shadow: none !important;
   background: white !important;
   border-radius: 0 !important;
@@ -312,12 +310,7 @@ body {
 }
 
 /* Center everything on the page */
-body {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: 100vh !important;
-}
+body {}
 
 /* } */
 
@@ -327,21 +320,33 @@ body {
   .loader-backdrop {
     display: none;
   }
-
-  @page {
-    margin-top: 0;
-    margin-bottom: 0;
-    size: landscape;
-    orientation: landscape;
-    /* specifiy number of pages */
-
-  }
-
-  body {
-    padding-top: 72px;
-    padding-bottom: 72px;
-  }
 }
+
+@page {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  size: landscape !important;
+  orientation: landscape !important;
+  /* specifiy number of pages */
+
+}
+
+body {
+  padding-top: 72px !important;
+  padding-bottom: 72px !important;
+  display: inline !important;
+  background: white !important;
+}
+
+body::before {
+  background: white !important;
+}
+
+#root {
+  margin: 0 !important;
+}
+
+/* } */
 
 .print-footer {
   position: fixed;

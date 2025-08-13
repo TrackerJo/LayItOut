@@ -168,6 +168,9 @@ function Print() {
       setCells([...newCells]);
       setTimeout(() => {
         window.print();
+        window.close();
+
+
 
 
         // setTimeout(() => {
@@ -301,15 +304,15 @@ function Print() {
     <>
 
       <div className="App">
-        <h1 className='title'>LayItOut</h1>
-        <br />
+
 
         {loading && (
           <>
             <div className="loader-backdrop"></div>
             <div className="loader"></div>
           </>
-        )} <div className='layout'>
+        )}
+        <div className='layout'>
 
           <AreaComponent width={width * cellSize} height={height * cellSize} cells={flattenCells(cells)} />
 

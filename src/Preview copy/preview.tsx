@@ -856,6 +856,7 @@ function Layout() {
                     return new Template({
                       name: templateName,
                       previewImage: imgUrl,
+                      inventoryItems: inventoryItems,
                       sections: sections.map((s) => new Section({
                         name: s.name,
                         cellId: new CellId({ x: t.sections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 10), y: t.sections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 10) }),
@@ -881,6 +882,7 @@ function Layout() {
                   return new Template({
                     name: t.name,
                     previewImage: t.previewImage,
+                    inventoryItems: t.inventoryItems,
                     sections: t.sections.map((s) => new Section({
                       name: s.name,
                       cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
@@ -928,6 +930,7 @@ function Layout() {
                 const newTemplate = new Template({
                   name: templateName,
                   previewImage: imgUrl,
+                  inventoryItems: inventoryItems,
                   sections: sections.map((s) => new Section({
                     name: s.name,
                     cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x * (isMobile ? 20 : 20), y: layoutSections.find((se) => se.name == s.name)!.cellId.y * (isMobile ? 20 : 20) }),
@@ -953,6 +956,7 @@ function Layout() {
                 const updatedTemplates = [...templates.map((t) => new Template({
                   name: t.name,
                   previewImage: t.previewImage,
+                  inventoryItems: t.inventoryItems,
                   sections: t.sections.map((s) => new Section({
                     name: s.name,
                     cellId: new CellId({ x: s.cellId.x * (isMobile ? 20 : 10), y: s.cellId.y * (isMobile ? 20 : 10) }),
@@ -1017,6 +1021,7 @@ function Layout() {
               const updatedDesign = new Design({
                 name: designName,
                 previewImage: imgUrl,
+                inventoryItems: inventoryItems,
                 areaId: areaId,
                 sections: sections.map((s) => new Section({
                   name: s.name,

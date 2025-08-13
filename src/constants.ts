@@ -258,12 +258,14 @@ export class Template {
     sections: Section[];
     id: string;
     previewImage: string;
+    inventoryItems: InventoryItem[];
 
-    constructor({ name, sections, id, previewImage }: { name: string, sections: Section[], id: string, previewImage: string }) {
+    constructor({ name, sections, id, previewImage, inventoryItems }: { name: string, sections: Section[], id: string, previewImage: string, inventoryItems: InventoryItem[] }) {
         this.name = name;
         this.sections = sections;
         this.id = id;
         this.previewImage = previewImage;
+        this.inventoryItems = inventoryItems;
     }
 
     toJSON(): string {
@@ -271,7 +273,8 @@ export class Template {
             name: this.name,
             id: this.id,
             sections: this.sections.map(section => section.toJSON()),
-            previewImage: this.previewImage
+            previewImage: this.previewImage,
+            inventoryItems: this.inventoryItems.map(item => item.toJSON())
         });
     }
 
@@ -280,7 +283,8 @@ export class Template {
             name: this.name,
             id: this.id,
             sections: this.sections.map(section => section.toDoc()),
-            previewImage: this.previewImage
+            previewImage: this.previewImage,
+            inventoryItems: this.inventoryItems.map(item => item.toDoc())
         };
     }
 
@@ -292,7 +296,8 @@ export class Template {
             name: data.name,
             id: data.id,
             sections: data.sections.map((section: any) => Section.fromJSON(section)),
-            previewImage: data.previewImage
+            previewImage: data.previewImage,
+            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromJSON(item)) : []
 
         });
     }
@@ -302,7 +307,8 @@ export class Template {
             name: data.name,
             id: data.id,
             sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : [],
-            previewImage: data.previewImage
+            previewImage: data.previewImage,
+            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromDoc(item)) : []
         });
     }
 }
