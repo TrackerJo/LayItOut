@@ -58,18 +58,26 @@ function CreateAreaDialog({ dialogRef, closeDialog, createArea }: CreateAreaDial
                     });
 
 
+
+                    await createArea(newArea);
+                    setLoading(false);
+
                     setAreaName('');
 
                     setAreaWidth(1);
                     setAreaHeight(1);
-                    await createArea(newArea);
-                    setLoading(false);
-
 
                 }}>Add Area</button>
                 <br />
                 <br />
-                <button className='action-btn' onClick={closeDialog}>Close</button>
+                <button className='action-btn' onClick={() => {
+                    setAreaName('');
+
+                    setAreaWidth(10);
+                    setAreaHeight(10);
+
+                    closeDialog();
+                }}>Close</button>
 
 
             </div>

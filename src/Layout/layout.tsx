@@ -189,6 +189,7 @@ function Layout() {
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
   const addSectionDialogRef = useRef<HTMLDialogElement>(null);
   const addInventoryItemDialogRef = useRef<HTMLDialogElement>(null);
+  const [highlightedCells, setHighlightedCells] = useState<CellId[]>([]);
 
   function getSectionByCellId(cellId: CellId, sections: Section[]): Section | null {
     for (const section of sections) {
@@ -1083,6 +1084,125 @@ function Layout() {
     return true;
   }
 
+  function canPlaceMultiItem(funcCells: CellProps[][], startCell: CellId, item: Item): boolean {
+    console.log(startCell)
+    console.log("CELLS", funcCells)
+
+
+    const rowLength = funcCells[startCell.y].length;
+    const columnLength = funcCells.length;
+    console.log(rowLength, columnLength)
+
+    // Use rotated dimensions for boundary checking
+    if (startCell.x + item.cellsLong > rowLength) {
+      return false;
+    }
+    if (startCell.y + item.cellsTall > columnLength) {
+      return false;
+    }
+    const startingSection = getSectionByCellId(startCell, sections);
+    if (!startingSection && !isMobile && (creatingAreaStage !== "placing-sections" || !isCreatingArea)) {
+      console.log("Item is out of bounds of any section")
+      return false;
+    }
+    // Use rotated dimensions for collision checking
+    for (let i = 0; i < item.cellsTall; i++) {
+      for (let j = 0; j < item.cellsLong; j++) {
+        //Check section it is in
+        if (!isMobile) {
+          const section = getSectionByCellId(new CellId({ x: startCell.x + j, y: startCell.y + i }), sections);
+          if (!section && (creatingAreaStage !== "placing-sections" || !isCreatingArea)) {
+            console.log("Item is out of bounds of any section")
+            return false;
+          }
+          if (section?.name != startingSection?.name && (creatingAreaStage !== "placing-sections" || !isCreatingArea)) {
+            console.log("Item is crossing section boundaries")
+            return false;
+          }
+        }
+        if (funcCells[startCell.y + i][startCell.x + j].hasItem && funcCells[startCell.y + i][startCell.x + j].itemId != item.id) {
+          console.log("Something is already here")
+          //Check if item in cell is a section modifier item
+          const occupyingItem = items.find((it) => it.id == funcCells[startCell.y + i][startCell.x + j].itemId);
+          if (occupyingItem && occupyingItem.isSectionModifier) {
+            //Check if the item being placed on edge of section modifier
+            if (occupyingItem.sectionModifierType === "RightWall") {
+              console.log("Item is on left wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (j == item.cellsLong - 1) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "LeftWall") {
+              console.log("Item is on right wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (j == 0) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            }
+            else if (occupyingItem.sectionModifierType === "TopWall") {
+              console.log("Item is on bottom wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == 0) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            }
+            else if (occupyingItem.sectionModifierType === "BottomWall") {
+              console.log("Item is on top wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == item.cellsTall - 1) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "TopRightCornerWall") {
+              console.log("Item is on bottom left corner of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == 0 && j == item.cellsLong - 1) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "TopLeftCornerWall") {
+              console.log("Item is on bottom right corner of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == 0 && j == 0) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "BottomRightCornerWall") {
+              console.log("Item is on top left corner of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == item.cellsTall - 1 && j == item.cellsLong - 1) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "BottomLeftCornerWall") {
+              console.log("Item is on top right corner of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == item.cellsTall - 1 && j == 0) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            }
+          } else {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
 
   function placeItem(startCell: CellId, item: Item, removeCell: CellId | null) {
     const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
@@ -1594,7 +1714,7 @@ function Layout() {
     for (const section of sections) {
       const sectionName = section.name;
       const sectionCellId = new CellId({ x: section.cellId.x, y: section.cellId.y });
-
+      console.log("Saving section modifier items for section", sectionName, section.items.map((i) => i.name), "at cell", sectionCellId);
       const newSection = new Section({
         name: sectionName,
         cellId: sectionCellId,
@@ -1698,6 +1818,142 @@ function Layout() {
     })
   }
 
+  function addHighlightedCell(startCell: CellId) {
+    const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
+    if (newCells[startCell.y] == undefined) {
+      return;
+    }
+    newCells[startCell.y][startCell.x].mouseOver = true;
+    newCells[startCell.y][startCell.x].canPlaceItem = true;
+    newCells[startCell.y][startCell.x].mouseOverLocation = "single";
+    setHighlightedCells((old) => [...old, startCell]);
+    if (isMobile) {
+      // Update the mobile cells
+      const mobileSection = mobileCells.find((m) => m.sectionName === mobileViewingSection);
+      if (mobileSection) {
+        mobileSection.cells = newCells.map(row => row.map(cell => ({ ...cell }))); // Create a new array to trigger re-render
+        setMobileCells([...mobileCells]);
+      }
+      setMobileCells((old) => old.map((m) => m.sectionName === mobileViewingSection ? { ...m, cells: newCells } : m));
+
+    } else {
+      console.log("Adding highlighted cell", startCell.toId())
+      setCells(newCells);
+    }
+  }
+
+  function placeHighlightedCells(item: Item) {
+    const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
+    setCanSave(true);
+    const cellsToAdd: CellId[] = [];
+    highlightedCells.forEach((cell) => {
+      if (!cellsToAdd.some((c) => c.toId() === cell.toId())) {
+        cellsToAdd.push(cell);
+      }
+    });
+    setHighlightedCells([]);
+    const newItems: Item[] = [];
+    const inventoryIndex = inventoryItems.findIndex((i) => i.item.name == item.name && !i.item.hasMoved);
+    let inventoryQuantity = inventoryIndex !== -1 ? inventoryItems[inventoryIndex].quantity : 0;
+    cellsToAdd.forEach((cell) => {
+      const newItem = new Item({
+        id: item.id,
+        name: item.name,
+        cellsLong: item.cellsLong,
+        cellsTall: item.cellsTall,
+        icon: item.icon,
+        initialElement: item.initialElement,
+        moveable: item.moveable,
+        starterItem: item.starterItem,
+        displayItem: item.isDisplayItem,
+        isSectionItem: item.isSectionItem,
+        isSectionModifier: item.isSectionModifier,
+        sectionModifierType: item.sectionModifierType,
+        sectionCell: item.sectionCell,
+        rotation: item.rotation
+      });
+      newItem.id = newItem.name + Math.floor(Math.random() * 100000).toString();
+      console.log("Placing item", newItem.name, "at", cell.toId(), "CAN PLACE?", canPlaceMultiItem(newCells, cell, newItem))
+      if (canPlaceMultiItem(newCells, cell, newItem) && inventoryQuantity != 0) {
+        if (inventoryIndex !== -1) {
+          inventoryQuantity -= 1;
+        }
+        if (creatingAreaStage !== "placing-sections" || !isCreatingArea) {
+          const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(cell, sections);
+          // Add item to section
+          console.log("Adding item to section", section!.name, "at", section!.cellId, "with cell", cell.toId(), cell.x - section!.cellId.x, cell.y - section!.cellId.y)
+          const relativeCell = new CellId({ x: cell.x - section!.cellId.x, y: cell.y - section!.cellId.y });
+          newItem.sectionCell = relativeCell;
+          console.log("Adding item to section", section!.name, "at", relativeCell, newItem)
+          section!.items.push(newItem);
+          console.log("SECTION ITEMS", section!.items.map((i) => i.name))
+        } else {
+          newItem.sectionCell = new CellId({ x: cell.x, y: cell.y });
+        }
+
+        // Use rotated dimensions for placement
+        for (let i = 0; i < item.cellsTall; i++) {
+          for (let j = 0; j < item.cellsLong; j++) {
+            newCells[cell.y + i][cell.x + j].hasItem = true;
+            newCells[cell.y + i][cell.x + j].itemId = newItem.id;
+          }
+        }
+        newItem.hasMoved = true;
+        newItem.starterItem = true;
+        newItem.isDisplayItem = false;
+        newItem.initialElement = document.querySelector(`.App #${cell.toId()}.cell:not(.cell-border)`) as HTMLElement;
+        const newestItem = new Item({
+          id: newItem.id,
+          name: newItem.name,
+          cellsLong: newItem.cellsLong,
+          cellsTall: newItem.cellsTall,
+          icon: newItem.icon,
+          initialElement: newItem.initialElement,
+          moveable: newItem.moveable,
+          starterItem: newItem.starterItem,
+          displayItem: newItem.isDisplayItem,
+          isSectionItem: newItem.isSectionItem,
+          isSectionModifier: newItem.isSectionModifier,
+          sectionModifierType: newItem.sectionModifierType,
+          sectionCell: newItem.sectionCell,
+          rotation: newItem.rotation
+        });
+        newItems.push(newestItem);
+      }
+    });
+    for (const item of newItems) {
+      console.log("Adding item to items", item.id)
+      setItems((old) => [...old, item]);
+    }
+    // Update inventory
+    if (inventoryIndex !== -1) {
+      setInventoryItems((old) => {
+        const newInventory = [...old];
+        if (newInventory[inventoryIndex].quantity > 0) {
+          newInventory[inventoryIndex].quantity = inventoryQuantity;
+          if (newInventory[inventoryIndex].quantity == 0) {
+            newInventory.splice(inventoryIndex, 1);
+          }
+        }
+        return newInventory;
+      });
+    }
+    if (inventoryQuantity == 0) {
+      setPlacingItem(null);
+    }
+    if (isMobile) {
+      const mobileSection = mobileCells.find((m) => m.sectionName === mobileViewingSection);
+      if (mobileSection) {
+        mobileSection.cells = newCells.map(row => row.map(cell => ({ ...cell }))); // Create a new array to trigger re-render
+        setMobileCells([...mobileCells]);
+      }
+      setMobileCells((old) => old.map((m) => m.sectionName === mobileViewingSection ? { ...m, cells: newCells } : m));
+
+    } else {
+      setCells(newCells);
+    }
+    setSections(sections);
+  }
 
   return (
     <>
@@ -2042,14 +2298,14 @@ function Layout() {
 
         </div>}
 
-        <div className='place-mode-row'>
+        {!isViewingDesign && !isViewingArea && < div className='place-mode-row'>
           <label htmlFor="tap-and-place-mode">Place Mode: </label>
           <select id="tap-and-place-mode" name="tap-and-place-mode" value={tapAndPlaceMode ? "tap" : "drag"} onChange={(e) => setTapAndPlaceMode(e.target.value === "tap")} className='place-mode-select'>
             <option value="drag">Drag and Drop</option>
             <option value="tap">Tap and Place</option>
           </select>
 
-        </div>
+        </div>}
         {loading && (
           <>
             <div className="loader-backdrop">
@@ -2060,7 +2316,7 @@ function Layout() {
         )} <div className='layout'>
 
 
-          {!isViewingDesign && <Toolbox setSelectedItem={setPlacingItem} tapAndPlaceMode={tapAndPlaceMode} isModifyingSections={isCreatingArea && creatingAreaStage == 'modify-sections'} isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height * cellSize} showAddCustomItem={() => {
+          {!isViewingDesign && !isViewingArea && <Toolbox setSelectedItem={setPlacingItem} tapAndPlaceMode={tapAndPlaceMode} isModifyingSections={isCreatingArea && creatingAreaStage == 'modify-sections'} isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height * cellSize} showAddCustomItem={() => {
             if (creatingAreaStage == "placing-sections" && isCreatingArea) {
               addSectionDialogRef.current?.showModal();
             } else if (creatingAreaStage == "placing-items" && isCreatingArea) {
@@ -2214,7 +2470,7 @@ function Layout() {
 
         </div >}
 
-      </div>
+      </div >
       <div >
         {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
         {items.map((item) => {
@@ -2396,7 +2652,7 @@ function Layout() {
         addInventoryItemDialogRef.current?.close();
       }} addInventoryItem={addInventoryItem} />
 
-      <PlacingItem item={placingItem} setSelectingItem={() => {
+      <PlacingItem placeMultiItem={placeHighlightedCells} addHighlightedCell={addHighlightedCell} item={placingItem} setSelectingItem={() => {
         setPlacingItem(null);
       }} canPlaceItem={canPlaceItem} placeItem={placeItem} highlightCells={highlightCells} unHighlightCells={unHighlightCells} cellSize={cellSize} />
 

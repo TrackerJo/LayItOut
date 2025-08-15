@@ -70,7 +70,12 @@ function CreateDesignDialog({ dialogRef, closeDialog, createDesign, areas }: Cre
                 <br />
 
                 <br />
-                <button className='action-btn' onClick={closeDialog}>Close</button>
+                <button className='action-btn' onClick={() => {
+                    setDesignName("");
+                    setSelectedArea(null);
+
+                    closeDialog();
+                }}>Close</button>
 
 
             </div>

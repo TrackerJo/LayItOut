@@ -13,10 +13,12 @@ type PlacingItemProps = {
     highlightCells: (startCell: CellId, item: Item) => void
     unHighlightCells: () => void,
     setSelectingItem: () => void,
+    addHighlightedCell: (cellId: CellId) => void,
+    placeMultiItem: (item: Item) => void,
     cellSize: number
 }
 
-function PlacingItem({ item, setSelectingItem, canPlaceItem, placeItem, highlightCells, unHighlightCells, cellSize }: PlacingItemProps) {
+function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem, placeItem, highlightCells, unHighlightCells, cellSize, placeMultiItem }: PlacingItemProps) {
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
     const textRef = useRef<HTMLParagraphElement>(null);
@@ -30,6 +32,10 @@ function PlacingItem({ item, setSelectingItem, canPlaceItem, placeItem, highligh
     const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
     const itemRef = useRef<HTMLDivElement>(null);
     const [inViewport, setInViewport] = useState<boolean>(true);
+    const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
+    const [isHighlighting, setIsHighlighting] = useState<boolean>(false);
+
+
 
 
 
@@ -91,6 +97,14 @@ function PlacingItem({ item, setSelectingItem, canPlaceItem, placeItem, highligh
         return currentFontSize; // Fallback if textRef is not set
     }
 
+    const onMouseDown = () => {
+        setIsMouseDown(true);
+    }
+
+    const onMouseUp = () => {
+        setIsMouseDown(false);
+    }
+
     useEffect(() => {
         setTimeout(() => {
             if (textRef.current) {
@@ -100,8 +114,18 @@ function PlacingItem({ item, setSelectingItem, canPlaceItem, placeItem, highligh
 
 
         }, 100);
+        window.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mouseup', onMouseUp);
+        return () => {
+            window.removeEventListener('mousedown', onMouseDown);
+            window.removeEventListener('mouseup', onMouseUp);
+        }
+
+
 
     }, []);
+
+
 
 
 
@@ -177,10 +201,10 @@ function PlacingItem({ item, setSelectingItem, canPlaceItem, placeItem, highligh
             }
         }
 
-        if (targetElement?.classList?.contains("cell")) {
+        if (targetElement?.classList?.contains("cell") && !isHighlighting) {
 
             highlightCells(CellId.fromString(targetElement.id), tempItem);
-        } else {
+        } else if (!isHighlighting) {
             unHighlightCells();
         }
         // if (item.starterItem) {
@@ -194,41 +218,16 @@ function PlacingItem({ item, setSelectingItem, canPlaceItem, placeItem, highligh
         setY(clientY - dragOffset.y + 5)
         //check if mouse is pressed
 
-        // if (isMouseDown) {
-        //     const rotatedDims = getRotatedDimensions(rotation);
-        //     const tempItem = {
-        //         ...item,
-        //         cellsLong: rotatedDims.cellsWide,
-        //         cellsTall: rotatedDims.cellsTall,
-
-        //     };
-
-        //     console.log("Temp item for placement:", tempItem);
-        //     const targetElement = document.elementFromPoint(clientX, clientY) as HTMLElement;
-        //     if (targetElement?.classList?.contains("cell")) {
-        //         console.log("Target element for placement:", targetElement);
-
-        //         if (canPlaceItem(CellId.fromString(targetElement.id), tempItem)) {
-        //             const cellTop = targetElement.offsetTop
-        //             const cellLeft = targetElement.offsetLeft;
-        //             const offset = getRotationOffset(rotation);
-
-        //             // Position the item at the cell location with rotation offset
-        //             const finalX = cellLeft + offset.x;
-        //             const finalY = cellTop + offset.y;
-
-        //             setX(finalX)
-        //             setY(finalY)
-        //             setPrevX(finalX)
-        //             setPrevY(finalY)
-        //             placeItem(CellId.fromString(targetElement.id), tempItem, cell != null ? CellId.fromString(cell.id) : null);
-
-        //         }
-        //     }
-        // }
+        if (isMouseDown) {
+            if (!isHighlighting) {
+                unHighlightCells();
+            }
+            setIsHighlighting(true);
+            addHighlightedCell(CellId.fromString(targetElement.id));
+        }
         // Adjust for touch offset
         // }
-    }, [item, isDragging, x, y, dragOffset, getRotatedDimensions, rotation, highlightCells, unHighlightCells, itemRef]);
+    }, [item, isDragging, x, y, isHighlighting, isMouseDown, dragOffset, canPlaceItem, placeItem, getRotatedDimensions, rotation, highlightCells, unHighlightCells, itemRef]);
 
     const handleEnd = useCallback((e: MouseEvent) => {
 
@@ -270,13 +269,17 @@ function PlacingItem({ item, setSelectingItem, canPlaceItem, placeItem, highligh
                 return;
             }
 
-
-            placeItem(CellId.fromString(targetElement.id), tempItem, cell != null ? CellId.fromString(cell.id) : null);
+            if (!isHighlighting) {
+                placeItem(CellId.fromString(targetElement.id), tempItem, cell != null ? CellId.fromString(cell.id) : null);
+            } else {
+                setIsHighlighting(false);
+                placeMultiItem(tempItem);
+            }
             console.log("Placed item at cell:", targetElement);
 
         }
 
-    }, [item, rotation, setSelectingItem, canPlaceItem, placeItem, cell, unHighlightCells, prevX, prevY]);
+    }, [item, rotation, setSelectingItem, isHighlighting, canPlaceItem, placeItem, cell, unHighlightCells, prevX, prevY]);
 
     const handleComputerMove = useCallback((e: MouseEvent) => {
         const clientX = e.clientX;

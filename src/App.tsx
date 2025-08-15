@@ -6,7 +6,7 @@ import PlusIcon from "./assets/plus.png";
 import { useEffect, useRef, useState } from "react";
 import type { Area, Design } from "./constants";
 import { isLoggedIn, logout } from "./api/auth";
-import { createAreaDesign, createCompanyArea, deleteDesign, getAreaDesigns, getCompanyAreas } from "./api/firestore";
+import { createAreaDesign, createCompanyArea, deleteArea, deleteDesign, getAreaDesigns, getCompanyAreas } from "./api/firestore";
 import AreaTile from "./Components/area_tile";
 import CreateDesignDialog from "./Components/create_design_dialog";
 import DesignTile from "./Components/design_tile";
@@ -105,7 +105,14 @@ function App() {
                                     <AreaTile key={area.id} area={area} onClick={() => {
                                         const companyId = localStorage.getItem("companyId");
                                         window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${area.id}&type=view-area`;
-                                    }} />
+                                    }} deleteArea={async () => {
+                                        setAreas(areas.filter(a => a.id !== area.id));
+                                        setDesigns(designs.filter(d => d.areaId !== area.id));
+                                        setLoading(true);
+                                        await deleteArea(localStorage.getItem("companyId")!, area.id);
+                                        setLoading(false);
+                                    }}
+                                    />
                                 ))}
                             </div>
 
