@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 
 
 import './layout.css'
@@ -19,9 +19,12 @@ import TemplateIcon from '../assets/template.png';
 import TemplateDialog from '../Components/template_dialog';
 import AddCustomItemDialog from '../Components/add_custom_item_dialog';
 
-import { getArea, getAreaDesign, saveAreaTemplates, saveCompanyArea, updateAreaDesign } from '../api/firestore';
+import { deleteArea, getArea, getAreaDesign, placeAreaSections, saveAreaSections, saveAreaTemplates, saveCompanyArea, updateAreaDesign } from '../api/firestore';
 import { getLocalArea } from '../api/local_firestore';
 import { createRoot } from 'react-dom/client';
+import AddSectionDialog from '../Components/add_section_dialog';
+import AddInventoryItemDialog from '../Components/add_inventory_item_dialog';
+import PlacingItem from '../Components/placing_item';
 
 
 createRoot(document.getElementById('root')!).render(
@@ -44,6 +47,110 @@ function Layout() {
   const [unselectingItemIds, setUnselectingItemIds] = useState<string[]>([]);
   const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [tapAndPlaceMode, setTapAndPlaceMode] = useState<boolean>(true);
+  const [placingItem, setPlacingItem] = useState<Item | null>(null);
+  const [placingItemId, setPlacingItemId] = useState<string | null>(null);
+  const [sectionModifierItems, setSectionModifierItems] = useState<Item[]>([
+    new Item({
+      id: "left-wall",
+      name: "Left Wall",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "LeftWall"
+    }),
+    new Item({
+      id: "right-wall",
+      name: "Right Wall",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "RightWall"
+    }),
+    new Item({
+      id: "top-wall",
+      name: "Top Wall",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "TopWall"
+    }),
+
+    new Item({
+      id: "bottom-wall",
+      name: "Bottom Wall",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "BottomWall"
+    }),
+    new Item({
+      id: "top-left-corner-wall",
+      name: "Top Left Corner Wall",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "TopLeftCornerWall"
+    }),
+    new Item({
+      id: "top-right-corner-wall",
+      name: "Top Right Corner Wall",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "TopRightCornerWall"
+    }),
+    new Item({
+      id: "bottom-left-corner-wall",
+      name: "Bottom Left Corner Wall",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "BottomLeftCornerWall"
+    }),
+    new Item({
+      id: "bottom-right-corner-wall",
+      name: "Bottom Right Corner Wall",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "BottomRightCornerWall"
+    })
+
+
+  ]);
 
   const layoutDialogRef = useRef<HTMLDialogElement>(null);
   const [layoutDialogOpen, setLayoutDialogOpen] = useState<boolean>(false);
@@ -62,12 +169,16 @@ function Layout() {
   const [isEditingTemplate, setIsEditingTemplate] = useState<boolean>(false);
   const [isViewingDesign, setIsViewingDesign] = useState<boolean>(false);
   const [isViewingArea, setIsViewingArea] = useState<boolean>(false);
+  const [isCreatingArea, setIsCreatingArea] = useState<boolean>(false);
+  const [creatingAreaStage, setCreatingAreaStage] = useState<"placing-sections" | "modify-sections" | "placing-items">("placing-sections");
   const [isEditingDesign, setIsEditingDesign] = useState<boolean>(false);
   const [isClientEditingDesign, setIsClientEditingDesign] = useState<boolean>(false);
   const [designName, setDesignName] = useState<string>("");
+  const [design, setDesign] = useState<Design | null>(null);
   const [templateName, setTemplateName] = useState<string>("");
   const [companyId, setCompanyId] = useState<string>("");
   const [areaId, setAreaId] = useState<string>("");
+  const [area, setArea] = useState<Area | null>(null);
   const [designId, setDesignId] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
@@ -76,6 +187,8 @@ function Layout() {
   const [canSave, setCanSave] = useState<boolean>(false);
 
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
+  const addSectionDialogRef = useRef<HTMLDialogElement>(null);
+  const addInventoryItemDialogRef = useRef<HTMLDialogElement>(null);
 
   function getSectionByCellId(cellId: CellId, sections: Section[]): Section | null {
     for (const section of sections) {
@@ -91,7 +204,7 @@ function Layout() {
 
 
 
-  function generateCells(sectionsToGenerate: Section[]) {
+  function generateCells(sectionsToGenerate: Section[], area: Area, isCreatingArea: boolean, creatingAreaStage: "placing-sections" | "modify-sections") {
     //check if localStorage has template
 
 
@@ -102,6 +215,24 @@ function Layout() {
         cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
         cellsLong: section.cellsLong,
         cellsTall: section.cellsTall,
+        modifierItems: section.modifierItems.map((item) => new StaringItem({
+          cell: new CellId({ x: item.cell.x, y: item.cell.y }),
+          item: new Item({
+            id: item.item.id,
+            name: item.item.name,
+            cellsLong: item.item.cellsLong,
+            cellsTall: item.item.cellsTall,
+            icon: item.item.icon,
+            starterItem: true,
+            moveable: item.item.moveable,
+            rotation: item.item.rotation || 0,
+            isSectionItem: item.item.isSectionItem,
+            isSectionModifier: item.item.isSectionModifier,
+            sectionModifierType: item.item.sectionModifierType, // Ensure section modifier type is set
+            displayItem: item.item.isDisplayItem, // Ensure display item is set
+            // Ensure rotation is set
+          })
+        })),
         startingItems: []
       })
     })
@@ -201,19 +332,19 @@ function Layout() {
 
 
 
-      setWidth(currentWidth);
-      setHeight(currentHeight);
-      setTotalWidth(currentWidth);
-      setTotalHeight(currentHeight);
+      setWidth(area.width);
+      setHeight(area.height);
+      setTotalWidth(area.width);
+      setTotalHeight(area.height);
       console.log("Final width:", currentWidth, "Final height:", currentHeight);
 
 
-      [...Array((currentHeight)).keys()].map((j) => {
+      [...Array((area.height)).keys()].map((j) => {
         const rowCells: CellProps[] = [];
-        [...Array((currentWidth)).keys()].map((i) => {
-
+        [...Array((area.width)).keys()].map((i) => {
+          console.log("Creating cell at", i, j, "with size", cellSize, isCreatingArea)
           rowCells.push({
-            id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "", inSection: getSectionByCellId(new CellId({ x: i, y: j }), sectionsToGenerate) != null, size: cellSize
+            id: new CellId({ x: i, y: j }), hasItem: false, itemId: "", mouseOver: false, canPlaceItem: false, mouseOverLocation: "", inSection: isCreatingArea && creatingAreaStage == 'placing-sections' ? true : getSectionByCellId(new CellId({ x: i, y: j }), sectionsToGenerate) != null, size: cellSize
           })
         })
         newCells.push(rowCells)
@@ -245,6 +376,26 @@ function Layout() {
               })
             })
           }))
+          newStartingItems.push(...section.modifierItems.map((item) => {
+            return new StaringItem({
+              cell: new CellId({ x: section.cellId.x + item.cell.x, y: section.cellId.y + item.cell.y }),
+              item: new Item({
+                id: item.item.id,
+                name: item.item.name,
+                cellsLong: item.item.cellsLong,
+                cellsTall: item.item.cellsTall,
+                icon: item.item.icon,
+                initialElement: document.querySelector(`.App #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
+                starterItem: true,
+                moveable: false,
+                isSectionItem: item.item.isSectionItem,
+                isSectionModifier: item.item.isSectionModifier,
+                sectionModifierType: item.item.sectionModifierType, // Ensure section modifier type is set
+                rotation: item.item.rotation || 0 // Ensure rotation is set
+              })
+            })
+          }))
+
 
         }
 
@@ -299,9 +450,16 @@ function Layout() {
     const companyId = urlParams.get('companyId') || "";
     const templateId = urlParams.get('templateId') || "";
     const area: Area = await getArea(companyId, areaId);
+    if (area === null) {
+      window.location.href = "/LayItOut/DNF/";
+      return;
+    }
+    setArea(area);
     setAreaPreview(area.previewImage || null);
     const type = urlParams.get('type') || "";
     let isDesign = false;
+    let isCreatingArea = false;
+    let creaingAreaStage: "placing-sections" | "modify-sections" | "placing-items" = "modify-sections";
     if (type === "create-template") {
       setIsCreatingTemplate(true);
 
@@ -321,6 +479,7 @@ function Layout() {
       const designId = urlParams.get('designId') || "";
       setDesignId(designId);
 
+
     } else if (type === "view-area") {
       setIsViewingArea(true)
     } else if (type === "edit-design") {
@@ -337,6 +496,52 @@ function Layout() {
       setDesignName(designName);
       const designId = urlParams.get('designId') || "";
       setDesignId(designId);
+    } else if (type === "create-area") {
+      isCreatingArea = true;
+      setIsCreatingArea(true);
+      const creatingAreaStageParam = urlParams.get('stage');
+      if (creatingAreaStageParam === "placing-sections") {
+        creaingAreaStage = "placing-sections";
+        setCreatingAreaStage("placing-sections");
+      } else if (creatingAreaStageParam === "modify-sections") {
+        setCreatingAreaStage("modify-sections");
+        creaingAreaStage = "modify-sections";
+        setInventoryItems(sectionModifierItems.map(item => new InventoryItem({
+          item: new Item({
+            id: item.id,
+            name: item.name,
+            cellsLong: item.cellsLong,
+            cellsTall: item.cellsTall,
+            icon: item.icon,
+            initialElement: item.initialElement,
+            moveable: item.moveable,
+            starterItem: item.starterItem,
+            displayItem: true,
+            isSectionItem: item.isSectionItem,
+            isSectionModifier: item.isSectionModifier,
+            sectionModifierType: item.sectionModifierType
+          }),
+          quantity: -1
+        })));
+      } else if (creatingAreaStageParam === "placing-items") {
+        setCreatingAreaStage("placing-items");
+        creaingAreaStage = "placing-items";
+        setInventoryItems(area.inventoryItems.map(inv => new InventoryItem({
+          item: new Item({
+            id: inv.item.id,
+            name: inv.item.name,
+            cellsLong: inv.item.cellsLong,
+            cellsTall: inv.item.cellsTall,
+            icon: inv.item.icon,
+            initialElement: inv.item.initialElement,
+            moveable: inv.item.moveable,
+            starterItem: inv.item.starterItem,
+            displayItem: true
+          }),
+          quantity: inv.quantity
+        })));
+      }
+
     }
 
     if (companyIdParam) {
@@ -345,20 +550,22 @@ function Layout() {
     if (areaIdParam) {
       setAreaId(areaIdParam);
     }
-    setInventoryItems(area.inventoryItems.map(inv => new InventoryItem({
-      item: new Item({
-        id: inv.item.id,
-        name: inv.item.name,
-        cellsLong: inv.item.cellsLong,
-        cellsTall: inv.item.cellsTall,
-        icon: inv.item.icon,
-        initialElement: inv.item.initialElement,
-        moveable: inv.item.moveable,
-        starterItem: inv.item.starterItem,
-        displayItem: true
-      }),
-      quantity: inv.quantity
-    })));
+    if (!isCreatingArea) {
+      setInventoryItems(area.inventoryItems.map(inv => new InventoryItem({
+        item: new Item({
+          id: inv.item.id,
+          name: inv.item.name,
+          cellsLong: inv.item.cellsLong,
+          cellsTall: inv.item.cellsTall,
+          icon: inv.item.icon,
+          initialElement: inv.item.initialElement,
+          moveable: inv.item.moveable,
+          starterItem: inv.item.starterItem,
+          displayItem: true
+        }),
+        quantity: inv.quantity
+      })));
+    }
     const newTemplates: Template[] = [];
     const newUnmodifiedTemplates: Template[] = [];
     for (const template of area.templates) {
@@ -370,6 +577,24 @@ function Layout() {
           cellId: new CellId({ x: (section.cellId.x), y: (section.cellId.y) }),
           cellsLong: section.cellsLong,
           cellsTall: section.cellsTall,
+          modifierItems: section.modifierItems.map((item) => new StaringItem({
+            cell: new CellId({ x: item.cell.x, y: item.cell.y }),
+            item: new Item({
+              id: item.item.id,
+              name: item.item.name,
+              cellsLong: item.item.cellsLong,
+              cellsTall: item.item.cellsTall,
+              icon: item.item.icon,
+              starterItem: true,
+              moveable: item.item.moveable,
+              rotation: item.item.rotation || 0,
+              isSectionItem: item.item.isSectionItem,
+              isSectionModifier: item.item.isSectionModifier,
+              sectionModifierType: item.item.sectionModifierType, // Ensure section modifier type is set
+              displayItem: item.item.isDisplayItem, // Ensure display item is set
+              // Ensure rotation is set
+            })
+          })),
           startingItems: section.startingItems.map((item) => new StaringItem({
             cell: new CellId({ x: item.cell.x, y: item.cell.y }), item: new Item({
               id: item.item.id,
@@ -389,6 +614,24 @@ function Layout() {
           cellId: new CellId({ x: (section.cellId.x), y: (section.cellId.y) }),
           cellsLong: section.cellsLong,
           cellsTall: section.cellsTall,
+          modifierItems: section.modifierItems.map((item) => new StaringItem({
+            cell: new CellId({ x: item.cell.x, y: item.cell.y }),
+            item: new Item({
+              id: item.item.id,
+              name: item.item.name,
+              cellsLong: item.item.cellsLong,
+              cellsTall: item.item.cellsTall,
+              icon: item.item.icon,
+              starterItem: true,
+              moveable: item.item.moveable,
+              rotation: item.item.rotation || 0,
+              isSectionItem: item.item.isSectionItem,
+              isSectionModifier: item.item.isSectionModifier,
+              sectionModifierType: item.item.sectionModifierType, // Ensure section modifier type is set
+              displayItem: item.item.isDisplayItem, // Ensure display item is set
+              // Ensure rotation is set
+            })
+          })),
           startingItems: section.startingItems.map((item) => new StaringItem({
             cell: new CellId({ x: item.cell.x, y: item.cell.y }), item: new Item({
               id: item.item.id,
@@ -432,6 +675,7 @@ function Layout() {
         window.location.href = "/LayItOut/DNF/";
         return;
       }
+      setDesign(design);
       setInventoryItems(design.inventoryItems.map(inv => new InventoryItem({
         item: new Item({
           id: inv.item.id,
@@ -454,6 +698,7 @@ function Layout() {
           cellsLong: section.cellsLong,
           cellsTall: section.cellsTall,
           startingItems: section.startingItems,
+          modifierItems: section.modifierItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
             name: i.item.name,
@@ -464,6 +709,7 @@ function Layout() {
             moveable: i.item.moveable,
             starterItem: i.item.starterItem,
             rotation: i.item.rotation,
+
 
           }))
         })
@@ -476,6 +722,7 @@ function Layout() {
           cellsLong: section.cellsLong,
           cellsTall: section.cellsTall,
           startingItems: section.startingItems,
+          modifierItems: section.modifierItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
             name: i.item.name,
@@ -515,6 +762,7 @@ function Layout() {
           cellsLong: section.cellsLong,
           cellsTall: section.cellsTall,
           startingItems: section.startingItems,
+          modifierItems: section.modifierItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
             name: i.item.name,
@@ -539,6 +787,7 @@ function Layout() {
           cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
           cellsLong: section.cellsLong,
           cellsTall: section.cellsTall,
+          modifierItems: section.modifierItems,
           startingItems: section.startingItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
@@ -564,6 +813,7 @@ function Layout() {
           cellId: new CellId({ x: section.cellId.x, y: section.cellId.y }),
           cellsLong: section.cellsLong,
           cellsTall: section.cellsTall,
+          modifierItems: section.modifierItems,
           startingItems: section.startingItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
@@ -587,6 +837,7 @@ function Layout() {
           cellsLong: section.cellsLong,
           cellsTall: section.cellsTall,
           startingItems: section.startingItems,
+          modifierItems: section.modifierItems,
           items: section.startingItems.map((i) => new Item({
             id: i.item.id,
             name: i.item.name,
@@ -605,7 +856,7 @@ function Layout() {
     }
     console.log("SECTIONS TO GENERATE", sectionsToGenerate);
 
-    generateCells(sectionsToGenerate);
+    generateCells(sectionsToGenerate, area, type === "create-area", creaingAreaStage);
 
   }
 
@@ -730,7 +981,7 @@ function Layout() {
       return false;
     }
     const startingSection = getSectionByCellId(startCell, sections);
-    if (!startingSection && !isMobile) {
+    if (!startingSection && !isMobile && (creatingAreaStage !== "placing-sections" || !isCreatingArea)) {
       console.log("Item is out of bounds of any section")
       return false;
     }
@@ -740,18 +991,91 @@ function Layout() {
         //Check section it is in
         if (!isMobile) {
           const section = getSectionByCellId(new CellId({ x: startCell.x + j, y: startCell.y + i }), sections);
-          if (!section) {
+          if (!section && (creatingAreaStage !== "placing-sections" || !isCreatingArea)) {
             console.log("Item is out of bounds of any section")
             return false;
           }
-          if (section.name != startingSection!.name) {
+          if (section?.name != startingSection?.name && (creatingAreaStage !== "placing-sections" || !isCreatingArea)) {
             console.log("Item is crossing section boundaries")
             return false;
           }
         }
         if (funcCells[startCell.y + i][startCell.x + j].hasItem && funcCells[startCell.y + i][startCell.x + j].itemId != item.id) {
           console.log("Something is already here")
-          return false;
+          //Check if item in cell is a section modifier item
+          const occupyingItem = items.find((it) => it.id == funcCells[startCell.y + i][startCell.x + j].itemId);
+          if (occupyingItem && occupyingItem.isSectionModifier) {
+            //Check if the item being placed on edge of section modifier
+            if (occupyingItem.sectionModifierType === "RightWall") {
+              console.log("Item is on left wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (j == item.cellsLong - 1) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "LeftWall") {
+              console.log("Item is on right wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (j == 0) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            }
+            else if (occupyingItem.sectionModifierType === "TopWall") {
+              console.log("Item is on bottom wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == 0) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            }
+            else if (occupyingItem.sectionModifierType === "BottomWall") {
+              console.log("Item is on top wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == item.cellsTall - 1) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "TopRightCornerWall") {
+              console.log("Item is on bottom left corner of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == 0 && j == item.cellsLong - 1) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "TopLeftCornerWall") {
+              console.log("Item is on bottom right corner of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == 0 && j == 0) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "BottomRightCornerWall") {
+              console.log("Item is on top left corner of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == item.cellsTall - 1 && j == item.cellsLong - 1) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            } else if (occupyingItem.sectionModifierType === "BottomLeftCornerWall") {
+              console.log("Item is on top right corner of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              if (i == item.cellsTall - 1 && j == 0) {
+                continue;
+              } else {
+                console.log("Item is not on edge of section modifier, cannot place item")
+                return false;
+              }
+            }
+          } else {
+            return false;
+          }
         }
       }
     }
@@ -777,12 +1101,16 @@ function Layout() {
         }
       }
     }
-    const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(startCell, sections);
-    // Add item to section
-    const relativeCell = new CellId({ x: startCell.x - section!.cellId.x, y: startCell.y - section!.cellId.y });
-    item.sectionCell = relativeCell;
-    console.log("Adding item to section", section!.name, "at", relativeCell, item)
-    section!.items.push(item);
+    if (creatingAreaStage !== "placing-sections" || !isCreatingArea) {
+      const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(startCell, sections);
+      // Add item to section
+      const relativeCell = new CellId({ x: startCell.x - section!.cellId.x, y: startCell.y - section!.cellId.y });
+      item.sectionCell = relativeCell;
+      console.log("Adding item to section", section!.name, "at", relativeCell, item)
+      section!.items.push(item);
+    } else {
+      item.sectionCell = new CellId({ x: startCell.x, y: startCell.y });
+    }
 
     // Use rotated dimensions for placement
     for (let i = 0; i < item.cellsTall; i++) {
@@ -806,33 +1134,73 @@ function Layout() {
 
     // If the item is being placed, remove it from the inventory
     console.log("Removing item from inventory", item.name)
+    let removedItem = false;
 
     if (!item.hasMoved) {
       const index = inventoryItems.findIndex((i) => i.item.name == item.name && !i.item.hasMoved);
       if (index !== -1) {
         const newInventoryItems = [...inventoryItems];
-        newInventoryItems[index].quantity -= 1;
-        if (newInventoryItems[index].quantity <= 0) {
+        if (newInventoryItems[index].quantity > 0) {
+          newInventoryItems[index].quantity -= 1;
+          if (newInventoryItems[index].quantity <= 0) {
+            removedItem = true;
 
-          newInventoryItems.splice(index, 1);
+            newInventoryItems.splice(index, 1);
+          }
+          setInventoryItems(newInventoryItems);
         }
-        setInventoryItems(newInventoryItems);
       } else {
         setInventoryItems(inventoryItems)
       }
     }
 
     setItems((old) => {
-      console.log("Placing item", item.id)
+      console.log("Placing item", item)
 
       console.log("Updating item", item.id)
-      if (!old.find((i) => i.id == item.id)!.hasMoved) {
+      if (tapAndPlaceMode && placingItem && item.id == placingItem.id) {
+        console.log("Updating placing item", item.id)
+        item.hasMoved = true;
+        item.starterItem = true;
+        item.isDisplayItem = false;
+        item.initialElement = document.querySelector(`.App #${startCell.toId()}.cell:not(.cell-border)`) as HTMLElement;
+        return [...old, new Item({
+          id: item.name + Math.floor(Math.random() * 100000).toString(),
+          name: item.name,
+          cellsLong: item.cellsLong,
+          cellsTall: item.cellsTall,
+          icon: item.icon,
+          initialElement: item.initialElement,
+          moveable: item.moveable,
+          starterItem: item.starterItem,
+          displayItem: item.isDisplayItem,
+          isSectionItem: item.isSectionItem,
+          isSectionModifier: item.isSectionModifier,
+          sectionModifierType: item.sectionModifierType,
+          sectionCell: item.sectionCell,
+          rotation: item.rotation
+        })];
+      } else {
+        if (!old.find((i) => i.id == item.id)!.hasMoved) {
 
 
-        old.find((i) => i.id == item.id)!.hasMoved = true
+          old.find((i) => i.id == item.id)!.hasMoved = true
+          old.find((i) => i.id == item.id)!.sectionCell = item.sectionCell;
+        }
       }
       return old;
     })
+    if (tapAndPlaceMode && placingItem) {
+
+
+      if (removedItem) {
+
+        setPlacingItem(null);
+
+        return;
+      }
+
+    }
   }
 
   function addDraggingItem(item: Item) {
@@ -843,6 +1211,34 @@ function Layout() {
     }
     setItems((old) => [...old, item])
   }
+
+
+
+  useEffect(() => {
+    if (placingItem) {
+      console.log("Adding placing item", placingItem.id)
+      setPlacingItemId(placingItem.id);
+      // placingItem.initialElement = undefined;
+      // setItems((old) => [...old, placingItem])
+
+
+
+    } else {
+      console.log("Removing placing item", placingItemId)
+      setPlacingItemId("");
+      // setItems((old) => {
+
+      //   return old.filter((i) => i.id != placingItemId)
+      // })
+
+    }
+
+  }, [placingItem]);
+
+
+
+
+
 
 
   function removeItem(item: Item) {
@@ -891,23 +1287,28 @@ function Layout() {
     } else {
       setCells(newCells);
     }
-    const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(cell, sections);
-    //remove item from section
-    section!.items = section!.items.filter((i) => i.id != item.id);
-    console.log("DELETING ITEM", item.id)
+    if ((creatingAreaStage !== "placing-sections" || !isCreatingArea)) {
+      const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(cell, sections);
+      //remove item from section
+      section!.items = section!.items.filter((i) => i.id != item.id);
+      console.log("DELETING ITEM", item.id)
+    }
     setItems((old) => {
       console.log()
       return old.filter((i) => i.id != item.id)
     })
+
     //add the item to the inventory
     setInventoryItems((old) => {
       const index = old.findIndex((i) => i.item.name == item.name && !i.item.hasMoved);
       if (index !== -1) {
         const newInventoryItems = [...old];
-        newInventoryItems[index].quantity += 1;
+        if (newInventoryItems[index].quantity > 0) {
+          newInventoryItems[index].quantity += 1;
+        }
         return newInventoryItems;
       } else {
-        return [...old, new InventoryItem({ item: new Item({ id: item.id, name: item.name, cellsLong: rotatedDims.cellsWide, cellsTall: rotatedDims.cellsTall, icon: item.icon }), quantity: 1 })];
+        return [...old, new InventoryItem({ item: new Item({ id: item.id, name: item.name, cellsLong: rotatedDims.cellsWide, cellsTall: rotatedDims.cellsTall, icon: item.icon, isSectionItem: item.isSectionItem }), quantity: 1 })];
       }
     })
   }
@@ -1101,6 +1502,7 @@ function Layout() {
     const item = items.find((i) => i.id === selectedItemId)!;
     console.log("Unselecting item", selectedItemId)
     setSelectedItemId(itemId)
+    // setPlacingItem(null);
 
     if (!item) return;
     setUnselectingItemIds((prev) => [...prev, item.id])
@@ -1144,6 +1546,157 @@ function Layout() {
     }
   }, [takingPhoto]);
 
+  async function placeSections(sections: Item[]) {
+    const newSections: Section[] = [];
+    setLoading(true);
+    for (const section of sections) {
+      const sectionName = section.name;
+      const sectionCellId = new CellId({ x: section.sectionCell!.x, y: section.sectionCell!.y });
+
+      const newSection = new Section({
+        name: sectionName,
+        cellId: sectionCellId,
+        cellsLong: section.cellsLong,
+        cellsTall: section.cellsTall,
+        modifierItems: [],
+        startingItems: [],
+        items: []
+      });
+      newSections.push(newSection);
+    }
+    let currentWidth = 0;
+    let currentHeight = 0;
+    for (const section of newSections) {
+
+      console.log("Generating cells for section", section.name, "at", section.cellId, "with size", section.cellsLong, "x", section.cellsTall)
+      console.log("Needed section Width:", (section.cellsLong + section.cellId.x), "Current width:", currentWidth)
+
+      if ((section.cellsLong + section.cellId.x) > currentWidth) {
+
+        console.log("Added section Width:", section.cellsLong + section.cellId.x)
+        currentWidth += (section.cellsLong + section.cellId.x) - currentWidth;
+      }
+      console.log("Needed section Height:", (section.cellsTall + section.cellId.y), "Current height:", currentHeight)
+      if ((section.cellsTall + section.cellId.y) > currentHeight) {
+        console.log("Added section Height:", section.cellsTall + section.cellId.y)
+        currentHeight += (section.cellsTall + section.cellId.y) - currentHeight;
+      }
+    }
+    await placeAreaSections(companyId, areaId, newSections, currentWidth, currentHeight);
+
+    window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=create-area&stage=modify-sections`;
+
+  }
+
+  async function saveSectionModifierItems(items: Item[], sections: Section[]) {
+    const newSections: Section[] = [];
+    setLoading(true);
+    for (const section of sections) {
+      const sectionName = section.name;
+      const sectionCellId = new CellId({ x: section.cellId.x, y: section.cellId.y });
+
+      const newSection = new Section({
+        name: sectionName,
+        cellId: sectionCellId,
+        cellsLong: section.cellsLong,
+        cellsTall: section.cellsTall,
+        startingItems: [],
+        items: [],
+        modifierItems: section.items.map((m) => new StaringItem({
+          cell: new CellId({ x: m.sectionCell!.x, y: m.sectionCell!.y }),
+          item: new Item({
+            id: m.id,
+            name: m.name,
+            cellsLong: m.cellsLong,
+            cellsTall: m.cellsTall,
+            icon: m.icon,
+
+            rotation: m.rotation,
+            moveable: m.moveable,
+            starterItem: m.starterItem,
+            isSectionItem: m.isSectionItem,
+            isSectionModifier: true,
+            sectionModifierType: m.sectionModifierType
+          })
+
+        }))
+      });
+      newSections.push(newSection);
+    }
+    console.log("Saving section modifier items", newSections);
+    await saveAreaSections(companyId, areaId, newSections);
+    console.log("Section modifier items saved successfully");
+
+    window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=create-area&stage=placing-items`;
+  }
+
+  async function saveArea(sections: Section[], inventoryItems: InventoryItem[]) {
+    setLoading(true);
+    const newSections: Section[] = [];
+    for (const section of sections) {
+      const sectionName = section.name;
+      const sectionCellId = new CellId({ x: section.cellId.x, y: section.cellId.y });
+      const newSection = new Section({
+        name: sectionName,
+        cellId: sectionCellId,
+        cellsLong: section.cellsLong,
+        cellsTall: section.cellsTall,
+        modifierItems: section.modifierItems,
+        startingItems: section.items.map((i) => new StaringItem({
+          cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+          item: new Item({
+            id: i.id,
+            name: i.name,
+            cellsLong: i.cellsLong,
+            cellsTall: i.cellsTall,
+            icon: i.icon,
+            starterItem: true,
+            moveable: i.moveable,
+            rotation: i.rotation
+          })
+        })),
+        items: []
+      });
+      newSections.push(newSection);
+    }
+    console.log("Saving area sections", newSections);
+
+    localStorage.setItem('screenshotSections', newSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
+    console.log("Screenshot sections saved to localStorage", newSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
+    localStorage.setItem('screenshot', '');
+    setTakingPhoto(true);
+    window.addEventListener('storage', async (event) => {
+      console.log("Storage event", event);
+      if (event.key === 'screenshot') {
+        const newArea = new Area({
+          id: areaId,
+          name: area!.name,
+          sections: newSections,
+          templates: [],
+          previewImage: event.newValue!,
+          width: area!.width,
+          height: area!.height,
+          inventoryItems: inventoryItems.map((i) => new InventoryItem({
+            item: new Item({
+              id: i.item.id,
+              name: i.item.name,
+              cellsLong: i.item.cellsLong,
+              cellsTall: i.item.cellsTall,
+              icon: i.item.icon,
+              starterItem: true,
+              moveable: i.item.moveable,
+              rotation: i.item.rotation
+            }),
+            quantity: i.quantity
+          }))
+        });
+        await saveCompanyArea(companyId!, newArea);
+        console.log("Area saved successfully");
+        setLoading(false);
+        window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=view-area`;
+      }
+    })
+  }
 
 
   return (
@@ -1152,6 +1705,10 @@ function Layout() {
       <div className="App" >
         <h1 className='title'>LayItOut</h1>
         <br />
+        {isCreatingArea && <div className='area-creation'>
+          <h2 className='area-creation-title'>Create Area</h2>
+          <label htmlFor="">{creatingAreaStage == "placing-sections" ? "Create new sections and place them" : creatingAreaStage == "modify-sections" ? "Add walls and doors to sections" : "Add items to the inventory and place items"}</label>
+        </div>}
         {(isCreatingTemplate || isEditingTemplate) && <div className="template-name-row">
           <label htmlFor="template-name">Template Name:</label>
           <input type="text" id="template-name" name="template-name" onChange={(e) => setTemplateName(e.target.value)} value={templateName} />
@@ -1184,6 +1741,7 @@ function Layout() {
                   cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
                   cellsLong: s.cellsLong,
                   cellsTall: s.cellsTall,
+                  modifierItems: s.modifierItems,
                   startingItems: s.items.map((i) => new StaringItem({
                     cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                     item: new Item({
@@ -1217,6 +1775,7 @@ function Layout() {
                             name: s.name,
                             cellId: new CellId({ x: t.sections.find((se) => se.name == s.name)!.cellId.x, y: t.sections.find((se) => se.name == s.name)!.cellId.y }),
                             cellsLong: s.cellsLong,
+                            modifierItems: s.modifierItems,
                             cellsTall: s.cellsTall,
                             startingItems: s.items.map((i) => new StaringItem({
                               cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
@@ -1244,6 +1803,7 @@ function Layout() {
                           cellId: new CellId({ x: s.cellId.x, y: s.cellId.y }),
                           cellsLong: s.cellsLong,
                           cellsTall: s.cellsTall,
+                          modifierItems: s.modifierItems,
                           startingItems: s.startingItems.map((i) => new StaringItem({
                             cell: new CellId({ x: i.cell.x, y: i.cell.y }),
                             item: new Item({
@@ -1287,6 +1847,7 @@ function Layout() {
                   cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
                   cellsLong: s.cellsLong,
                   cellsTall: s.cellsTall,
+                  modifierItems: s.modifierItems,
                   startingItems: s.items.map((i) => new StaringItem({
                     cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                     item: new Item({
@@ -1318,6 +1879,7 @@ function Layout() {
                         cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
                         cellsLong: s.cellsLong,
                         cellsTall: s.cellsTall,
+                        modifierItems: s.modifierItems,
                         startingItems: s.items.map((i) => new StaringItem({
                           cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                           item: new Item({
@@ -1344,6 +1906,7 @@ function Layout() {
                         cellId: new CellId({ x: s.cellId.x, y: s.cellId.y }),
                         cellsLong: s.cellsLong,
                         cellsTall: s.cellsTall,
+                        modifierItems: s.modifierItems,
                         startingItems: s.startingItems.map((i) => new StaringItem({
                           cell: new CellId({ x: i.cell.x, y: i.cell.y }),
                           item: new Item({
@@ -1403,6 +1966,7 @@ function Layout() {
                 cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
                 cellsLong: s.cellsLong,
                 cellsTall: s.cellsTall,
+                modifierItems: s.modifierItems,
                 startingItems: s.items.map((i) => new StaringItem({
                   cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                   item: new Item({
@@ -1435,6 +1999,7 @@ function Layout() {
                       cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
                       cellsLong: s.cellsLong,
                       cellsTall: s.cellsTall,
+                      modifierItems: s.modifierItems,
                       startingItems: s.items.map((i) => new StaringItem({
                         cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                         item: new Item({
@@ -1477,7 +2042,14 @@ function Layout() {
 
         </div>}
 
+        <div className='place-mode-row'>
+          <label htmlFor="tap-and-place-mode">Place Mode: </label>
+          <select id="tap-and-place-mode" name="tap-and-place-mode" value={tapAndPlaceMode ? "tap" : "drag"} onChange={(e) => setTapAndPlaceMode(e.target.value === "tap")} className='place-mode-select'>
+            <option value="drag">Drag and Drop</option>
+            <option value="tap">Tap and Place</option>
+          </select>
 
+        </div>
         {loading && (
           <>
             <div className="loader-backdrop">
@@ -1488,7 +2060,13 @@ function Layout() {
         )} <div className='layout'>
 
 
-          {!isViewingDesign && <Toolbox isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height * cellSize} showAddCustomItem={() => { addCustomItemDialogRef.current?.showModal(); }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
+          {!isViewingDesign && <Toolbox setSelectedItem={setPlacingItem} tapAndPlaceMode={tapAndPlaceMode} isModifyingSections={isCreatingArea && creatingAreaStage == 'modify-sections'} isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height * cellSize} showAddCustomItem={() => {
+            if (creatingAreaStage == "placing-sections" && isCreatingArea) {
+              addSectionDialogRef.current?.showModal();
+            } else if (creatingAreaStage == "placing-items" && isCreatingArea) {
+              addInventoryItemDialogRef.current?.showModal();
+            } else { addCustomItemDialogRef.current?.showModal(); }
+          }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
             new InventoryItem({
               item: new Item({
                 id: inv.item.id,
@@ -1497,6 +2075,11 @@ function Layout() {
                 cellsTall: inv.item.cellsTall,
                 icon: inv.item.icon,
                 displayItem: true,
+                isSectionItem: inv.item.isSectionItem,
+                isSectionModifier: inv.item.isSectionModifier,
+                moveable: inv.item.moveable,
+                rotation: inv.item.rotation,
+                sectionModifierType: inv.item.sectionModifierType
               })
               , quantity: inv.quantity
             })
@@ -1531,6 +2114,7 @@ function Layout() {
               cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
               cellsLong: s.cellsLong,
               cellsTall: s.cellsTall,
+              modifierItems: s.modifierItems,
               startingItems: s.items.map((i) => new StaringItem({
                 cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                 item: new Item({
@@ -1548,10 +2132,55 @@ function Layout() {
             localStorage.setItem('printSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
             window.open(window.location.origin + `/LayItOut/Print/?companyId=${companyId}&areaId=${areaId}&designName=${designName}&designId=${designId}`, '_blank');
           }}>Print</button>
+          <button className='action-btn' onClick={() => {
+
+            const newTemplate = new Template({
+              name: designName,
+              previewImage: design!.previewImage,
+              inventoryItems: design!.inventoryItems,
+              sections: design!.sections,
+              id: design!.name + (Math.random() * 10000).toString()
+            });
+            const updatedTemplates = [...templates.map((t) => new Template({
+              name: t.name,
+              previewImage: t.previewImage,
+              inventoryItems: t.inventoryItems,
+              sections: t.sections.map((s) => new Section({
+                name: s.name,
+                cellId: new CellId({ x: s.cellId.x, y: s.cellId.y }),
+                cellsLong: s.cellsLong,
+                cellsTall: s.cellsTall,
+                modifierItems: s.modifierItems,
+                startingItems: s.startingItems.map((i) => new StaringItem({
+                  cell: new CellId({ x: i.cell.x, y: i.cell.y }),
+                  item: new Item({
+                    id: i.item.id,
+                    name: i.item.name,
+                    cellsLong: i.item.cellsLong,
+                    cellsTall: i.item.cellsTall,
+                    icon: i.item.icon,
+                    starterItem: i.item.starterItem,
+                    moveable: i.item.moveable,
+                    rotation: i.item.rotation
+                  })
+                }))
+              })),
+              id: t.id
+            })), newTemplate];
+            saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
+
+
+              console.log("Template updated successfully");
+              setTemplates(updatedTemplates);
+
+
+              window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=edit-template&templateId=${newTemplate.id}`;
+            });
+          }}>Turn into a Template</button>
 
           <button className='action-btn' onClick={() => {
 
-            window.location.href = `/LayItOut/`;
+            window.location.href = `/LayItOut/?view=desings`;
           }}>Back</button>
 
         </div>}
@@ -1560,16 +2189,36 @@ function Layout() {
 
           <button className='action-btn' onClick={() => {
 
-            window.location.href = `/LayItOut/`;
+            window.location.href = `/LayItOut/?view=areas`;
           }}>Back</button>
 
         </div>}
+        {isCreatingArea && <div className='design-view'>
+          <button className='action-btn' onClick={() => {
+            if (creatingAreaStage == "placing-sections") {
+              placeSections(items.filter((i) => i.isSectionItem));
 
-      </div >
+            } else if (creatingAreaStage == "modify-sections") {
+              saveSectionModifierItems(items.filter((i) => i.isSectionModifier), sections);
+            } else if (creatingAreaStage == "placing-items") {
+              saveArea(sections, inventoryItems);
+            }
+          }
+          }>{creatingAreaStage == "placing-items" ? "Create Area" : "Next"}</button>
+
+          <button className='action-btn' onClick={async () => {
+            setLoading(true);
+            await deleteArea(companyId, areaId);
+            window.location.href = `/LayItOut/`
+          }}>Cancel</button>
+
+        </div >}
+
+      </div>
       <div >
         {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
         {items.map((item) => {
-          return <DraggableItem cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+          return <DraggableItem isCreatingArea={isCreatingArea} isCreatingTemplate={isCreatingTemplate || isEditingTemplate} cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
 
             item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
             onSelect={onSelectItem}
@@ -1589,7 +2238,7 @@ function Layout() {
         </div>
       }
       {
-        !loading && !(isCreatingTemplate || isEditingTemplate || isViewingDesign) && <div className='template-icon' onClick={() => {
+        !loading && !(isCreatingTemplate || isEditingTemplate || isViewingDesign || isCreatingArea) && <div className='template-icon' onClick={() => {
           templateDialogRef.current?.showModal();
           setTemplateDialogOpen(true);
           console.log("Showing template dialog")
@@ -1601,17 +2250,24 @@ function Layout() {
       <TemplateDialog isViewingArea={isViewingArea} dialogRef={templateDialogRef} isOpen={templateDialogOpen} closeDialog={() => {
         templateDialogRef.current?.close();
         setTemplateDialogOpen(false);
-      }} templates={templates} selectTemplate={(temp) => {
-        setLoading(true);
-
-        setTimeout(async () => {
-          //open url in new tab
-
-          const screenshotSections = temp.sections.map((s) => new Section({
+      }} duplicateTemplate={(temp) => {
+        const newTemplate = new Template({
+          name: temp.name + " Copy",
+          previewImage: temp.previewImage,
+          inventoryItems: temp.inventoryItems,
+          sections: temp.sections,
+          id: temp.name + "Copy" + (Math.random() * 10000).toString()
+        });
+        const updatedTemplates = [...templates.map((t) => new Template({
+          name: t.name,
+          previewImage: t.previewImage,
+          inventoryItems: t.inventoryItems,
+          sections: t.sections.map((s) => new Section({
             name: s.name,
-            cellId: new CellId({ x: temp.sections.find((se) => se.name == s.name)!.cellId.x, y: temp.sections.find((se) => se.name == s.name)!.cellId.y }),
+            cellId: new CellId({ x: s.cellId.x, y: s.cellId.y }),
             cellsLong: s.cellsLong,
             cellsTall: s.cellsTall,
+            modifierItems: s.modifierItems,
             startingItems: s.startingItems.map((i) => new StaringItem({
               cell: new CellId({ x: i.cell.x, y: i.cell.y }),
               item: new Item({
@@ -1620,68 +2276,108 @@ function Layout() {
                 cellsLong: i.item.cellsLong,
                 cellsTall: i.item.cellsTall,
                 icon: i.item.icon,
-                starterItem: true,
+                starterItem: i.item.starterItem,
                 moveable: i.item.moveable,
                 rotation: i.item.rotation
               })
             }))
-          }));
+          })),
+          id: t.id
+        })), newTemplate];
+        saveAreaTemplates(companyId, areaId, updatedTemplates).then(() => {
+          templateDialogRef.current?.close();
 
-          localStorage.setItem('screenshotSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-          console.log("Screenshot sections saved to localStorage", screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-          localStorage.setItem('screenshot', '');
-          setTakingPhoto(true);
-          window.addEventListener('storage', async (event) => {
-            console.log("Storage event", event);
-            if (event.key === 'screenshot') {
-              setTakingPhoto(false);
-              const updatedDesign = new Design({
-                name: designName,
-                previewImage: event.newValue!,
-                areaId: areaId,
-                inventoryItems: temp.inventoryItems,
-                sections: temp.sections.map((s) => new Section({
-                  name: s.name,
-                  cellId: new CellId({ x: temp.sections.find((se) => se.name == s.name)!.cellId.x, y: temp.sections.find((se) => se.name == s.name)!.cellId.y }),
-                  cellsLong: s.cellsLong,
-                  cellsTall: s.cellsTall,
-                  startingItems: s.startingItems.map((i) => new StaringItem({
-                    cell: new CellId({ x: i.cell.x, y: i.cell.y }),
-                    item: new Item({
-                      id: i.item.id,
-                      name: i.item.name,
-                      cellsLong: i.item.cellsLong,
-                      cellsTall: i.item.cellsTall,
-                      icon: i.item.icon,
-                      starterItem: true,
-                      moveable: i.item.moveable,
-                      rotation: i.item.rotation
-                    })
-                  }))
-                })),
-                id: designId
-              });
-              console.log("UPDATED DESIGN", updatedDesign);
-              updateAreaDesign(companyId, areaId, updatedDesign).then(() => {
-                console.log("Design updated successfully");
-                setCanSave(false);
-                setLoading(false);
-                window.location.reload();
+          console.log("Template updated successfully");
+          setTemplates(updatedTemplates);
+          setTemplateDialogOpen(false);
+
+          window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=edit-template&templateId=${newTemplate.id}`;
+        });
+      }}
+
+        templates={templates} selectTemplate={(temp) => {
+          setLoading(true);
+
+          setTimeout(async () => {
+            //open url in new tab
+
+            const screenshotSections = temp.sections.map((s) => new Section({
+              name: s.name,
+              cellId: new CellId({ x: temp.sections.find((se) => se.name == s.name)!.cellId.x, y: temp.sections.find((se) => se.name == s.name)!.cellId.y }),
+              cellsLong: s.cellsLong,
+              cellsTall: s.cellsTall,
+              modifierItems: s.modifierItems,
+              startingItems: s.startingItems.map((i) => new StaringItem({
+                cell: new CellId({ x: i.cell.x, y: i.cell.y }),
+                item: new Item({
+                  id: i.item.id,
+                  name: i.item.name,
+                  cellsLong: i.item.cellsLong,
+                  cellsTall: i.item.cellsTall,
+                  icon: i.item.icon,
+                  starterItem: true,
+                  moveable: i.item.moveable,
+                  rotation: i.item.rotation
+                })
+              }))
+            }));
+
+            localStorage.setItem('screenshotSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
+            console.log("Screenshot sections saved to localStorage", screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
+            localStorage.setItem('screenshot', '');
+            setTakingPhoto(true);
+            window.addEventListener('storage', async (event) => {
+              console.log("Storage event", event);
+              if (event.key === 'screenshot') {
+                setTakingPhoto(false);
+                const updatedDesign = new Design({
+                  name: designName,
+                  previewImage: event.newValue!,
+                  areaId: areaId,
+                  inventoryItems: temp.inventoryItems,
+                  sections: temp.sections.map((s) => new Section({
+                    name: s.name,
+                    cellId: new CellId({ x: temp.sections.find((se) => se.name == s.name)!.cellId.x, y: temp.sections.find((se) => se.name == s.name)!.cellId.y }),
+                    cellsLong: s.cellsLong,
+                    cellsTall: s.cellsTall,
+                    modifierItems: s.modifierItems,
+                    startingItems: s.startingItems.map((i) => new StaringItem({
+                      cell: new CellId({ x: i.cell.x, y: i.cell.y }),
+                      item: new Item({
+                        id: i.item.id,
+                        name: i.item.name,
+                        cellsLong: i.item.cellsLong,
+                        cellsTall: i.item.cellsTall,
+                        icon: i.item.icon,
+                        starterItem: true,
+                        moveable: i.item.moveable,
+                        rotation: i.item.rotation
+                      })
+                    }))
+                  })),
+                  id: designId
+                });
+                console.log("UPDATED DESIGN", updatedDesign);
+                updateAreaDesign(companyId, areaId, updatedDesign).then(() => {
+                  console.log("Design updated successfully");
+                  setCanSave(false);
+                  setLoading(false);
+                  window.location.reload();
 
 
-              });
-            }
-          })
-          // open the url in the background
+                });
+              }
+            })
+            // open the url in the background
 
 
 
 
 
 
-        }, 500)
+          }, 500)
 
-      }} />
+        }} />
       < LayoutDialog dialogRef={layoutDialogRef} closeDialog={() => {
         layoutDialogRef.current?.close();
         setLayoutDialogOpen(false);
@@ -1692,7 +2388,19 @@ function Layout() {
 
       }} />
 
-      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src='https://trackerjo.github.io/LayItOut/Preview/' width={totalWidth * cellSize + 20} height={totalHeight * cellSize + 20}></iframe>}
+      <AddSectionDialog dialogRef={addSectionDialogRef} closeDialog={() => {
+        addSectionDialogRef.current?.close();
+      }} addSection={addInventoryItem} />
+
+      <AddInventoryItemDialog dialogRef={addInventoryItemDialogRef} closeDialog={() => {
+        addInventoryItemDialogRef.current?.close();
+      }} addInventoryItem={addInventoryItem} />
+
+      <PlacingItem item={placingItem} setSelectingItem={() => {
+        setPlacingItem(null);
+      }} canPlaceItem={canPlaceItem} placeItem={placeItem} highlightCells={highlightCells} unHighlightCells={unHighlightCells} cellSize={cellSize} />
+
+      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src={window.location.origin + '/LayItOut/Preview/'} width={totalWidth * cellSize + 20} height={totalHeight * cellSize + 20}></iframe>}
     </>
   )
 }

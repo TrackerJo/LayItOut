@@ -39,7 +39,7 @@ function AddCustomItemDialog({ dialogRef, closeDialog, addInventoryItem }: Custo
 
 
                 <br />
-                <button className='custom-item-dialog-add' onClick={() => {
+                <button className='action-btn' onClick={() => {
                     if (itemName.trim() === "") {
                         alert("Item name cannot be empty");
                         return;
@@ -67,7 +67,7 @@ function AddCustomItemDialog({ dialogRef, closeDialog, addInventoryItem }: Custo
                 }}>Add Item</button>
                 <br />
                 <br />
-                <button className='custom-item-dialog-close' onClick={closeDialog}>Close</button>
+                <button className='action-btn' onClick={closeDialog}>Close</button>
 
 
             </div>

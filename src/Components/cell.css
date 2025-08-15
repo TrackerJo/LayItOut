@@ -363,10 +363,10 @@
     /* animation: pulseGreen 0.6s ease-in-out infinite alternate; */
 }
 
-.cell.hasItem .cell-border {
+/* .cell.hasItem .cell-border {
     background: rgba(99, 102, 241, 0.05);
     border-color: rgba(99, 102, 241, 0.2);
-}
+} */
 
 @keyframes pulseGreen {
     0% {

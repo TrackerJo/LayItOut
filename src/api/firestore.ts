@@ -153,3 +153,56 @@ export async function updateAreaDesign(companyId: string, areaId: string, design
         await setDoc(designRef, design.toDoc());
     }
 }
+
+export async function createCompanyArea(companyId: string, area: Area): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not creating area");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", area.id);
+        await setDoc(areaRef, area.toDoc());
+    }
+}
+
+export async function placeAreaSections(companyId: string, areaId: string, sections: Section[], newWidth: number, newHeight: number): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not updating sections");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", areaId);
+        await updateDoc(areaRef, {
+            sections: sections.map((section) => section.toDoc()),
+            width: newWidth,
+            height: newHeight
+        });
+    }
+}
+
+export async function saveAreaSections(companyId: string, areaId: string, sections: Section[]): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not saving sections");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", areaId);
+        await updateDoc(areaRef, {
+            sections: sections.map((section) => section.toDoc())
+        });
+    }
+}
+
+
+
+
+export async function deleteArea(companyId: string, areaId: string): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not deleting area");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const areaRef = doc(companyRef, "areas", areaId);
+        await deleteDoc(areaRef);
+    }
+}

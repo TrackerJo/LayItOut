@@ -6,7 +6,7 @@ import '../index.css'
 import AreaComponent from '../Components/area';
 import type { CellProps } from '../Components/cell';
 import DraggableItem from '../Components/draggable_item';
-import { Area, CellId, Item, Section, StaringItem, Template } from '../constants';
+import { CellId, Item, Section, StaringItem } from '../constants';
 
 
 
@@ -226,6 +226,7 @@ function Print() {
         cellsLong: section.cellsLong,
         cellsTall: section.cellsTall,
         startingItems: section.startingItems,
+        modifierItems: section.modifierItems,
         items: section.startingItems.map((i) => new Item({
           id: i.item.id,
           name: i.item.name,
@@ -248,6 +249,7 @@ function Print() {
         cellsLong: section.cellsLong,
         cellsTall: section.cellsTall,
         startingItems: section.startingItems,
+        modifierItems: section.modifierItems,
         items: section.startingItems.map((i) => new Item({
           id: i.item.id,
           name: i.item.name,
@@ -320,7 +322,7 @@ function Print() {
       </div>
       {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
       {items.map((item) => {
-        return <DraggableItem cellSize={cellSize} isViewingDesign={true} removeItem={() => { }} visible={true}
+        return <DraggableItem isCreatingArea={false} isCreatingTemplate={false} cellSize={cellSize} isViewingDesign={true} removeItem={() => { }} visible={true}
 
           item={item} canPlaceItem={() => { return false }} placeItem={() => { }} deleteItemRotate={() => { }} highlightCells={() => { }} unHighlightCells={() => { }} key={item.id} deleteItem={() => { }} isSelected={false}
           onSelect={() => { }}

@@ -9,11 +9,13 @@ type DisplayItemProps = {
     inventoryItem: InventoryItem
     addDraggingItem: (item: Item) => void,
     removeItem: (item: Item) => void,
+    setSelectedItem: (item: Item | null) => void,
+    tapAndPlaceMode: boolean
 
 
 }
 
-function DisplayItem({ inventoryItem, addDraggingItem, removeItem }: DisplayItemProps) {
+function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedItem, tapAndPlaceMode }: DisplayItemProps) {
     const displayRef = useRef<HTMLDivElement>(null)
     const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
     const textRef = useRef<HTMLParagraphElement>(null);
@@ -87,7 +89,8 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem }: DisplayItem
     };
     return (<div className="display">
 
-        <div ref={displayRef} id={inventoryItem.item.id} className={`display-item`} style={{ width: `${inventoryItem.item.cellsLong * 10}px`, height: `${inventoryItem.item.cellsTall * 10}px` }} onMouseDown={(e) => {
+        <div ref={displayRef} id={inventoryItem.item.id} className={inventoryItem.item.isSectionItem ? `display-section` : `display-item ${inventoryItem.item.isSectionModifier ? inventoryItem.item.sectionModifierType!.toString() : ""}`} style={{ width: `${inventoryItem.item.cellsLong * 10}px`, height: `${inventoryItem.item.cellsTall * 10}px` }} onMouseDown={(e) => {
+            if (tapAndPlaceMode) return;
             e.preventDefault();
             e.stopPropagation();
             inventoryItem.item.initialElement = displayRef.current!
@@ -102,12 +105,22 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem }: DisplayItem
                 icon: inventoryItem.item.icon,
                 moveable: inventoryItem.item.moveable,
                 starterItem: inventoryItem.item.starterItem,
-                displayItem: inventoryItem.item.isDisplayItem
+                displayItem: inventoryItem.item.isDisplayItem,
+                isSectionItem: inventoryItem.item.isSectionItem
             }))
             addDraggingItem(inventoryItem.item)
 
+        }} onClick={(e) => {
+            if (!tapAndPlaceMode) return;
+            e.preventDefault();
+            e.stopPropagation();
+            inventoryItem.item.initialElement = displayRef.current!
+            inventoryItem.item.id = inventoryItem.item.name + (Math.random() * 10000).toString()
+            setSelectedItem(inventoryItem.item);
+
         }}
             onTouchStart={(e) => {
+                if (tapAndPlaceMode) return;
                 e.preventDefault();
                 e.stopPropagation();
 
@@ -129,8 +142,8 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem }: DisplayItem
                 addDraggingItem(inventoryItem.item)
 
             }}>
-            {inventoryItem.item.icon.includes("custom-") ?
-                <div className="custom-icon">
+            {inventoryItem.item.isSectionModifier ? null : inventoryItem.item.icon.includes("custom-") ?
+                <div className={inventoryItem.item.isSectionItem ? "custom-section" : "custom-icon"}>
                     <div>
 
 
@@ -145,7 +158,7 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem }: DisplayItem
 
 
         <p>{inventoryItem.item.name}</p>
-        <p className="quantity">x{inventoryItem.quantity}</p>
+        {inventoryItem.quantity > 0 && <p className="quantity">x{inventoryItem.quantity}</p>}
     </div >
     )
 }

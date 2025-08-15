@@ -14,7 +14,7 @@
     justify-content: center;
     flex-direction: column;
 
-    border: 1px solid black;
+    border: 1px dashed rgba(59, 130, 246, 0.4);
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.12),
         0 2px 8px rgba(0, 0, 0, 0.08),

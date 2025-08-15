@@ -6,11 +6,12 @@ import PlusIcon from "./assets/plus.png";
 import { useEffect, useRef, useState } from "react";
 import type { Area, Design } from "./constants";
 import { isLoggedIn, logout } from "./api/auth";
-import { createAreaDesign, deleteDesign, getAreaDesigns, getCompanyAreas } from "./api/firestore";
+import { createAreaDesign, createCompanyArea, deleteDesign, getAreaDesigns, getCompanyAreas } from "./api/firestore";
 import AreaTile from "./Components/area_tile";
 import CreateDesignDialog from "./Components/create_design_dialog";
 import DesignTile from "./Components/design_tile";
 import AccountDialog from "./Components/account_dialog";
+import CreateAreaDialog from "./Components/create_area_dialog";
 
 createRoot(document.getElementById('root')!).render(
 
@@ -20,6 +21,7 @@ createRoot(document.getElementById('root')!).render(
 
 
 function App() {
+    const [isMobile, setIsMobile] = useState<boolean>(/Mobi|Android/i.test(navigator.userAgent));
     const [selectedNav, setSelectedNav] = useState<string>("designs");
     const [designs, setDesigns] = useState<Design[]>([]);
     const [areas, setAreas] = useState<Area[]>([]);
@@ -27,8 +29,17 @@ function App() {
 
     const accountDialogRef = useRef<HTMLDialogElement>(null);
     const createDesignRef = useRef<HTMLDialogElement>(null);
+    const createAreaRef = useRef<HTMLDialogElement>(null);
+
     useEffect(() => {
         isLoggedIn(() => { })
+        const urlParams = new URLSearchParams(window.location.search);
+        const view = urlParams.get("view");
+        if (view === "designs") {
+            setSelectedNav("designs");
+        } else if (view === "areas") {
+            setSelectedNav("areas");
+        }
         async function fetchContent() {
             const companyId = localStorage.getItem("companyId");
             if (!companyId) {
@@ -116,15 +127,16 @@ function App() {
                             </div>
 
                         }
-                        <div className="plus-icon" onClick={() => {
+                        {selectedNav == "designs" || !isMobile ? <div className="plus-icon" onClick={() => {
                             if (selectedNav == "designs") {
                                 createDesignRef.current?.showModal();
                             } else {
+                                createAreaRef.current?.showModal();
                             }
                         }}>
                             <img src={PlusIcon} alt="Plus Icon" />
 
-                        </div>
+                        </div> : null}
                     </div>
 
 
@@ -137,6 +149,12 @@ function App() {
             }} />
 
             <AccountDialog dialogRef={accountDialogRef} closeDialog={() => accountDialogRef.current?.close()} />
+            <CreateAreaDialog dialogRef={createAreaRef} closeDialog={() => createAreaRef.current?.close()} createArea={async (area) => {
+                await createCompanyArea(localStorage.getItem("companyId")!, area);
+                setAreas([...areas, area]);
+                createAreaRef.current?.close();
+                window.location.href = `/LayItOut/Layout/?companyId=${localStorage.getItem("companyId")}&areaId=${area.id}&type=create-area&stage=placing-sections`;
+            }} />
         </>
     );
 }

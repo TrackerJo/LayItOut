@@ -1,4 +1,4 @@
-.create-design-dialog {
+.create-area-dialog {
     background-color: rgba(255, 255, 255, 1);
 
     box-shadow:
@@ -12,7 +12,7 @@
     z-index: 100;
 }
 
-.create-design-dialog-div h2 {
+.create-area-dialog-div h2 {
     font-size: 32px;
     font-weight: bold;
     margin-bottom: 16px;
@@ -22,8 +22,20 @@
 
 }
 
+.create-area-dialog-close {
+    cursor: pointer;
+    background-color: rgba(59, 130, 246, 0.9);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
 
-.create-design-row {
+}
+
+.create-area-row {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -32,13 +44,13 @@
     gap: 16px;
 }
 
-.create-design-row label {
+.create-area-row label {
     font-size: 16px;
     color: #333;
     flex: 1;
 }
 
-.create-design-row input {
+.create-area-row input {
     padding: 8px;
     font-size: 16px;
     outline: none !important;
@@ -52,34 +64,33 @@
 
 
 
-.create-design-size input {
+.create-area-size input {
     width: 50px;
 }
 
-.create-design-size label {
+.create-area-size label {
     margin-right: 10px;
 }
 
-.create-design-size {
+.create-area-size {
     display: block !important;
 
 }
 
-.create-design-size span {
+.create-area-size span {
     font-size: 16px;
     color: #333;
 
 }
 
-.create-design-row select {
-    padding: 8px;
+.create-area-dialog-add {
+    cursor: pointer;
+    background-color: rgba(59, 130, 246, 0.9);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
     font-size: 16px;
-    outline: none !important;
-    border: 2px solid rgba(59, 130, 246, 0.9);
-    border-radius: 4px;
-    background-color: white;
-    flex: 2;
-    color: black;
-    max-width: 320px;
-
+    font-weight: bold;
+    transition: background-color 0.3s ease;
 }

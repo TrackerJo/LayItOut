@@ -13,9 +13,10 @@ type TemplateDialogProps = {
     isOpen: boolean;
     isViewingArea: boolean;
     selectTemplate?: (template: Template) => void;
+    duplicateTemplate?: (template: Template) => void;
 };
 
-function TemplateDialog({ dialogRef, closeDialog, templates, isOpen, isViewingArea, selectTemplate }: TemplateDialogProps) {
+function TemplateDialog({ dialogRef, closeDialog, templates, isOpen, isViewingArea, selectTemplate, duplicateTemplate }: TemplateDialogProps) {
 
 
     const [isMobile, setIsMobile] = useState<boolean>(/Mobi|Android/i.test(navigator.userAgent));
@@ -105,6 +106,12 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen, isViewingAr
                                         if (selectTemplate) selectTemplate(allTemplates.find((t) => t.name === temp)!);
                                     }
                                 }}>{isViewingArea ? "Edit" : "Select"}</button>
+                                {isViewingArea && <button className='action-btn' onClick={() => {
+                                    if (loading) return;
+
+                                    setLoading(true);
+                                    if (duplicateTemplate) duplicateTemplate(allTemplates.find((t) => t.name === temp)!);
+                                }}>Duplicate</button>}
                                 {isViewingArea && <button className='action-btn' onClick={() => {
                                     if (loading) return;
 

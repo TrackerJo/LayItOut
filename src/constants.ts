@@ -21,6 +21,21 @@ export class CellId {
 
 }
 
+export const SectionModifierType = {
+    TopWall: "TopWall",
+    BottomWall: "BottomWall",
+    LeftWall: "LeftWall",
+    RightWall: "RightWall",
+    TopRightCornerWall: "TopRightCornerWall",
+    TopLeftCornerWall: "TopLeftCornerWall",
+    BottomRightCornerWall: "BottomRightCornerWall",
+    BottomLeftCornerWall: "BottomLeftCornerWall",
+    Door: "Door",
+    Window: "Window"
+} as const;
+
+export type SectionModifierType = typeof SectionModifierType[keyof typeof SectionModifierType];
+
 export class Item {
     name: string;
     id: string;
@@ -34,17 +49,23 @@ export class Item {
     starterItem: boolean;
     isDisplayItem: boolean;
     sectionCell?: CellId;
+    isSectionItem: boolean;
+    isSectionModifier: boolean;
+    sectionModifierType?: SectionModifierType;
 
 
-    constructor({ id, cellsLong, cellsTall, initialElement, name, icon, moveable, starterItem, displayItem, sectionCell, rotation }: {
+    constructor({ id, cellsLong, cellsTall, initialElement, name, icon, moveable, starterItem, displayItem, sectionCell, rotation, isSectionItem, sectionModifierType, isSectionModifier }: {
         id: string, cellsLong: number, cellsTall: number, initialElement?: HTMLElement,
+        isSectionItem?: boolean,
         name: string,
         icon: string,
         moveable?: boolean,
         starterItem?: boolean,
         displayItem?: boolean,
         sectionCell?: CellId,
-        rotation?: number
+        rotation?: number,
+        isSectionModifier?: boolean,
+        sectionModifierType?: SectionModifierType
     }) {
         this.id = id;
         this.cellsLong = cellsLong;
@@ -59,6 +80,9 @@ export class Item {
         this.starterItem = starterItem ?? false;
         this.isDisplayItem = displayItem ?? false;
         this.sectionCell = sectionCell;
+        this.isSectionItem = isSectionItem ?? false;
+        this.isSectionModifier = isSectionModifier ?? false;
+        this.sectionModifierType = sectionModifierType;
 
 
     }
@@ -73,7 +97,11 @@ export class Item {
             moveable: data.moveable,
             starterItem: data.starterItem,
             displayItem: data.displayItem || false,
-            rotation: data.rotation || 0, // Ensure rotation is handled
+            rotation: data.rotation || 0,
+            isSectionItem: data.isSectionItem || false,
+
+            isSectionModifier: data.isSectionModifier || false,
+            sectionModifierType: data.sectionModifierType == "" ? undefined : data.sectionModifierType,
         });
     }
 
@@ -88,6 +116,9 @@ export class Item {
             starterItem: data.starterItem,
             displayItem: data.displayItem || false,
             rotation: data.rotation || 0, // Ensure rotation is handled
+            isSectionItem: data.isSectionItem || false,
+            isSectionModifier: data.isSectionModifier || false,
+            sectionModifierType: data.sectionModifierType == "" ? undefined : data.sectionModifierType, // Handle optional sectionModifierType
         });
     }
 
@@ -101,7 +132,10 @@ export class Item {
             moveable: this.moveable,
             starterItem: this.starterItem,
             displayItem: this.isDisplayItem,
-            rotation: this.rotation || 0 // Ensure rotation is included
+            rotation: this.rotation || 0, // Ensure rotation is included
+            isSectionItem: this.isSectionItem || false,
+            isSectionModifier: this.isSectionModifier || false,
+            sectionModifierType: this.sectionModifierType || "", // Handle optional sectionModifierType
         };
     }
 
@@ -115,6 +149,9 @@ export class Item {
             moveable: this.moveable,
             starterItem: this.starterItem,
             displayItem: this.isDisplayItem,
+            isSectionItem: this.isSectionItem || false,
+            isSectionModifier: this.isSectionModifier || false,
+            sectionModifierType: this.sectionModifierType || "",
 
             rotation: this.rotation || 0 // Ensure rotation is included
         };
@@ -170,6 +207,34 @@ export class StaringItem {
         this.item = item;
     }
 
+    static fromDoc(data: DocumentData): StaringItem {
+        return new StaringItem({
+            cell: CellId.fromString(data.cell),
+            item: Item.fromDoc(data.item)
+        });
+    }
+
+    static fromJSON(data: any): StaringItem {
+        return new StaringItem({
+            cell: CellId.fromString(data.cell),
+            item: Item.fromJSON(data.item)
+        });
+    }
+
+    toJSON(): object {
+        return {
+            cell: this.cell.toId(),
+            item: this.item.toJSON()
+        };
+    }
+
+    toDoc(): DocumentData {
+        return {
+            cell: this.cell.toId(),
+            item: this.item.toDoc()
+        };
+    }
+
 }
 
 export class Section {
@@ -180,15 +245,17 @@ export class Section {
     cellsTall: number;
     startingItems: StaringItem[];
     items: Item[];
+    modifierItems: StaringItem[];
 
 
-    constructor({ name, cellId, cellsLong, cellsTall, startingItems, items }: {
+    constructor({ name, cellId, cellsLong, cellsTall, startingItems, items, modifierItems }: {
         name: string,
         cellId: CellId,
         cellsLong: number,
         cellsTall: number,
         startingItems: StaringItem[],
-        items?: Item[]
+        items?: Item[],
+        modifierItems: StaringItem[]
     }) {
         this.name = name;
         this.cellId = cellId;
@@ -197,6 +264,7 @@ export class Section {
         this.startingItems = startingItems;
         this.cellElement = null;
         this.items = items || [];
+        this.modifierItems = modifierItems;
     }
 
     static fromJSON(section: any): Section {
@@ -209,7 +277,9 @@ export class Section {
             startingItems: data.startingItems.map((item: any) => new StaringItem({
                 cell: CellId.fromString(item.cell),
                 item: Item.fromJSON(item.item)
-            }))
+            })),
+            items: data.items ? data.items.map((item: any) => Item.fromJSON(item)) : [],
+            modifierItems: data.modifierItems ? data.modifierItems.map((item: any) => StaringItem.fromJSON(item)) : []
         });
     }
 
@@ -222,7 +292,9 @@ export class Section {
             startingItems: data.startingItems ? data.startingItems.map((item: any) => new StaringItem({
                 cell: CellId.fromString(item.cell),
                 item: Item.fromDoc(item.item)
-            })) : []
+            })) : [],
+            items: data.items ? data.items.map((item: any) => Item.fromDoc(item)) : [],
+            modifierItems: data.modifierItems ? data.modifierItems.map((item: any) => StaringItem.fromDoc(item)) : []
         });
     }
 
@@ -235,11 +307,14 @@ export class Section {
             startingItems: this.startingItems.map(item => ({
                 cell: item.cell.toId(),
                 item: item.item.toJSON()
-            }))
+            })),
+            items: this.items.map(item => item.toJSON()),
+            modifierItems: this.modifierItems.map(item => item.toJSON())
         };
     }
 
     toDoc(): DocumentData {
+        console.log("Section toDoc", this.items);
         return {
             name: this.name,
             cellId: this.cellId.toId(),
@@ -248,7 +323,9 @@ export class Section {
             startingItems: this.startingItems.map(item => ({
                 cell: item.cell.toId(),
                 item: item.item.toDoc()
-            }))
+            })),
+            items: this.items.map(item => item.toDoc()),
+            modifierItems: this.modifierItems.map(item => item.toDoc())
         };
     }
 }
@@ -331,14 +408,18 @@ export class Area {
     templates: Template[];
     inventoryItems: InventoryItem[];
     previewImage: string;
+    width: number;
+    height: number;
 
-    constructor({ name, sections, templates, inventoryItems, id, previewImage }: {
+    constructor({ name, sections, templates, inventoryItems, id, previewImage, width, height }: {
         name: string,
         sections: Section[],
         templates: Template[],
         inventoryItems: InventoryItem[],
         id: string,
-        previewImage: string
+        previewImage: string,
+        width: number,
+        height: number
 
     }) {
         this.name = name;
@@ -347,6 +428,8 @@ export class Area {
         this.inventoryItems = inventoryItems;
         this.id = id;
         this.previewImage = previewImage;
+        this.width = width;
+        this.height = height;
     }
 
     static fromDoc(data: DocumentData): Area {
@@ -356,7 +439,9 @@ export class Area {
             sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : [],
             templates: data.templates ? data.templates.map((template: any) => Template.fromDoc(template)) : [],
             inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromDoc(item)) : [],
-            previewImage: data.previewImage || ""
+            previewImage: data.previewImage || "",
+            width: data.width,
+            height: data.height
         });
     }
 
@@ -367,7 +452,9 @@ export class Area {
             sections: data.sections ? data.sections.map((section: any) => Section.fromJSON(section)) : [],
             templates: data.templates ? data.templates.map((template: any) => Template.fromJSON(template)) : [],
             inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromJSON(item)) : [],
-            previewImage: data.previewImage || ""
+            previewImage: data.previewImage || "",
+            width: data.width,
+            height: data.height
         });
     }
 
@@ -378,7 +465,9 @@ export class Area {
             sections: this.sections.map(section => section.toJSON()),
             templates: this.templates.map(template => template.toJSON()),
             inventoryItems: this.inventoryItems.map(item => item.toJSON()),
-            previewImage: this.previewImage
+            previewImage: this.previewImage,
+            width: this.width,
+            height: this.height
         };
     }
 
@@ -386,10 +475,12 @@ export class Area {
         return {
             name: this.name,
             id: this.id,
-            sections: this.sections.map(section => section.toJSON()),
+            sections: this.sections.map(section => section.toDoc()),
             templates: this.templates.map(template => template.toDoc()),
             inventoryItems: this.inventoryItems.map(item => item.toDoc()),
-            previewImage: this.previewImage || ""
+            previewImage: this.previewImage || "",
+            width: this.width,
+            height: this.height
         };
     }
 }
@@ -473,3 +564,36 @@ export class Design {
         };
     }
 }
+
+export const premadeItems: Item[] = [
+    new Item({
+        id: "rectangular-table",
+        name: "Rectangular Table",
+        icon: "https://firebasestorage.googleapis.com/v0/b/kazoom-layitout.firebasestorage.app/o/public%2Frectangle_Table.png?alt=media&token=b6a58b65-3082-4fa7-93a4-f93b71c01dc8",
+        cellsLong: 8,
+        cellsTall: 4,
+        moveable: true,
+        starterItem: true,
+        displayItem: true
+    }),
+    new Item({
+        id: "rounded-table",
+        name: "Rounded Table",
+        icon: "https://firebasestorage.googleapis.com/v0/b/kazoom-layitout.firebasestorage.app/o/public%2Frounded_table.png?alt=media&token=f7c546ad-0247-420e-a146-46346751de00",
+        cellsLong: 4,
+        cellsTall: 4,
+        moveable: true,
+        starterItem: true,
+        displayItem: true
+    }),
+    new Item({
+        id: "chair",
+        name: "Chair",
+        icon: "https://firebasestorage.googleapis.com/v0/b/kazoom-layitout.firebasestorage.app/o/public%2FChair.png?alt=media&token=cde7cf8c-35d5-40da-a0ff-7cc96fd1996d",
+        cellsLong: 2,
+        cellsTall: 2,
+        moveable: true,
+        starterItem: true,
+        displayItem: true
+    }),
+]

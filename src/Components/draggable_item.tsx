@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { use, useEffect, useRef, useState } from "react"
 import "./draggable_item.css"
 import { CellId, Item } from "../constants";
 import XMark from "../assets/xmark.png";
@@ -21,10 +21,12 @@ type DraggableItemProps = {
     isUnselecting: boolean
     visible?: boolean,
     isViewingDesign: boolean,
-    cellSize: number
+    cellSize: number,
+    isCreatingArea: boolean,
+    isCreatingTemplate: boolean
 }
 
-function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible, removeItem, isViewingDesign, cellSize }: DraggableItemProps) {
+function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible, removeItem, isViewingDesign, cellSize }: DraggableItemProps) {
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
     const textRef = useRef<HTMLParagraphElement>(null);
@@ -38,6 +40,17 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
 
     const itemRef = useRef<HTMLDivElement>(null);
     const [inViewport, setInViewport] = useState<boolean>(true);
+    const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
+
+    useEffect(() => {
+        window.addEventListener("mousedown", () => setIsMouseDown(true));
+        window.addEventListener("mouseup", () => setIsMouseDown(false));
+        return () => {
+            window.removeEventListener("mousedown", () => setIsMouseDown(true));
+            window.removeEventListener("mouseup", () => setIsMouseDown(false));
+        }
+    }, []);
+
 
     // Helper function to get rotated dimensions
     const getRotatedDimensions = (rotation: number) => {
@@ -334,6 +347,40 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                 // } else {
                 setX(clientX - initialOffsetX)
                 setY(clientY - initialOffsetY + 5)
+                //check if mouse is pressed
+                console.log("Is mouse down:", isMouseDown);
+                // if (isMouseDown) {
+                //     const rotatedDims = getRotatedDimensions(rotation);
+                //     const tempItem = {
+                //         ...item,
+                //         cellsLong: rotatedDims.cellsWide,
+                //         cellsTall: rotatedDims.cellsTall,
+
+                //     };
+
+                //     console.log("Temp item for placement:", tempItem);
+                //     const targetElement = document.elementFromPoint(clientX, clientY) as HTMLElement;
+                //     if (targetElement?.classList?.contains("cell")) {
+                //         console.log("Target element for placement:", targetElement);
+
+                //         if (canPlaceItem(CellId.fromString(targetElement.id), tempItem)) {
+                //             const cellTop = targetElement.offsetTop
+                //             const cellLeft = targetElement.offsetLeft;
+                //             const offset = getRotationOffset(rotation);
+
+                //             // Position the item at the cell location with rotation offset
+                //             const finalX = cellLeft + offset.x;
+                //             const finalY = cellTop + offset.y;
+
+                //             setX(finalX)
+                //             setY(finalY)
+                //             setPrevX(finalX)
+                //             setPrevY(finalY)
+                //             placeItem(CellId.fromString(targetElement.id), tempItem, cell != null ? CellId.fromString(cell.id) : null);
+
+                //         }
+                //     }
+                // }
                 // Adjust for touch offset
                 // }
             };
@@ -441,7 +488,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
             document.ontouchend = null;
             document.body.removeEventListener('touchmove', preventScroll);
         }
-    }, [isDragging, cell, rotation])
+    }, [isDragging, cell, rotation]);
 
     const rotatedDims = getRotatedDimensions(rotation);
 
@@ -473,24 +520,24 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                 <div
                     id={item.id}
                     ref={itemRef}
-                    className={`draggable-item ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""} ${visible ? "" : "invisible"}`}
+                    className={`draggable-item  ${item.isSectionModifier && !item.moveable ? "placed-modifier" : ""} ${item.isSectionModifier ? item.sectionModifierType?.toString() : ""} ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""} ${visible ? "" : "invisible"}`}
                     style={{
                         top: `${y}px`,
                         left: `${x}px`,
-                        width: `${item.cellsLong * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0)}px`,
-                        height: `${item.cellsTall * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0)}px`,
+                        width: `${item.cellsLong * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "LeftWall" || item.sectionModifierType == "RightWall" || item.sectionModifierType?.includes("Corner") ? 1 : 0)}px`,
+                        height: `${item.cellsTall * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "TopWall" || item.sectionModifierType == "BottomWall" || item.sectionModifierType?.includes("Corner") ? 1 : 0)}px`,
                         rotate: `${rotation * 90}deg`,
                         transformOrigin: 'center center',
                         fontSize: `${fontSize}px`
                     }}
-                    onMouseDown={item.moveable && !isViewingDesign ? () => setIsDragging(true) : undefined}
-                    onTouchStart={item.moveable && !isViewingDesign ? (e) => {
+                    onMouseDown={(item.moveable || isCreatingArea || isCreatingTemplate) && !isViewingDesign ? () => setIsDragging(true) : undefined}
+                    onTouchStart={(item.moveable || isCreatingArea || isCreatingTemplate) && !isViewingDesign ? (e) => {
                         e.preventDefault();
                         setIsDragging(true);
                     } : undefined}
                     onClick={(e) => {
                         e.stopPropagation();
-
+                        if ((!item.moveable && !isCreatingArea && !isCreatingTemplate)) return;
                         if (isSelected) {
                             onDeselect();
                         } else {
@@ -499,8 +546,8 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                         }
                     }}
                 >
-                    {item.icon.includes("custom-") ?
-                        <div className="custom-icon" >
+                    {item.isSectionModifier ? null : item.icon.includes("custom-") ?
+                        <div className={item.isSectionItem ? "custom-section" : "custom-icon"} >
                             <div>
                                 <p ref={textRef}>{item.icon.split("custom-")[1]}</p>
 
@@ -563,7 +610,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                                     width: `${rotatedDims.width}px`
                                 }}
                             >
-                                <img
+                                {!item.isSectionModifier && <img
                                     src={Rotate}
                                     alt="rotate"
                                     className={"rotate-icon" + (canRotate ? " can-rotate" : " cannot-rotate")}
@@ -571,7 +618,7 @@ function DraggableItem({ item, canPlaceItem, placeItem, deleteItem, deleteItemRo
                                         e.stopPropagation();
                                         rotateItem();
                                     }}
-                                />
+                                />}
                                 <img
                                     src={XMark}
                                     alt="delete"

@@ -210,6 +210,27 @@ function Layout() {
             })
           }))
 
+          newStartingItems.push(...section.modifierItems.map((item) => {
+            return new StaringItem({
+              cell: new CellId({ x: section.cellId.x + item.cell.x, y: section.cellId.y + item.cell.y }),
+              item: new Item({
+                id: item.item.id,
+                name: item.item.name,
+                cellsLong: item.item.cellsLong,
+                cellsTall: item.item.cellsTall,
+                icon: item.item.icon,
+                initialElement: document.querySelector(`.App #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
+                starterItem: true,
+                moveable: false,
+                isSectionItem: item.item.isSectionItem,
+                isSectionModifier: item.item.isSectionModifier,
+                sectionModifierType: item.item.sectionModifierType, // Ensure section modifier type is set
+                rotation: item.item.rotation || 0 // Ensure rotation is set
+              })
+            })
+          }))
+
+
         }
 
         setSections([...newSections]);
@@ -297,6 +318,7 @@ function Layout() {
         cellsLong: section.cellsLong,
         cellsTall: section.cellsTall,
         startingItems: section.startingItems,
+        modifierItems: section.modifierItems,
         items: section.startingItems.map((i) => new Item({
           id: i.item.id,
           name: i.item.name,
@@ -307,6 +329,7 @@ function Layout() {
           moveable: i.item.moveable,
           starterItem: i.item.starterItem,
           rotation: i.item.rotation,
+
 
         }))
       })
@@ -319,6 +342,7 @@ function Layout() {
         cellsLong: section.cellsLong,
         cellsTall: section.cellsTall,
         startingItems: section.startingItems,
+        modifierItems: section.modifierItems,
         items: section.startingItems.map((i) => new Item({
           id: i.item.id,
           name: i.item.name,
@@ -850,7 +874,7 @@ function Layout() {
       <div id={takingPhoto ? 'capture' : ''}>
         {sections.map((section) => <SectionArea takingPhoto={takingPhoto} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
         {items.map((item) => {
-          return <DraggableItem cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+          return <DraggableItem isCreatingArea={false} isCreatingTemplate={false} cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
 
             item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
             onSelect={onSelectItem}

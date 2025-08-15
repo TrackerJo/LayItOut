@@ -199,3 +199,39 @@ body:has(#screenshot-iframe) #root {
   font-weight: bold;
   margin-bottom: 10px;
 }
+
+.place-mode-select {
+  padding: 8px;
+  font-size: 16px;
+  outline: none !important;
+  border: 2px solid rgba(59, 130, 246, 0.9);
+  border-radius: 4px;
+  background-color: white;
+  flex: 2;
+  color: black;
+  max-width: 320px;
+
+}
+
+.place-mode-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  gap: 16px;
+  color: #333;
+}
+
+.area-creation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(59, 130, 246, 0.9);
+  gap: 16px;
+}
+
+.area-creation-title {
+  margin: 0;
+}
