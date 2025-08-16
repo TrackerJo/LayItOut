@@ -25,8 +25,7 @@
     gap: 8px;
     word-break: break-word;
     padding-bottom: 8px;
-    padding-left: 8px;
-    padding-right: 8px;
+
 }
 
 .area-info h3 {
@@ -36,13 +35,21 @@
     /* allow text break */
 }
 
-.area-preview-img {
+.area-preview-container {
     width: 100px;
-    flex: 2;
+
+
+
     padding: 10px;
 
 }
 
+.area-preview-img {
+    width: 100%;
+
+    border-radius: 4px;
+    object-fit: cover;
+}
 
 .area-actions {
 

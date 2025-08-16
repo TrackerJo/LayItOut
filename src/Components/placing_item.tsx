@@ -248,7 +248,19 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
         const targetElement = document.elementFromPoint(clientX, clientY) as HTMLElement;
 
         if (!targetElement?.classList?.contains("cell")) {
-            setSelectingItem();
+            const rotatedDims = getRotatedDimensions(rotation);
+            const tempItem = {
+                ...item,
+                cellsLong: rotatedDims.cellsWide,
+                cellsTall: rotatedDims.cellsTall
+            };
+            if (isHighlighting) {
+                setIsHighlighting(false);
+                placeMultiItem(tempItem);
+            } else {
+                setSelectingItem();
+
+            }
 
             // setX(prevX)
             // setY(prevY)
@@ -261,15 +273,16 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
                 cellsTall: rotatedDims.cellsTall
             };
 
-            if (!canPlaceItem(CellId.fromString(targetElement.id), tempItem)) {
 
-                // setX(prevX);
-                // setY(prevY);
-                // setIsDragging(false);
-                return;
-            }
 
             if (!isHighlighting) {
+                if (!canPlaceItem(CellId.fromString(targetElement.id), tempItem)) {
+
+                    // setX(prevX);
+                    // setY(prevY);
+                    // setIsDragging(false);
+                    return;
+                }
                 placeItem(CellId.fromString(targetElement.id), tempItem, cell != null ? CellId.fromString(cell.id) : null);
             } else {
                 setIsHighlighting(false);

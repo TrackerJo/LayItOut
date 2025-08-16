@@ -8,8 +8,10 @@ function DesignTile({ design, areaName, onClick, deleteDesign }: { design: Desig
     return (
         <div className="design-tile" onClick={() => onClick(design.id)}>
             {/* <div className="design-tile-content"> */}
+            <div className="design-preview-container">
+                <img src={design.previewImage} alt="" className="design-preview-img" />
+            </div>
 
-            <img src={design.previewImage} alt="" className="design-preview-img" />
             <div className="design-info">
 
                 <h3>{design.name}</h3>

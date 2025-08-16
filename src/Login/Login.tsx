@@ -3,7 +3,7 @@ import "../index.css";
 import "./Login.css";
 
 import { useEffect, useState } from "react";
-import type { Company } from "../constants";
+import type { Company, User } from "../constants";
 import { getCompanies, updateCompany } from "../api/firestore";
 import { isLoggedIn, login, register } from "../api/auth";
 
@@ -18,6 +18,7 @@ createRoot(document.getElementById('root')!).render(
 function Login() {
     const [stage, setStage] = useState<string>("select");
     const [email, setEmail] = useState<string>("");
+    const [name, setName] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [confirmPassword, setConfirmPassword] = useState<string>("");
     const [companyCode, setCompanyCode] = useState<string>("");
@@ -98,13 +99,13 @@ function Login() {
             return;
         }
         setSigningUp(true);
-        const result = await register(email, password);
+        const result = await register(email, password, name);
         if (result === false) {
             alert("Error registering user. Please try again.");
             setSigningUp(false);
             return;
         }
-        company.users.push(result as string);
+        company.users.push((result as User).id);
         await updateCompany(company);
         localStorage.setItem("companyId", company.id);
         setSigningUp(false);
@@ -147,6 +148,11 @@ function Login() {
                             <h2>Sign Up</h2>
                             <br />
                             <br />
+                            <div className="login-item-row">
+                                <label htmlFor="name">Full Name:</label>
+                                <input type="text" id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} />
+                            </div>
+
                             <div className="login-item-row">
                                 <label htmlFor="email">Email:</label>
                                 <input type="text" id="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} />

@@ -6,7 +6,7 @@ import '../index.css'
 import AreaComponent from '../Components/area';
 import type { CellProps } from '../Components/cell';
 import DraggableItem from '../Components/draggable_item';
-import { Area, CellId, Design, InventoryItem, Item, Section, StaringItem, Template } from '../constants';
+import { Area, Booth, CellId, Design, InventoryItem, Item, Section, StaringItem, Template } from '../constants';
 import Toolbox from '../Components/toolbox';
 
 
@@ -22,6 +22,7 @@ import AddCustomItemDialog from '../Components/add_custom_item_dialog';
 import { getArea, getAreaDesign, saveAreaTemplates, saveCompanyArea, updateAreaDesign } from '../api/firestore';
 import { getLocalArea } from '../api/local_firestore';
 import { createRoot } from 'react-dom/client';
+import BoothItem from '../Components/booth_item';
 
 createRoot(document.getElementById('root')!).render(
 
@@ -70,6 +71,7 @@ function Layout() {
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [takingPhoto, setTakingPhoto] = useState<boolean>(false);
   const [tookScreenshot, setTookScreenshot] = useState<boolean>(false);
+  const [booths, setBooths] = useState<Booth[]>([]);
 
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
 
@@ -186,6 +188,7 @@ function Layout() {
 
       setTimeout(() => {
         const newStartingItems: StaringItem[] = []
+        const newBooths: Booth[] = [];
         const newSections: Section[] = [...sectionsToGenerate];
         for (const section of newSections) {
 
@@ -197,15 +200,10 @@ function Layout() {
             return new StaringItem({
               cell: new CellId({ x: section.cellId.x + item.cell.x, y: section.cellId.y + item.cell.y }),
               item: new Item({
-                id: item.item.id,
-                name: item.item.name,
-                cellsLong: item.item.cellsLong,
-                cellsTall: item.item.cellsTall,
-                icon: item.item.icon,
+                ...item.item, // copies all properties
                 initialElement: document.querySelector(`.App #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
                 starterItem: true,
-                moveable: item.item.moveable,
-                rotation: item.item.rotation || 0 // Ensure rotation is set
+                // Ensure rotation is set
               })
             })
           }))
@@ -214,19 +212,18 @@ function Layout() {
             return new StaringItem({
               cell: new CellId({ x: section.cellId.x + item.cell.x, y: section.cellId.y + item.cell.y }),
               item: new Item({
-                id: item.item.id,
-                name: item.item.name,
-                cellsLong: item.item.cellsLong,
-                cellsTall: item.item.cellsTall,
-                icon: item.item.icon,
+                ...item.item, // copies all properties
                 initialElement: document.querySelector(`.App #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
                 starterItem: true,
-                moveable: false,
-                isSectionItem: item.item.isSectionItem,
-                isSectionModifier: item.item.isSectionModifier,
-                sectionModifierType: item.item.sectionModifierType, // Ensure section modifier type is set
-                rotation: item.item.rotation || 0 // Ensure rotation is set
+                // Ensure rotation is set
               })
+            })
+          }))
+
+          newBooths.push(...section.booths.map((booth) => {
+            return new Booth({
+              ...booth, // copies all properties
+              initialElement: document.querySelector(`.App #${booth.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
             })
           }))
 
@@ -260,6 +257,26 @@ function Layout() {
 
 
           setItems((old) => [...old, startingItem.item])
+        }
+
+        for (const booth of newBooths) {
+
+
+          // Get the current rotation from the item
+
+
+          for (let i = 0; i < booth.cellsTall; i++) {
+            for (let j = 0; j < booth.cellsLong; j++) {
+              newCells[booth.cell.y + i][booth.cell.x + j].hasItem = true;
+              newCells[booth.cell.y + i][booth.cell.x + j].itemId = booth.id;
+            }
+          }
+
+          booth.initialElement = document.querySelector(`.App #${booth.cell.toId()}.cell:not(.cell-border)`) as HTMLElement;
+
+
+
+          setBooths((old) => [...old, booth])
         }
 
         setCells([...newCells]);
@@ -319,16 +336,9 @@ function Layout() {
         cellsTall: section.cellsTall,
         startingItems: section.startingItems,
         modifierItems: section.modifierItems,
+        booths: section.booths,
         items: section.startingItems.map((i) => new Item({
-          id: i.item.id,
-          name: i.item.name,
-          sectionCell: i.cell,
-          cellsLong: i.item.cellsLong,
-          cellsTall: i.item.cellsTall,
-          icon: i.item.icon,
-          moveable: i.item.moveable,
-          starterItem: i.item.starterItem,
-          rotation: i.item.rotation,
+          ...i.item,
 
 
         }))
@@ -343,16 +353,9 @@ function Layout() {
         cellsTall: section.cellsTall,
         startingItems: section.startingItems,
         modifierItems: section.modifierItems,
+        booths: section.booths,
         items: section.startingItems.map((i) => new Item({
-          id: i.item.id,
-          name: i.item.name,
-          sectionCell: i.cell,
-          cellsLong: i.item.cellsLong,
-          cellsTall: i.item.cellsTall,
-          icon: i.item.icon,
-          moveable: i.item.moveable,
-          starterItem: i.item.starterItem,
-          rotation: i.item.rotation,
+          ...i.item, // copies all properties
 
         }))
       })
@@ -420,15 +423,9 @@ function Layout() {
 
       console.log("Adding item to items", startingItem.item.initialElement)
       newItems.push(new Item({
-        id: startingItem.item.id,
-        name: startingItem.item.name,
-        cellsLong: startingItem.item.cellsLong,
-        cellsTall: startingItem.item.cellsTall,
-        icon: startingItem.item.icon,
-        initialElement: startingItem.item.initialElement,
+        ...startingItem.item, // copies all properties
+
         starterItem: true,
-        moveable: startingItem.item.moveable,
-        rotation: startingItem.item.rotation,
       }));
     }
 
@@ -444,15 +441,9 @@ function Layout() {
       //check if any of the items are already in the list
       const existingItems = old.filter((i) => !newItems.some((newItem) => newItem.id === i.id));
       return [...existingItems, ...newItems.map((item) => new Item({
-        id: item.id,
-        name: item.name,
-        cellsLong: item.cellsLong,
-        cellsTall: item.cellsTall,
-        icon: item.icon,
-        initialElement: item.initialElement,
+        ...item, // copies all properties
+
         starterItem: true,
-        moveable: item.moveable,
-        rotation: item.rotation,
       }))];
     }
 
@@ -648,7 +639,7 @@ function Layout() {
         newInventoryItems[index].quantity += 1;
         return newInventoryItems;
       } else {
-        return [...old, new InventoryItem({ item: new Item({ id: item.id, name: item.name, cellsLong: rotatedDims.cellsWide, cellsTall: rotatedDims.cellsTall, icon: item.icon }), quantity: 1 })];
+        return [...old, new InventoryItem({ item: new Item({ ...item }), quantity: 1 })];
       }
     })
   }
@@ -880,6 +871,13 @@ function Layout() {
             onSelect={onSelectItem}
             isUnselecting={unselectingItemIds.includes(item.id)}
             onDeselect={() => onDeselectItem(item.id)} />
+        })}
+        {booths.map((booth) => {
+          return <BoothItem visible={!isMobile ? true : mobileViewingSection == null ? false : (sections.find((s) => s.name == mobileViewingSection)?.booths.some((i) => i.id === booth.id) ?? false)} booth={booth} isViewingBooth={false} isSelected={selectedItemId == booth.id} cellSize={cellSize} key={booth.id} onSelect={onSelectItem}
+            isUnselecting={unselectingItemIds.includes(booth.id)}
+            onDeselect={() => onDeselectItem(booth.id)} onPickBooth={async (boothId) => {
+
+            }} />
         })}
       </div>
 

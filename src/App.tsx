@@ -4,14 +4,16 @@ import "./App.css";
 import PersonIcon from "./assets/person.png";
 import PlusIcon from "./assets/plus.png";
 import { useEffect, useRef, useState } from "react";
-import type { Area, Design } from "./constants";
+import type { Area, BoothMap, Design } from "./constants";
 import { isLoggedIn, logout } from "./api/auth";
-import { createAreaDesign, createCompanyArea, deleteArea, deleteDesign, getAreaDesigns, getCompanyAreas } from "./api/firestore";
+import { createAreaBoothMap, createAreaDesign, createCompanyArea, deleteArea, deleteBoothMap, deleteDesign, getAreaBoothMaps, getAreaDesigns, getCompanyAreas } from "./api/firestore";
 import AreaTile from "./Components/area_tile";
 import CreateDesignDialog from "./Components/create_design_dialog";
 import DesignTile from "./Components/design_tile";
 import AccountDialog from "./Components/account_dialog";
 import CreateAreaDialog from "./Components/create_area_dialog";
+import CreateBoothMapDialog from "./Components/create_boothmap_dialog";
+import BoothMapTile from "./Components/boothmap_tile";
 
 createRoot(document.getElementById('root')!).render(
 
@@ -25,11 +27,13 @@ function App() {
     const [selectedNav, setSelectedNav] = useState<string>("designs");
     const [designs, setDesigns] = useState<Design[]>([]);
     const [areas, setAreas] = useState<Area[]>([]);
+    const [boothMaps, setBoothMaps] = useState<BoothMap[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
     const accountDialogRef = useRef<HTMLDialogElement>(null);
     const createDesignRef = useRef<HTMLDialogElement>(null);
     const createAreaRef = useRef<HTMLDialogElement>(null);
+    const createBoothMapRef = useRef<HTMLDialogElement>(null);
 
     useEffect(() => {
         isLoggedIn(() => { })
@@ -39,6 +43,8 @@ function App() {
             setSelectedNav("designs");
         } else if (view === "areas") {
             setSelectedNav("areas");
+        } else if (view === "boothmaps") {
+            setSelectedNav("boothmaps");
         }
         async function fetchContent() {
             const companyId = localStorage.getItem("companyId");
@@ -47,7 +53,15 @@ function App() {
                 return;
             }
             const areasResponse = await getCompanyAreas(companyId!);
+            const boothMapsResponse: BoothMap[] = [];
+            const boothMapsArrays = await Promise.all(
+                areasResponse.map(area => getAreaBoothMaps(companyId!, area.id))
+            );
+            boothMapsArrays.forEach(areaBoothMapsResponse => {
+                boothMapsResponse.push(...areaBoothMapsResponse);
+            });
             const designsResponse: Design[] = [];
+
             const designsArrays = await Promise.all(
                 areasResponse.map(area => getAreaDesigns(companyId!, area.id))
             );
@@ -56,6 +70,7 @@ function App() {
             });
             setAreas([...areasResponse]);
             setDesigns([...designsResponse]);
+            setBoothMaps([...boothMapsResponse]);
 
             setLoading(false);
 
@@ -90,6 +105,8 @@ function App() {
                         </div>
                         <div className="nav-buttons">
                             <button className={`nav-button ${selectedNav == "designs" ? "selected" : ""}`} onClick={() => setSelectedNav("designs")}>Designs</button>
+                            <button className={`nav-button ${selectedNav == "boothmaps" ? "selected" : ""}`} onClick={() => setSelectedNav("boothmaps")}>Booth Maps</button>
+
                             <button className={`nav-button ${selectedNav == "areas" ? "selected" : ""}`} onClick={() => setSelectedNav("areas")}>Areas</button>
 
                         </div>
@@ -98,6 +115,7 @@ function App() {
                     <div className="content">
                         {selectedNav == "designs" && designs.length == 0 && <div className="no-designs"><h3>No Designs Yet</h3></div>}
                         {selectedNav == "areas" && areas.length == 0 && <div className="no-areas"><h3>No Areas Yet</h3></div>}
+                        {selectedNav == "boothmaps" && boothMaps.length == 0 && <div className="no-boothmaps"><h3>No BoothMaps Yet</h3></div>}
                         {selectedNav == "areas" &&
 
                             <div className="area-tiles">
@@ -134,10 +152,30 @@ function App() {
                             </div>
 
                         }
+
+                        {selectedNav == "boothmaps" &&
+
+                            <div className="boothmap-tiles">
+                                {boothMaps.map((boothMap) => (
+                                    <BoothMapTile key={boothMap.id} areaName={areas.find((a) => a.id == boothMap.areaId)?.name || ""} boothMap={boothMap} onClick={() => {
+                                        const companyId = localStorage.getItem("companyId");
+                                        window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${boothMap.areaId}&type=view-boothMap&boothMapId=${boothMap.id}&boothMapName=${boothMap.name}`;
+                                    }} deleteBoothMap={async () => {
+                                        setBoothMaps(boothMaps.filter(b => b.id !== boothMap.id));
+                                        setLoading(true);
+                                        await deleteBoothMap(localStorage.getItem("companyId")!, boothMap.areaId, boothMap.id);
+                                        setLoading(false);
+                                    }} />
+                                ))}
+                            </div>
+
+                        }
                         {selectedNav == "designs" || !isMobile ? <div className="plus-icon" onClick={() => {
                             if (selectedNav == "designs") {
                                 createDesignRef.current?.showModal();
-                            } else {
+                            } else if (selectedNav == "boothmaps") {
+                                createBoothMapRef.current?.showModal();
+                            } else if (selectedNav == "areas") {
                                 createAreaRef.current?.showModal();
                             }
                         }}>
@@ -161,6 +199,12 @@ function App() {
                 setAreas([...areas, area]);
                 createAreaRef.current?.close();
                 window.location.href = `/LayItOut/Layout/?companyId=${localStorage.getItem("companyId")}&areaId=${area.id}&type=create-area&stage=placing-sections`;
+            }} />
+
+            <CreateBoothMapDialog areas={areas} dialogRef={createBoothMapRef} closeDialog={() => createBoothMapRef.current?.close()} createBoothMap={async (boothMap) => {
+                setBoothMaps([...boothMaps, boothMap]);
+                await createAreaBoothMap(localStorage.getItem("companyId")!, boothMap.areaId, boothMap);
+                createBoothMapRef.current?.close();
             }} />
         </>
     );

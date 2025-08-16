@@ -185,7 +185,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
 
     useEffect(() => {
 
-        if (item.initialElement != null && !item.hasMoved) {
+        if (item.initialElement != null) {
             //rotate item if it has a rotation
             console.log("Item initial element:", item.rotation);
             if (item.rotation) {
@@ -212,7 +212,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                 }, 100);
             }
 
-            if (item.initialElement && !item.hasMoved) {
+            if (item.initialElement) {
                 if (item.initialElement.classList.contains("cell")) {
                     console.log("Setting cell to initial element:", item.initialElement.children[0] as HTMLElement);
                     setCell(item.initialElement.children[0] as HTMLElement);
@@ -520,7 +520,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                 <div
                     id={item.id}
                     ref={itemRef}
-                    className={`draggable-item  ${item.isSectionModifier && !item.moveable ? "placed-modifier" : ""} ${item.isSectionModifier ? item.sectionModifierType?.toString() : ""} ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""} ${visible ? "" : "invisible"}`}
+                    className={`draggable-item ${isViewingDesign ? "viewing" : ""} ${item.isSectionModifier && !item.moveable ? "placed-modifier" : ""} ${item.isSectionModifier ? item.sectionModifierType?.toString() : ""} ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""} ${visible ? "" : "invisible"}`}
                     style={{
                         top: `${y}px`,
                         left: `${x}px`,
@@ -537,7 +537,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                     } : undefined}
                     onClick={(e) => {
                         e.stopPropagation();
-                        if ((!item.moveable && !isCreatingArea && !isCreatingTemplate)) return;
+                        if ((!item.moveable && !isCreatingArea && !isCreatingTemplate) || isViewingDesign) return;
                         if (isSelected) {
                             onDeselect();
                         } else {

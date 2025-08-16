@@ -7,14 +7,16 @@ type CustomItemDialogProps = {
     dialogRef: RefObject<HTMLDialogElement | null>;
     closeDialog: () => void;
     addInventoryItem: (item: InventoryItem) => void;
+    canBeBooth: boolean;
 
 };
 
-function AddCustomItemDialog({ dialogRef, closeDialog, addInventoryItem }: CustomItemDialogProps) {
+function AddCustomItemDialog({ dialogRef, closeDialog, addInventoryItem, canBeBooth }: CustomItemDialogProps) {
     const [itemName, setItemName] = useState<string>('');
     const [itemCount, setItemCount] = useState<number>(1);
     const [itemWidth, setItemWidth] = useState<number>(1);
     const [itemHeight, setItemHeight] = useState<number>(1);
+    const [isBooth, setIsBooth] = useState<boolean>(false);
 
 
     return (
@@ -36,6 +38,10 @@ function AddCustomItemDialog({ dialogRef, closeDialog, addInventoryItem }: Custo
                     <span> x </span>
                     <input type="number" id="item-height" name="item-height" min="1" value={itemHeight} onChange={(e) => setItemHeight(parseFloat(e.target.value) ?? 1)} />
                 </div>
+                {canBeBooth ? <div className="custom-item-row">
+                    <label htmlFor="is-booth">Is Booth:</label>
+                    <input type="checkbox" id="is-booth" name="is-booth" checked={isBooth} onChange={(e) => setIsBooth(e.target.checked)} />
+                </div> : null}
 
 
                 <br />
@@ -53,7 +59,8 @@ function AddCustomItemDialog({ dialogRef, closeDialog, addInventoryItem }: Custo
                             cellsTall: Math.ceil(itemHeight),
                             moveable: true,
                             starterItem: false,
-                            displayItem: true
+                            displayItem: true,
+                            isBooth: isBooth
                         })
                     });
 
@@ -62,12 +69,21 @@ function AddCustomItemDialog({ dialogRef, closeDialog, addInventoryItem }: Custo
                     setItemCount(1);
                     setItemWidth(1);
                     setItemHeight(1);
+                    setIsBooth(false);
 
                     closeDialog();
                 }}>Add Item</button>
                 <br />
                 <br />
-                <button className='action-btn' onClick={closeDialog}>Close</button>
+                <button className='action-btn' onClick={() => {
+                    closeDialog();
+
+                    setItemName('');
+                    setItemCount(1);
+                    setItemWidth(1);
+                    setItemHeight(1);
+                    setIsBooth(false);
+                }}>Close</button>
 
 
             </div>

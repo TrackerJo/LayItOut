@@ -52,11 +52,15 @@ export class Item {
     isSectionItem: boolean;
     isSectionModifier: boolean;
     sectionModifierType?: SectionModifierType;
+    onDisplay: boolean;
+    isBooth: boolean;
+    boothUser: Vendor | null;
 
 
-    constructor({ id, cellsLong, cellsTall, initialElement, name, icon, moveable, starterItem, displayItem, sectionCell, rotation, isSectionItem, sectionModifierType, isSectionModifier }: {
-        id: string, cellsLong: number, cellsTall: number, initialElement?: HTMLElement,
+    constructor({ id, cellsLong, cellsTall, initialElement, name, icon, moveable, starterItem, displayItem, sectionCell, rotation, isSectionItem, sectionModifierType, isSectionModifier, hasMoved, onDisplay, isBooth, boothUser }: {
+        id: string, cellsLong: number, cellsTall: number, initialElement?: HTMLElement, hasMoved?: boolean,
         isSectionItem?: boolean,
+        onDisplay?: boolean,
         name: string,
         icon: string,
         moveable?: boolean,
@@ -65,12 +69,14 @@ export class Item {
         sectionCell?: CellId,
         rotation?: number,
         isSectionModifier?: boolean,
-        sectionModifierType?: SectionModifierType
+        sectionModifierType?: SectionModifierType,
+        isBooth?: boolean,
+        boothUser?: Vendor | null
     }) {
         this.id = id;
         this.cellsLong = cellsLong;
         this.cellsTall = cellsTall;
-        this.hasMoved = false;
+        this.hasMoved = hasMoved || false;
         this.initialElement = initialElement;
 
         this.name = name;
@@ -78,11 +84,14 @@ export class Item {
         this.rotation = rotation || 0; // Ensure rotation is handled
         this.moveable = moveable ?? true;
         this.starterItem = starterItem ?? false;
+        this.onDisplay = onDisplay ?? false;
         this.isDisplayItem = displayItem ?? false;
         this.sectionCell = sectionCell;
         this.isSectionItem = isSectionItem ?? false;
         this.isSectionModifier = isSectionModifier ?? false;
         this.sectionModifierType = sectionModifierType;
+        this.isBooth = isBooth || false;
+        this.boothUser = boothUser || null;
 
 
     }
@@ -99,7 +108,8 @@ export class Item {
             displayItem: data.displayItem || false,
             rotation: data.rotation || 0,
             isSectionItem: data.isSectionItem || false,
-
+            isBooth: data.isBooth || false,
+            boothUser: data.boothUser ? Vendor.fromDoc(data.boothUser) : null,
             isSectionModifier: data.isSectionModifier || false,
             sectionModifierType: data.sectionModifierType == "" ? undefined : data.sectionModifierType,
         });
@@ -115,6 +125,8 @@ export class Item {
             moveable: data.moveable,
             starterItem: data.starterItem,
             displayItem: data.displayItem || false,
+            isBooth: data.isBooth || false,
+            boothUser: data.boothUser ? Vendor.fromJSON(data.boothUser) : null,
             rotation: data.rotation || 0, // Ensure rotation is handled
             isSectionItem: data.isSectionItem || false,
             isSectionModifier: data.isSectionModifier || false,
@@ -132,6 +144,8 @@ export class Item {
             moveable: this.moveable,
             starterItem: this.starterItem,
             displayItem: this.isDisplayItem,
+            isBooth: this.isBooth || false,
+            boothUser: this.boothUser ? this.boothUser.toJSON() : null,
             rotation: this.rotation || 0, // Ensure rotation is included
             isSectionItem: this.isSectionItem || false,
             isSectionModifier: this.isSectionModifier || false,
@@ -147,6 +161,8 @@ export class Item {
             cellsLong: this.cellsLong,
             cellsTall: this.cellsTall,
             moveable: this.moveable,
+            isBooth: this.isBooth || false,
+            boothUser: this.boothUser ? this.boothUser.toDoc() : null,
             starterItem: this.starterItem,
             displayItem: this.isDisplayItem,
             isSectionItem: this.isSectionItem || false,
@@ -246,16 +262,18 @@ export class Section {
     startingItems: StaringItem[];
     items: Item[];
     modifierItems: StaringItem[];
+    booths: Booth[];
 
 
-    constructor({ name, cellId, cellsLong, cellsTall, startingItems, items, modifierItems }: {
+    constructor({ name, cellId, cellsLong, cellsTall, startingItems, items, modifierItems, booths }: {
         name: string,
         cellId: CellId,
         cellsLong: number,
         cellsTall: number,
         startingItems: StaringItem[],
         items?: Item[],
-        modifierItems: StaringItem[]
+        modifierItems: StaringItem[],
+        booths?: Booth[]
     }) {
         this.name = name;
         this.cellId = cellId;
@@ -265,6 +283,7 @@ export class Section {
         this.cellElement = null;
         this.items = items || [];
         this.modifierItems = modifierItems;
+        this.booths = booths || [];
     }
 
     static fromJSON(section: any): Section {
@@ -279,7 +298,8 @@ export class Section {
                 item: Item.fromJSON(item.item)
             })),
             items: data.items ? data.items.map((item: any) => Item.fromJSON(item)) : [],
-            modifierItems: data.modifierItems ? data.modifierItems.map((item: any) => StaringItem.fromJSON(item)) : []
+            modifierItems: data.modifierItems ? data.modifierItems.map((item: any) => StaringItem.fromJSON(item)) : [],
+            booths: data.booths ? data.booths.map((booth: any) => Booth.fromJSON(booth)) : []
         });
     }
 
@@ -294,7 +314,8 @@ export class Section {
                 item: Item.fromDoc(item.item)
             })) : [],
             items: data.items ? data.items.map((item: any) => Item.fromDoc(item)) : [],
-            modifierItems: data.modifierItems ? data.modifierItems.map((item: any) => StaringItem.fromDoc(item)) : []
+            modifierItems: data.modifierItems ? data.modifierItems.map((item: any) => StaringItem.fromDoc(item)) : [],
+            booths: data.booths ? data.booths.map((booth: any) => Booth.fromDoc(booth)) : []
         });
     }
 
@@ -309,7 +330,8 @@ export class Section {
                 item: item.item.toJSON()
             })),
             items: this.items.map(item => item.toJSON()),
-            modifierItems: this.modifierItems.map(item => item.toJSON())
+            modifierItems: this.modifierItems.map(item => item.toJSON()),
+            booths: this.booths.map(booth => booth.toJSON())
         };
     }
 
@@ -325,7 +347,8 @@ export class Section {
                 item: item.item.toDoc()
             })),
             items: this.items.map(item => item.toDoc()),
-            modifierItems: this.modifierItems.map(item => item.toDoc())
+            modifierItems: this.modifierItems.map(item => item.toDoc()),
+            booths: this.booths.map(booth => booth.toDoc())
         };
     }
 }
@@ -597,3 +620,240 @@ export const premadeItems: Item[] = [
         displayItem: true
     }),
 ]
+
+
+
+export class Vendor {
+    businessName: string;
+    id: string;
+    plotWidth: number;
+    plotHeight: number;
+
+    constructor({ businessName, id, plotWidth, plotHeight }: { businessName: string, id: string, plotWidth: number, plotHeight: number }) {
+        this.businessName = businessName;
+        this.id = id;
+        this.plotWidth = plotWidth;
+        this.plotHeight = plotHeight;
+    }
+
+    static fromDoc(data: DocumentData): Vendor {
+        return new Vendor({
+            businessName: data.businessName,
+            id: data.id,
+            plotWidth: data.plotWidth,
+            plotHeight: data.plotHeight
+        });
+    }
+
+    toDoc(): DocumentData {
+        return {
+            businessName: this.businessName,
+            id: this.id,
+            plotWidth: this.plotWidth,
+            plotHeight: this.plotHeight
+        };
+    }
+
+    static fromJSON(data: any): Vendor {
+        return new Vendor({
+            businessName: data.businessName,
+            id: data.id,
+            plotWidth: data.plotWidth,
+            plotHeight: data.plotHeight
+        });
+    }
+    toJSON(): object {
+        return {
+            businessName: this.businessName,
+            id: this.id,
+            plotWidth: this.plotWidth,
+            plotHeight: this.plotHeight
+        };
+    }
+}
+
+export class Booth {
+    cellsLong: number;
+    cellsTall: number;
+    name: string;
+    id: string;
+    cell: CellId;
+    user: Vendor | null;
+    initialElement: HTMLElement | null;
+
+    constructor({ cellsLong, cellsTall, name, id, cell, user, initialElement }: { cellsLong: number, cellsTall: number, name: string, id: string, cell: CellId, user?: Vendor | null, initialElement?: HTMLElement }) {
+        this.cellsLong = cellsLong;
+        this.cellsTall = cellsTall;
+        this.name = name;
+        this.id = id;
+        this.cell = cell;
+        this.user = user || null;
+        this.initialElement = initialElement || null;
+    }
+
+    static fromDoc(data: DocumentData): Booth {
+        return new Booth({
+            cellsLong: data.cellsLong,
+            cellsTall: data.cellsTall,
+            name: data.name,
+            id: data.id,
+            cell: CellId.fromString(data.cellId),
+            user: data.user ? Vendor.fromDoc(data.user) : null
+        });
+    }
+
+    toDoc(): DocumentData {
+        return {
+            cellsLong: this.cellsLong,
+            cellsTall: this.cellsTall,
+            name: this.name,
+            id: this.id,
+            cellId: this.cell.toId(),
+            user: this.user ? this.user.toDoc() : null
+        };
+    }
+
+    static fromJSON(data: any): Booth {
+        return new Booth({
+            cellsLong: data.cellsLong,
+            cellsTall: data.cellsTall,
+            name: data.name,
+            id: data.id,
+            cell: CellId.fromString(data.cellId),
+            user: data.user ? Vendor.fromJSON(data.user) : null
+        });
+    }
+
+    toJSON(): object {
+        return {
+            cellsLong: this.cellsLong,
+            cellsTall: this.cellsTall,
+            name: this.name,
+            id: this.id,
+            cellId: this.cell.toId(),
+            user: this.user ? this.user.toJSON() : null
+        };
+    }
+
+}
+
+export class BoothMap {
+    name: string;
+    id: string;
+    areaId: string;
+    sections: Section[];
+    inventoryItems: InventoryItem[];
+
+    previewImage: string;
+    vendors: Vendor[];
+
+    constructor({ name, id, areaId, sections, inventoryItems, previewImage, vendors }: {
+        name: string,
+        id: string,
+        areaId: string,
+        sections: Section[],
+        inventoryItems: InventoryItem[],
+
+        previewImage: string,
+        vendors?: Vendor[]
+    }) {
+        this.name = name;
+        this.id = id;
+        this.areaId = areaId;
+        this.sections = sections;
+        this.inventoryItems = inventoryItems;
+
+        this.previewImage = previewImage;
+        this.vendors = vendors || [];
+    }
+
+    static fromDoc(data: DocumentData): BoothMap {
+        return new BoothMap({
+            name: data.name,
+            id: data.id,
+            areaId: data.areaId,
+            sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : [],
+            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromDoc(item)) : [],
+
+            previewImage: data.previewImage || "",
+            vendors: data.vendors ? data.vendors.map((vendor: any) => Vendor.fromDoc(vendor)) : []
+        });
+    }
+
+    toDoc(): DocumentData {
+        return {
+            name: this.name,
+            id: this.id,
+            areaId: this.areaId,
+            sections: this.sections.map(section => section.toDoc()),
+            inventoryItems: this.inventoryItems.map(item => item.toDoc()),
+
+            previewImage: this.previewImage || "",
+            vendors: this.vendors.map(vendor => vendor.toDoc())
+        };
+    }
+
+    static fromJSON(data: any): BoothMap {
+        return new BoothMap({
+            name: data.name,
+            id: data.id,
+            areaId: data.areaId,
+            sections: data.sections ? data.sections.map((section: any) => Section.fromJSON(section)) : [],
+            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromJSON(item)) : [],
+
+            previewImage: data.previewImage || "",
+            vendors: data.vendors ? data.vendors.map((vendor: any) => Vendor.fromJSON(vendor)) : []
+        });
+    }
+
+    toJSON(): object {
+        return {
+            name: this.name,
+            id: this.id,
+            areaId: this.areaId,
+            sections: this.sections.map(section => section.toJSON()),
+            inventoryItems: this.inventoryItems.map(item => item.toJSON()),
+
+            previewImage: this.previewImage || "",
+            vendors: this.vendors.map(vendor => vendor.toJSON())
+        };
+    }
+}
+
+export class User {
+    id: string;
+    name: string;
+
+    constructor({ id, name }: { id: string, name: string }) {
+        this.id = id;
+        this.name = name;
+    }
+
+    static fromDoc(data: DocumentData): User {
+        return new User({
+            id: data.id,
+            name: data.name
+        });
+    }
+
+    toDoc(): DocumentData {
+        return {
+            id: this.id,
+            name: this.name
+        };
+    }
+
+    static fromJSON(data: any): User {
+        return new User({
+            id: data.id,
+            name: data.name
+        });
+    }
+
+    toJSON(): object {
+        return {
+            id: this.id,
+            name: this.name
+        };
+    }
+}

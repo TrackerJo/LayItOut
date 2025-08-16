@@ -97,16 +97,7 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedIt
             inventoryItem.item.id = inventoryItem.item.name + (Math.random() * 10000).toString()
             console.log("ADDING ITEM", inventoryItem.item.id, "to initialElement", inventoryItem.item.initialElement)
             setCurrentItem(new Item({
-                id: inventoryItem.item.id,
-                cellsLong: inventoryItem.item.cellsLong,
-                cellsTall: inventoryItem.item.cellsTall,
-
-                name: inventoryItem.item.name,
-                icon: inventoryItem.item.icon,
-                moveable: inventoryItem.item.moveable,
-                starterItem: inventoryItem.item.starterItem,
-                displayItem: inventoryItem.item.isDisplayItem,
-                isSectionItem: inventoryItem.item.isSectionItem
+                ...inventoryItem.item, // copies all properties
             }))
             addDraggingItem(inventoryItem.item)
 
@@ -129,15 +120,7 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedIt
                 inventoryItem.item.id = inventoryItem.item.name + (Math.random() * 10000).toString()
                 console.log("ADDING ITEM", inventoryItem.item.id, "to initialElement", inventoryItem.item.initialElement)
                 setCurrentItem(new Item({
-                    id: inventoryItem.item.id,
-                    cellsLong: inventoryItem.item.cellsLong,
-                    cellsTall: inventoryItem.item.cellsTall,
-
-                    name: inventoryItem.item.name,
-                    icon: inventoryItem.item.icon,
-                    moveable: inventoryItem.item.moveable,
-                    starterItem: inventoryItem.item.starterItem,
-                    displayItem: inventoryItem.item.isDisplayItem
+                    ...inventoryItem.item, // copies all properties
                 }))
                 addDraggingItem(inventoryItem.item)
 

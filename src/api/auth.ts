@@ -1,19 +1,23 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { browserLocalPersistence, createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail, setPersistence, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { browserLocalPersistence, createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail, setPersistence, signInWithEmailAndPassword, signOut, updateProfile } from "firebase/auth";
 import { app } from "./firebase";
+import { User } from "../constants";
 
 
 const auth = getAuth(app);
 
 
 
-export async function login(email: string, password: string) {
+export async function login(email: string, password: string): Promise<User | boolean> {
     return setPersistence(auth, browserLocalPersistence).then(async () => {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             console.log(auth.currentUser);
             localStorage.setItem("userId", auth.currentUser!.uid!);
-            return true;
+            return new User({
+                id: auth.currentUser!.uid!,
+                name: auth.currentUser!.displayName || "null" // Use email prefix as default name
+            });
 
         } catch (e) {
             return false;
@@ -28,7 +32,7 @@ export async function logout() {
     return signOut(auth);
 }
 
-export async function register(email: string, password: string): Promise<string | boolean> {
+export async function register(email: string, password: string, name: string): Promise<User | boolean> {
     return setPersistence(auth, browserLocalPersistence).then(async () => {
         console.log("Registering user");
 
@@ -38,9 +42,19 @@ export async function register(email: string, password: string): Promise<string 
                 localStorage.setItem("userId", userCredential.user.uid);
 
 
+                //Add display name to user profile
+                updateProfile(userCredential.user, {
+                    displayName: name
+                }).then(() => {
+                    console.log("User profile updated");
+                }).catch((error) => {
+                    console.error("Error updating user profile:", error);
+                });
 
-
-                return userCredential.user.uid;
+                return new User({
+                    id: userCredential.user.uid,
+                    name: userCredential.user.displayName || name
+                });
             });
         }
         catch (e) {
@@ -90,6 +104,16 @@ export function getCurrentUserId() {
     return auth.currentUser?.uid ?? localStorage.getItem("userId");
 }
 
+export function getCurrentUser(): User | null {
+    const userId = getCurrentUserId();
+    if (userId) {
+        return new User({
+            id: userId,
+            name: auth.currentUser?.displayName || "null"
+        });
+    }
+    return null;
+}
 
 export async function sendPasswordReset(email: string): Promise<boolean> {
     return sendPasswordResetEmail(auth, email).then(() => {

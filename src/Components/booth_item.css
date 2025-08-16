@@ -1,0 +1,31 @@
+.booth-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.no-select {
+
+    cursor: not-allowed !important;
+}
+
+.booth {
+    cursor: pointer !important;
+}
+
+.booth-inner {
+    word-break: break-all;
+}
+
+.booth-sizing {
+    font-weight: normal !important;
+
+    margin: 0;
+}
+
+.cannot-pick {
+    cursor: not-allowed !important;
+    filter: brightness(0.8) grayscale(0.5);
+}

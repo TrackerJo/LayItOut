@@ -67,7 +67,7 @@ function CreateAreaDialog({ dialogRef, closeDialog, createArea }: CreateAreaDial
                     setAreaWidth(1);
                     setAreaHeight(1);
 
-                }}>Add Area</button>
+                }}>Create Area</button>
                 <br />
                 <br />
                 <button className='action-btn' onClick={() => {

@@ -8,7 +8,9 @@ function AreaTile({ area, onClick, deleteArea }: { area: Area; onClick: (areaId:
     return (
         <div className="area-tile" onClick={() => onClick(area.id)}>
             <div className="area-tile-content">
-                <img src={area.previewImage} alt="" className="area-preview-img" />
+                <div className="area-preview-container">
+                    <img src={area.previewImage} alt="" className="area-preview-img" />
+                </div>
                 <div className="area-info">
                     <h3>{area.name}</h3>
                     <div className="area-actions">

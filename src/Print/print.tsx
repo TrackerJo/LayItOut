@@ -121,15 +121,23 @@ function Print() {
           return new StaringItem({
             cell: new CellId({ x: section.cellId.x + item.cell.x, y: section.cellId.y + item.cell.y }),
             item: new Item({
-              id: item.item.id,
-              name: item.item.name,
-              cellsLong: item.item.cellsLong,
-              cellsTall: item.item.cellsTall,
-              icon: item.item.icon,
+              ...item.item, // copies all properties
               initialElement: document.querySelector(`.App #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
               starterItem: true,
-              moveable: item.item.moveable,
-              rotation: item.item.rotation || 0 // Ensure rotation is set
+
+            })
+          })
+        }))
+
+        newStartingItems.push(...section.modifierItems.map((item) => {
+          return new StaringItem({
+            cell: new CellId({ x: section.cellId.x + item.cell.x, y: section.cellId.y + item.cell.y }),
+            item: new Item({
+              ...item.item, // copies all properties
+              initialElement: document.querySelector(`.App #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
+              starterItem: true,
+              moveable: false,
+              // Ensure rotation is set
             })
           })
         }))
@@ -228,15 +236,9 @@ function Print() {
         startingItems: section.startingItems,
         modifierItems: section.modifierItems,
         items: section.startingItems.map((i) => new Item({
-          id: i.item.id,
-          name: i.item.name,
-          sectionCell: i.cell,
-          cellsLong: i.item.cellsLong,
-          cellsTall: i.item.cellsTall,
-          icon: i.item.icon,
-          moveable: i.item.moveable,
-          starterItem: i.item.starterItem,
-          rotation: i.item.rotation,
+          ...i.item, // copies all properties
+          sectionCell: new CellId({ x: i.cell.x, y: i.cell.y }),
+
 
         }))
       })
@@ -251,15 +253,9 @@ function Print() {
         startingItems: section.startingItems,
         modifierItems: section.modifierItems,
         items: section.startingItems.map((i) => new Item({
-          id: i.item.id,
-          name: i.item.name,
-          sectionCell: i.cell,
-          cellsLong: i.item.cellsLong,
-          cellsTall: i.item.cellsTall,
-          icon: i.item.icon,
-          moveable: i.item.moveable,
-          starterItem: i.item.starterItem,
-          rotation: i.item.rotation,
+          ...i.item, // copies all properties
+          sectionCell: new CellId({ x: i.cell.x, y: i.cell.y }),
+
 
         }))
       })
@@ -278,11 +274,6 @@ function Print() {
 
     loadArea();
 
-    async function test() {
-      const area = getLocalArea();
-      saveCompanyArea("dMjfwNN0XFes0WxUH8h1", area);
-    }
-    test();
 
 
   }, [])

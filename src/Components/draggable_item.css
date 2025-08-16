@@ -79,6 +79,12 @@
 
 }
 
+.pick-icon {
+    width: 10px;
+    height: 10px;
+
+}
+
 .rotate-icon.cannot-rotate {
     opacity: 0.5;
     cursor: not-allowed;
@@ -217,6 +223,10 @@ body:not(:has(.draggable-item.dragging)) .draggable-item:hover:not(.dragging):no
 
 }
 
+.draggable-item.viewing {
+    pointer-events: none;
+}
+
 .draggable-item.LeftWall {
     border-left: 1px solid black;
 }
@@ -293,6 +303,11 @@ body:not(:has(.draggable-item.dragging)):not(:has(.draggable-item.placed-modifie
 
 @media (max-width: 768px) {
     .rotate-icon {
+        width: 12px;
+        height: 12px;
+    }
+
+    .pick-icon {
         width: 12px;
         height: 12px;
     }

@@ -1,0 +1,111 @@
+.add-vendor-dialog {
+    background-color: rgba(255, 255, 255, 1);
+
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    outline: none !important;
+    color: black;
+    border: 1px solid rgba(255, 255, 255, 1);
+    z-index: 100;
+}
+
+.add-vendor-dialog-div h2 {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 16px;
+    text-align: center;
+    color: rgba(59, 130, 246, 0.9);
+    margin-top: 0;
+
+}
+
+.add-vendor-dialog-close {
+    cursor: pointer;
+    background-color: rgba(59, 130, 246, 0.9);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+
+}
+
+.add-vendor-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    gap: 16px;
+}
+
+.add-vendor-row label {
+    font-size: 16px;
+    color: #333;
+    flex: 1;
+}
+
+.add-vendor-row input {
+    padding: 8px;
+    font-size: 16px;
+    outline: none !important;
+    border: 2px solid rgba(59, 130, 246, 0.9);
+    border-radius: 4px;
+    background-color: white;
+    flex: 2;
+    color: black;
+    max-width: 300px;
+}
+
+
+
+.add-vendor-size input {
+    width: 50px;
+}
+
+.add-vendor-size label {
+    margin-right: 10px;
+}
+
+.add-vendor-size {
+    display: block !important;
+
+}
+
+.add-vendor-size span {
+    font-size: 16px;
+    color: #333;
+
+}
+
+.add-vendor-dialog-add {
+    cursor: pointer;
+    background-color: rgba(59, 130, 246, 0.9);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .add-vendor-dialog {
+        width: 80vw;
+
+    }
+
+    .add-vendor-size {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+    }
+
+
+}
