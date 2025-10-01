@@ -79,10 +79,9 @@ function EditVendorDialog({ dialogRef, closeDialog, editVendor, oldVendor }: Edi
                 <button className='action-btn' onClick={() => {
                     closeDialog();
 
-                    setBusinessName("");
-
-                    setItemWidth(1);
-                    setItemHeight(1);
+                    setBusinessName(oldVendor!.businessName);
+                    setItemWidth(oldVendor!.plotWidth);
+                    setItemHeight(oldVendor!.plotHeight);
 
                 }}>Close</button>
 

@@ -203,6 +203,7 @@ function Print() {
 
       setCells([...newCells]);
       setTimeout(() => {
+        // setLoading(false);
         window.print();
         window.close();
 

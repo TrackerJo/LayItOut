@@ -320,6 +320,10 @@ body {}
   .loader-backdrop {
     display: none;
   }
+
+  .print-footer {
+    display: block;
+  }
 }
 
 @page {
@@ -349,7 +353,7 @@ body::before {
 /* } */
 
 .print-footer {
-  position: fixed;
+  position: static;
   bottom: 0;
   left: 0;
   width: 100%;
@@ -359,4 +363,5 @@ body::before {
   padding: 10px;
   background-color: rgba(255, 255, 255, 0.8);
   border-top: 1px solid #000;
+  margin-top: 20px;
 }
