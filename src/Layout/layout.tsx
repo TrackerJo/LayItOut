@@ -210,6 +210,7 @@ function Layout() {
   const [isCreatingBoothMap, setIsCreatingBoothMap] = useState<boolean>(false);
   const [isPickingBoothMap, setIsPickingBoothMap] = useState<boolean>(false);
   const [isClientEditingDesign, setIsClientEditingDesign] = useState<boolean>(false);
+  const [isPublicPreviewingDesign, setIsPublicPreviewingDesign] = useState<boolean>(false);
   const [designName, setDesignName] = useState<string>("");
   const [design, setDesign] = useState<Design | null>(null);
   const [templateName, setTemplateName] = useState<string>("");
@@ -515,7 +516,13 @@ function Layout() {
     let creaingAreaStage: "placing-sections" | "modify-sections" | "placing-items" = "modify-sections";
     let isBoothMap = false;
     let boothMap: BoothMap | null = null;
-    if (type === "create-template") {
+    if (type === "public-preview") {
+      setIsPublicPreviewingDesign(true);
+      const designName = urlParams.get('designName') || "";
+      setDesignName(designName);
+      const designId = urlParams.get('designId') || "";
+      setDesignId(designId);
+    } else if (type === "create-template") {
       setIsCreatingTemplate(true);
 
     } else if (type === "edit-template") {
@@ -648,6 +655,22 @@ function Layout() {
       }
       setBoothMap(newBoothMap);
       boothMap = newBoothMap;
+
+    } else if (type === "public-preview-boothMap") {
+      isBoothMap = true;
+      setIsPublicPreviewingDesign(true);
+      const boothMapId = urlParams.get('boothMapId') || "";
+      setBoothMapId(boothMapId);
+      const designName = urlParams.get('designName') || "";
+      setDesignName(designName);
+      const newBoothMap = await getAreaBoothMap(companyId, areaId, boothMapId);
+      if (newBoothMap === null) {
+        window.location.href = "/LayItOut/DNF/";
+        return;
+      }
+      setBoothMap(newBoothMap);
+      boothMap = newBoothMap;
+
 
     }
 
@@ -1392,13 +1415,16 @@ function Layout() {
     }
 
     // If the item is being placed, remove it from the inventory
-    console.log("Removing item from inventory", item.name)
+    console.log("Removing item from inventory", item.name, item.hasMoved)
     let removedItem = false;
 
     if (!item.hasMoved) {
+      console.log("INVENTORY ITEMs", inventoryItems)
       const index = inventoryItems.findIndex((i) => i.item.name == item.name && !i.item.hasMoved);
+
       if (index !== -1) {
         const newInventoryItems = [...inventoryItems];
+        console.log("Found item in inventory", newInventoryItems[index])
         if (newInventoryItems[index].quantity > 0) {
           newInventoryItems[index].quantity -= 1;
           if (newInventoryItems[index].quantity <= 0) {
@@ -1559,7 +1585,7 @@ function Layout() {
         return [...old, new InventoryItem({
           item: new Item({
             ...item, // copies all properties
-
+            hasMoved: false,
           }), quantity: 1
         })];
       }
@@ -2138,7 +2164,7 @@ function Layout() {
           <input type="text" id="template-name" name="template-name" onChange={(e) => setTemplateName(e.target.value)} value={templateName} />
 
         </div>}
-        {isViewingDesign && <div className='design-name-row'>
+        {(isViewingDesign || isPublicPreviewingDesign) && <div className='design-name-row'>
           <label htmlFor="design-name">Design Name: {designName}</label>
         </div>}
 
@@ -2418,7 +2444,7 @@ function Layout() {
 
         </div>}
 
-        {!isViewingDesign && !isViewingArea && !isViewingBoothMap && !isPickingBoothMap && < div className='place-mode-row'>
+        {!isViewingDesign && !isViewingArea && !isViewingBoothMap && !isPickingBoothMap && !isPublicPreviewingDesign && < div className='place-mode-row'>
           <label htmlFor="tap-and-place-mode">Place Mode: </label>
           <select id="tap-and-place-mode" name="tap-and-place-mode" value={tapAndPlaceMode ? "tap" : "drag"} onChange={(e) => setTapAndPlaceMode(e.target.value === "tap")} className='place-mode-select'>
             <option value="drag">Drag and Drop</option>
@@ -2436,7 +2462,7 @@ function Layout() {
         )} <div className='layout'>
 
 
-          {!isViewingDesign && !isViewingArea && !isViewingBoothMap && !isPickingBoothMap && <Toolbox setSelectedItem={setPlacingItem} tapAndPlaceMode={tapAndPlaceMode} isModifyingSections={isCreatingArea && creatingAreaStage == 'modify-sections'} isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height * cellSize} showAddCustomItem={() => {
+          {!isViewingDesign && !isViewingArea && !isViewingBoothMap && !isPickingBoothMap && !isPublicPreviewingDesign && <Toolbox setSelectedItem={setPlacingItem} tapAndPlaceMode={tapAndPlaceMode} isModifyingSections={isCreatingArea && creatingAreaStage == 'modify-sections'} isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height * cellSize} showAddCustomItem={() => {
             if (creatingAreaStage == "placing-sections" && isCreatingArea) {
               addSectionDialogRef.current?.showModal();
             } else if (creatingAreaStage == "placing-items" && isCreatingArea) {
@@ -2647,7 +2673,7 @@ function Layout() {
       <div >
         {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
         {items.map((item) => {
-          return <DraggableItem isPlacingItem={placingItem != null} isCreatingArea={isCreatingArea} isCreatingTemplate={isCreatingTemplate || isEditingTemplate} cellSize={cellSize} isViewingDesign={isViewingDesign || isViewingArea || isViewingBoothMap || isPickingBoothMap} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.isSectionModifier ? sections.find((s) => s.name == mobileViewingSection)?.modifierItems.some((i) => i.item.id === item.id) : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+          return <DraggableItem isPlacingItem={placingItem != null} isCreatingArea={isCreatingArea} isCreatingTemplate={isCreatingTemplate || isEditingTemplate} cellSize={cellSize} isViewingDesign={isViewingDesign || isViewingArea || isViewingBoothMap || isPickingBoothMap || isPublicPreviewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.isSectionModifier ? sections.find((s) => s.name == mobileViewingSection)?.modifierItems.some((i) => i.item.id === item.id) : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
 
             item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
             onSelect={onSelectItem}
@@ -2656,7 +2682,7 @@ function Layout() {
         })}
         {booths.map((booth) => {
           console.log("CAN PICK BOOTH", booth.cellsLong == vendor?.plotWidth && booth.cellsTall == vendor!.plotHeight, "BOOTH", booth, "VENDOR", vendor);
-          return <BoothItem canPick={isViewingBoothMap || hasPickedBooth || (booth.cellsLong == vendor?.plotWidth && booth.cellsTall == vendor!.plotHeight)} visible={!isMobile ? true : mobileViewingSection == null ? false : (sections.find((s) => s.name == mobileViewingSection)?.booths.some((i) => i.id === booth.id) ?? false)} booth={booth} isViewingBooth={isViewingBoothMap} hasPickedBooth={hasPickedBooth} isSelected={selectedItemId == booth.id} cellSize={cellSize} key={booth.id} onSelect={onSelectItem}
+          return <BoothItem canPick={isViewingBoothMap || hasPickedBooth || (booth.cellsLong == vendor?.plotWidth && booth.cellsTall == vendor!.plotHeight)} visible={!isMobile ? true : mobileViewingSection == null ? false : (sections.find((s) => s.name == mobileViewingSection)?.booths.some((i) => i.id === booth.id) ?? false)} booth={booth} isViewingBooth={isViewingBoothMap} isPublicViewingBooth={isPublicPreviewingDesign} hasPickedBooth={hasPickedBooth} isSelected={selectedItemId == booth.id} cellSize={cellSize} key={booth.id} onSelect={onSelectItem}
             isUnselecting={unselectingItemIds.includes(booth.id)}
             onDeselect={() => onDeselectItem(booth.id)} onPickBooth={async (boothId) => {
               setLoading(true);
@@ -2748,7 +2774,7 @@ function Layout() {
         </div>
       }
       {
-        !loading && !(isCreatingTemplate || isEditingTemplate || isViewingDesign || isCreatingBoothMap || isCreatingArea || isViewingBoothMap || isPickingBoothMap) && <div className='template-icon' onClick={() => {
+        !loading && !(isCreatingTemplate || isEditingTemplate || isViewingDesign || isCreatingBoothMap || isCreatingArea || isViewingBoothMap || isPickingBoothMap || isPublicPreviewingDesign) && <div className='template-icon' onClick={() => {
           templateDialogRef.current?.showModal();
           setTemplateDialogOpen(true);
           console.log("Showing template dialog")

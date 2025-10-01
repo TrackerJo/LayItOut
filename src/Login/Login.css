@@ -19,7 +19,7 @@
     width: 35vw;
 
 
-    background-color: white;
+    background-color: #eff6ff80;
     border: 2px dashed rgba(59, 130, 246, 0.9);
     gap: 1rem;
     border-radius: 12px;
@@ -40,7 +40,7 @@
     color: #333;
     font-size: 16px;
     margin: 0;
-    margin-bottom: 1rem;
+
 }
 
 .login-item-row {
@@ -64,10 +64,22 @@
     outline: none !important;
     border: 2px solid rgba(59, 130, 246, 0.9);
     border-radius: 4px;
-    background-color: white !important;
+    background-color: #eff6ff80 !important;
     flex: 2;
     color: black;
     max-width: 300px;
+}
+
+.login-item-row input:hover {
+
+    background-color: #ddecff80 !important;
+
+}
+
+.login-item-row input:focus {
+
+    background-color: #cfe3fd80 !important;
+
 }
 
 .action-btn {

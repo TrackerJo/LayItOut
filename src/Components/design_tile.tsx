@@ -2,6 +2,7 @@ import type { Design } from "../constants";
 import "./design_tile.css";
 import Link from "../assets/link.png";
 import Trash from "../assets/trash.png";
+import Preview from "../assets/preview.png";
 
 function DesignTile({ design, areaName, onClick, deleteDesign }: { design: Design; onClick: (designId: string) => void, deleteDesign: (designId: string) => void, areaName: string }) {
 
@@ -23,6 +24,13 @@ function DesignTile({ design, areaName, onClick, deleteDesign }: { design: Desig
                         const shareUrl = window.location.origin + `/LayItOut/Layout/?companyId=${companyId}&areaId=${design.areaId}&type=client-edit-design&designId=${design.id}&designName=${design.name}`;
                         await navigator.clipboard.writeText(shareUrl);
                         alert("Design link copied to clipboard!");
+                    }} />
+                    <img src={Preview} alt="" className="design-preview" onClick={async (e) => {
+                        e.stopPropagation(); // Prevent the tile click event
+                        const companyId = localStorage.getItem("companyId");
+                        const shareUrl = window.location.origin + `/LayItOut/Layout/?companyId=${companyId}&areaId=${design.areaId}&type=public-preview&designId=${design.id}&designName=${design.name}`;
+                        await navigator.clipboard.writeText(shareUrl);
+                        alert("Preview link copied to clipboard!");
                     }} />
                     <img src={Trash} alt="" className="design-trash" onClick={async (e) => {
                         e.stopPropagation(); // Prevent the tile click event

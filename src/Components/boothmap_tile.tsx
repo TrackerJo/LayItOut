@@ -1,7 +1,8 @@
 import type { BoothMap } from "../constants";
 import "./boothmap_tile.css";
-import Link from "../assets/link.png";
+
 import Trash from "../assets/trash.png";
+import Preview from "../assets/preview.png";
 
 function BoothMapTile({ boothMap, areaName, onClick, deleteBoothMap }: { boothMap: BoothMap; onClick: (boothMapId: string) => void, deleteBoothMap: (boothMapId: string) => void, areaName: string }) {
 
@@ -16,6 +17,14 @@ function BoothMapTile({ boothMap, areaName, onClick, deleteBoothMap }: { boothMa
                 <h3>{boothMap.name}</h3>
                 <p className="boothMap-area-name">Area: {areaName}</p>
                 <div className="boothMap-actions">
+                    <img src={Preview} alt="" className="boothMap-preview" onClick={async (e) => {
+                        e.stopPropagation(); // Prevent the tile click event
+                        const companyId = localStorage.getItem("companyId");
+                        const shareUrl = window.location.origin + `/LayItOut/Layout/?companyId=${companyId}&areaId=${boothMap.areaId}&type=public-preview-boothMap&boothMapId=${boothMap.id}&designName=${boothMap.name}`;
+                        await navigator.clipboard.writeText(shareUrl);
+                        alert("Preview link copied to clipboard!");
+                    }} />
+
 
                     <img src={Trash} alt="" className="boothMap-trash" onClick={async (e) => {
                         e.stopPropagation(); // Prevent the tile click event

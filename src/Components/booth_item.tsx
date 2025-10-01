@@ -22,9 +22,10 @@ type BoothItemProps = {
     cellSize: number,
     hasPickedBooth: boolean,
     canPick: boolean,
+    isPublicViewingBooth: boolean
 }
 
-function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth, onSelect, isUnselecting, visible, cellSize, canPick, hasPickedBooth, onAddVendorToBooth, onRemoveVendorFromBooth }: BoothItemProps) {
+function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth, onSelect, isUnselecting, visible, cellSize, canPick, hasPickedBooth, onAddVendorToBooth, onRemoveVendorFromBooth, isPublicViewingBooth = false }: BoothItemProps) {
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
     const textRef = useRef<HTMLParagraphElement>(null);
@@ -150,7 +151,7 @@ function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth,
                 <div
                     id={booth.id}
                     ref={itemRef}
-                    className={`booth draggable-item ${hasPickedBooth ? "viewing" : ""} ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${booth.user != null && !isViewingBooth ? "no-select" : ""} ${visible ? "" : "invisible"} ${!canPick ? "cannot-pick" : ""}`}
+                    className={`booth draggable-item ${hasPickedBooth ? "viewing" : ""} ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${booth.user != null && !isViewingBooth ? "no-select" : ""} ${isPublicViewingBooth ? "viewing" : ""} ${visible ? "" : "invisible"} ${!canPick && !isPublicViewingBooth ? "cannot-pick" : ""}`}
                     style={{
                         top: `${y}px`,
                         left: `${x}px`,

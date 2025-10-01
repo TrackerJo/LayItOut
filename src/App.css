@@ -94,6 +94,7 @@
     border: 2px dashed rgba(59, 130, 246, 0.5);
     border-radius: 12px;
     background-color: rgba(239, 246, 255, 0.5);
+    overflow: scroll;
 
 }
 

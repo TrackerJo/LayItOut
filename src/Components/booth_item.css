@@ -11,6 +11,10 @@
     cursor: not-allowed !important;
 }
 
+.viewing {
+    pointer-events: none;
+}
+
 .booth {
     cursor: pointer !important;
 }
