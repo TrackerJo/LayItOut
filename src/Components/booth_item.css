@@ -19,10 +19,18 @@
     word-break: break-all;
 }
 
+.person-icon {
+    width: 15px;
+    height: 15px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
 .booth-sizing {
     font-weight: normal !important;
 
     margin: 0;
+    font-size: 6px;
 }
 
 .cannot-pick {

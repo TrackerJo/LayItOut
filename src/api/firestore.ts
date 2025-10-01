@@ -64,6 +64,20 @@ export async function getCompanies(): Promise<Company[]> {
     }
 }
 
+export async function getCompany(companyId: string): Promise<Company | null> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, returning local company");
+        return null;
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const companyData = await getDoc(companyRef);
+        if (companyData.exists()) {
+            return Company.fromDoc(companyData.data());
+        }
+        return null;
+    }
+}
+
 export async function updateCompany(company: Company): Promise<void> {
     if (useLocalFirestore) {
         console.warn("Using local firestore, not updating company");

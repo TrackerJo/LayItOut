@@ -23,10 +23,11 @@ type DraggableItemProps = {
     isViewingDesign: boolean,
     cellSize: number,
     isCreatingArea: boolean,
-    isCreatingTemplate: boolean
+    isCreatingTemplate: boolean,
+    isPlacingItem: boolean
 }
 
-function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible, removeItem, isViewingDesign, cellSize }: DraggableItemProps) {
+function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem, placeItem, deleteItem, deleteItemRotate, isSelected, onSelect, onDeselect, isUnselecting, highlightCells, unHighlightCells, visible, removeItem, isViewingDesign, cellSize, isPlacingItem }: DraggableItemProps) {
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
     const textRef = useRef<HTMLParagraphElement>(null);
@@ -332,10 +333,18 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                     }
                 }
 
+
                 if (targetElement?.classList?.contains("cell")) {
 
                     highlightCells(CellId.fromString(targetElement.id), tempItem);
-                } else {
+                } else if (targetElement?.classList?.contains("section-modifier")) {
+                    // Highlight section modifier cells
+                    console.log("Target element is a section modifier, highlighting cells", targetElement);
+                    highlightCells(CellId.fromString(targetElement.dataset.cell as string), tempItem);
+
+                }
+                else {
+                    console.log("Target element is not a cell or section modifier, not highlighting cells", targetElement);
                     unHighlightCells();
                 }
                 // if (item.starterItem) {
@@ -394,16 +403,79 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
 
                 // Find the element under the final position
                 const targetElement = document.elementFromPoint(clientX, clientY) as HTMLElement;
-
-                if (!targetElement?.classList?.contains("cell")) {
+                if (cell !== null && targetElement?.dataset.cell === cell.id) {
+                    console.log("Target element is the same cell, not placing item");
+                    setX(prevX);
+                    setY(prevY);
+                    setIsDragging(false);
+                    return;
+                }
+                if (!targetElement?.classList?.contains("cell") && !targetElement?.classList?.contains("section-modifier")) {
                     if (item.isDisplayItem && !item.hasMoved) {
                         console.log("Removing item from toolbox");
                         removeItem(item);
+                        setIsDragging(false);
                         return;
                     }
 
+                    setIsDragging(false);
                     setX(prevX)
                     setY(prevY)
+                } else if (targetElement?.classList?.contains("section-modifier")) {
+                    console.log("Placing item on section modifier cell");
+                    console.log("Target element:", targetElement.dataset.cell);
+                    if (targetElement.dataset.cell == "") {
+                        console.warn("Section modifier cell data is null, cannot place item");
+                        if (item.isDisplayItem && !item.hasMoved) {
+                            console.log("Removing item from toolbox");
+                            removeItem(item);
+                            setIsDragging(false);
+                            return;
+                        }
+                        setIsDragging(false);
+
+                        setX(prevX)
+                        setY(prevY)
+                        return;
+                    }
+                    // Highlight section modifier cells
+                    // Create item with current rotation for placement validation
+                    const rotatedDims = getRotatedDimensions(rotation);
+                    const tempItem = {
+                        ...item,
+                        cellsLong: rotatedDims.cellsWide,
+                        cellsTall: rotatedDims.cellsTall
+                    };
+
+                    if (!canPlaceItem(CellId.fromString(targetElement.dataset.cell as string), tempItem)) {
+                        if (item.isDisplayItem && !item.hasMoved) {
+                            console.log("Removing item from toolbox");
+                            removeItem(item);
+                            return;
+                        }
+                        setX(prevX);
+                        setY(prevY);
+                        setIsDragging(false);
+                        return;
+                    }
+
+                    const cellTop = targetElement.offsetTop
+                    const cellLeft = targetElement.offsetLeft;
+                    const offset = getRotationOffset(rotation);
+
+                    // Position the item at the cell location with rotation offset
+                    const finalX = cellLeft + offset.x;
+                    const finalY = cellTop + offset.y;
+
+                    setX(finalX)
+                    setY(finalY)
+                    setPrevX(finalX)
+                    setPrevY(finalY)
+                    setIsDragging(false);
+                    placeItem(CellId.fromString(targetElement.dataset.cell as string), tempItem, cell != null ? CellId.fromString(cell.id) : null);
+                    console.log("Placed item at cell:", targetElement);
+                    setCell(document.getElementById(targetElement.dataset.cell as string));
+
                 } else {
                     // Create item with current rotation for placement validation
                     const rotatedDims = getRotatedDimensions(rotation);
@@ -441,6 +513,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                     placeItem(CellId.fromString(targetElement.id), tempItem, cell != null ? CellId.fromString(cell.id) : null);
                     console.log("Placed item at cell:", targetElement);
                     setCell(targetElement)
+                    setIsDragging(false);
                 }
                 setIsDragging(false)
             };
@@ -452,6 +525,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
             };
 
             document.onmouseup = (e) => {
+                console.log("Mouse up at:", e.clientX, e.clientY);
                 handleEnd(e.clientX, e.clientY);
                 document.onmousemove = null;
                 document.onmouseup = null;
@@ -495,22 +569,22 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
 
 
     function checkCanRotate() {
-        if (cell) {
-            const newRotation = (rotation + 1);
-            const rotatedDims = getRotatedDimensions(newRotation);
+        // if (cell) {
+        //     const newRotation = (rotation + 1);
+        //     const rotatedDims = getRotatedDimensions(newRotation);
 
-            // Create a temporary item with rotated dimensions for validation
-            const tempItem = {
-                ...item,
-                cellsLong: rotatedDims.cellsWide,
-                cellsTall: rotatedDims.cellsTall
-            };
-            console.log("Can place item at cell:", canPlaceItem(CellId.fromString(cell?.id || ""), tempItem));
+        //     // Create a temporary item with rotated dimensions for validation
+        //     const tempItem = {
+        //         ...item,
+        //         cellsLong: rotatedDims.cellsWide,
+        //         cellsTall: rotatedDims.cellsTall
+        //     };
+        //     console.log("Can place item at cell:", canPlaceItem(CellId.fromString(cell?.id || ""), tempItem));
 
-            setCanRotate(canPlaceItem(CellId.fromString(cell.id), tempItem));
-        } else {
-            setCanRotate(false);
-        }
+        //     setCanRotate(canPlaceItem(CellId.fromString(cell.id), tempItem));
+        // } else {
+        //     setCanRotate(false);
+        // }
 
     }
 
@@ -520,12 +594,13 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                 <div
                     id={item.id}
                     ref={itemRef}
-                    className={`draggable-item ${isViewingDesign ? "viewing" : ""} ${item.isSectionModifier && !item.moveable ? "placed-modifier" : ""} ${item.isSectionModifier ? item.sectionModifierType?.toString() : ""} ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""} ${visible ? "" : "invisible"}`}
+                    className={`draggable-item ${isPlacingItem ? "is-placing" : ""} ${item.isSectionModifier ? "section-modifier" : ""} ${isViewingDesign ? "viewing" : ""} ${item.isSectionModifier && !item.moveable ? "placed-modifier" : ""} ${item.isSectionModifier ? item.sectionModifierType?.toString() : ""} ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${!item.moveable ? "not-moveable" : ""} ${visible ? "" : "invisible"}`}
+                    data-cell={cell?.id || ""}
                     style={{
                         top: `${y}px`,
                         left: `${x}px`,
-                        width: `${item.cellsLong * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "LeftWall" || item.sectionModifierType == "RightWall" || item.sectionModifierType?.includes("Corner") ? 1 : 0)}px`,
-                        height: `${item.cellsTall * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "TopWall" || item.sectionModifierType == "BottomWall" || item.sectionModifierType?.includes("Corner") ? 1 : 0)}px`,
+                        width: `${item.cellsLong * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "LeftWall" || item.sectionModifierType == "RightWall" || item.sectionModifierType === "LeftWindow" || item.sectionModifierType === "RightWindow" ? 1 : 0)}px`,
+                        height: `${item.cellsTall * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "TopWall" || item.sectionModifierType == "BottomWall" || item.sectionModifierType === "TopWindow" || item.sectionModifierType === "BottomWindow" ? 1 : 0)}px`,
                         rotate: `${rotation * 90}deg`,
                         transformOrigin: 'center center',
                         fontSize: `${fontSize}px`
@@ -536,6 +611,8 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                         setIsDragging(true);
                     } : undefined}
                     onClick={(e) => {
+                        console.log("Clicked on item:", item.id);
+                        setIsDragging(false);
                         e.stopPropagation();
                         if ((!item.moveable && !isCreatingArea && !isCreatingTemplate) || isViewingDesign) return;
                         if (isSelected) {
@@ -546,7 +623,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                         }
                     }}
                 >
-                    {item.isSectionModifier ? null : item.icon.includes("custom-") ?
+                    {item.isSectionModifier ? item.sectionModifierType === "LeftDoor" || item.sectionModifierType === "RightDoor" ? <img src={item.icon} alt="icon" /> : null : item.icon.includes("custom-") ?
                         <div className={item.isSectionItem ? "custom-section" : "custom-icon"} >
                             <div>
                                 <p ref={textRef}>{item.icon.split("custom-")[1]}</p>
@@ -610,7 +687,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                                     width: `${rotatedDims.width}px`
                                 }}
                             >
-                                {!item.isSectionModifier && <img
+                                {(!item.isSectionModifier || item.sectionModifierType === "LeftDoor" || item.sectionModifierType === "RightDoor") && <img
                                     src={Rotate}
                                     alt="rotate"
                                     className={"rotate-icon" + (canRotate ? " can-rotate" : " cannot-rotate")}

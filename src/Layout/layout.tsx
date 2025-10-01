@@ -6,7 +6,7 @@ import '../index.css'
 import AreaComponent from '../Components/area';
 import type { CellProps } from '../Components/cell';
 import DraggableItem from '../Components/draggable_item';
-import { Area, Booth, BoothMap, CellId, Design, InventoryItem, Item, Section, StaringItem, Template, Vendor } from '../constants';
+import { Area, Booth, BoothMap, CellId, Company, Design, InventoryItem, Item, Section, StaringItem, Template, Vendor } from '../constants';
 import Toolbox from '../Components/toolbox';
 
 
@@ -19,7 +19,7 @@ import TemplateIcon from '../assets/template.png';
 import TemplateDialog from '../Components/template_dialog';
 import AddCustomItemDialog from '../Components/add_custom_item_dialog';
 
-import { deleteArea, deleteBoothMap, getArea, getAreaBoothMap, getAreaDesign, placeAreaSections, saveAreaBoothMap, saveAreaSections, saveAreaTemplates, saveCompanyArea, updateAreaDesign } from '../api/firestore';
+import { deleteArea, deleteBoothMap, getArea, getAreaBoothMap, getAreaDesign, getCompany, placeAreaSections, saveAreaBoothMap, saveAreaSections, saveAreaTemplates, saveCompanyArea, updateAreaDesign } from '../api/firestore';
 import { getLocalArea } from '../api/local_firestore';
 import { createRoot } from 'react-dom/client';
 import AddSectionDialog from '../Components/add_section_dialog';
@@ -31,6 +31,8 @@ import BoothItem from '../Components/booth_item';
 import VendorsTile from '../Components/vendors_tile';
 import AddVendorDialog from '../Components/add_vendor_dialog';
 import EditVendorDialog from '../Components/edit_vendor_dialog';
+import KeyTile from '../Components/key_tile';
+import AddVendorToBoothDialog from '../Components/add_vendor_to_booth';
 
 
 createRoot(document.getElementById('root')!).render(
@@ -53,7 +55,7 @@ function Layout() {
   const [unselectingItemIds, setUnselectingItemIds] = useState<string[]>([]);
   const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [tapAndPlaceMode, setTapAndPlaceMode] = useState<boolean>(true);
+  const [tapAndPlaceMode, setTapAndPlaceMode] = useState<boolean>(false);
   const [placingItem, setPlacingItem] = useState<Item | null>(null);
   const [placingItemId, setPlacingItemId] = useState<string | null>(null);
   const [sectionModifierItems, setSectionModifierItems] = useState<Item[]>([
@@ -107,32 +109,32 @@ function Layout() {
       sectionModifierType: "BottomWall"
     }),
     new Item({
-      id: "top-left-corner-wall",
-      name: "Top Left Corner Wall",
+      id: "left-door",
+      name: "Left Door",
       cellsLong: 1,
       cellsTall: 1,
-      icon: "",
+      icon: "https://firebasestorage.googleapis.com/v0/b/kazoom-layitout.firebasestorage.app/o/public%2Fleft_door.png?alt=media&token=91fde31c-ebc6-4807-9670-f846c8d75cb6",
       moveable: true,
       starterItem: false,
       displayItem: true,
       isSectionModifier: true,
-      sectionModifierType: "TopLeftCornerWall"
+      sectionModifierType: "LeftDoor",
     }),
     new Item({
-      id: "top-right-corner-wall",
-      name: "Top Right Corner Wall",
+      id: "right-door",
+      name: "Right Door",
       cellsLong: 1,
       cellsTall: 1,
-      icon: "",
+      icon: "https://firebasestorage.googleapis.com/v0/b/kazoom-layitout.firebasestorage.app/o/public%2Fright_door.png?alt=media&token=8c6f3b4d-5e7a-4b9c-8d2f-0a3b5e6f7c8d",
       moveable: true,
       starterItem: false,
       displayItem: true,
       isSectionModifier: true,
-      sectionModifierType: "TopRightCornerWall"
+      sectionModifierType: "RightDoor",
     }),
     new Item({
-      id: "bottom-left-corner-wall",
-      name: "Bottom Left Corner Wall",
+      id: "left-window",
+      name: "Left Window",
       cellsLong: 1,
       cellsTall: 1,
       icon: "",
@@ -140,11 +142,11 @@ function Layout() {
       starterItem: false,
       displayItem: true,
       isSectionModifier: true,
-      sectionModifierType: "BottomLeftCornerWall"
+      sectionModifierType: "LeftWindow"
     }),
     new Item({
-      id: "bottom-right-corner-wall",
-      name: "Bottom Right Corner Wall",
+      id: "right-window",
+      name: "Right Window",
       cellsLong: 1,
       cellsTall: 1,
       icon: "",
@@ -152,8 +154,33 @@ function Layout() {
       starterItem: false,
       displayItem: true,
       isSectionModifier: true,
-      sectionModifierType: "BottomRightCornerWall"
+      sectionModifierType: "RightWindow"
+    }),
+    new Item({
+      id: "top-window",
+      name: "Top Window",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "TopWindow"
+    }),
+    new Item({
+      id: "bottom-window",
+      name: "Bottom Window",
+      cellsLong: 1,
+      cellsTall: 1,
+      icon: "",
+      moveable: true,
+      starterItem: false,
+      displayItem: true,
+      isSectionModifier: true,
+      sectionModifierType: "BottomWindow"
     })
+
 
 
   ]);
@@ -187,6 +214,7 @@ function Layout() {
   const [design, setDesign] = useState<Design | null>(null);
   const [templateName, setTemplateName] = useState<string>("");
   const [companyId, setCompanyId] = useState<string>("");
+  const [company, setCompany] = useState<Company | null>(null);
   const [areaId, setAreaId] = useState<string>("");
   const [area, setArea] = useState<Area | null>(null);
   const [designId, setDesignId] = useState<string>("");
@@ -201,12 +229,14 @@ function Layout() {
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [hasPickedBooth, setHasPickedBooth] = useState<boolean>(false);
   const [editVendor, setEditVendor] = useState<Vendor | null>(null);
+  const [selectedBooth, setSelectedBooth] = useState<Booth | null>(null);
 
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
   const addSectionDialogRef = useRef<HTMLDialogElement>(null);
   const addInventoryItemDialogRef = useRef<HTMLDialogElement>(null);
   const addVendorDialogRef = useRef<HTMLDialogElement>(null);
   const editVendorDialogRef = useRef<HTMLDialogElement>(null);
+  const addVendorToBoothDialogRef = useRef<HTMLDialogElement>(null);
 
 
   function getSectionByCellId(cellId: CellId, sections: Section[]): Section | null {
@@ -396,6 +426,7 @@ function Layout() {
           newBooths.push(...section.booths.map((booth) => {
             return new Booth({
               ...booth, // copies all properties
+              cell: new CellId({ x: section.cellId.x + booth.cell.x, y: section.cellId.y + booth.cell.y }),
               initialElement: document.querySelector(`.App #${booth.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
             })
           }))
@@ -590,6 +621,12 @@ function Layout() {
             })
           })
           setHasPickedBooth(pickedBooth);
+          const company = await getCompany(companyId);
+          if (company === null) {
+            window.location.href = "/LayItOut/DNF/";
+            return;
+          }
+          setCompany(company);
 
         } else {
           window.location.href = "/LayItOut/DNF/";
@@ -1043,7 +1080,18 @@ function Layout() {
   }
 
 
+  function vendorHasBooth(vendor: Vendor, boothMap: BoothMap): boolean {
+    let hasBooth = false;
+    boothMap.sections.forEach((section) => {
+      section.booths.forEach((item) => {
+        if (item.user?.id === vendor.id) {
+          hasBooth = true;
 
+        }
+      })
+    })
+    return hasBooth;
+  }
 
 
   function canPlaceItem(startCell: CellId, item: Item): boolean {
@@ -1087,6 +1135,13 @@ function Layout() {
           const occupyingItem = items.find((it) => it.id == funcCells[startCell.y + i][startCell.x + j].itemId);
           if (occupyingItem && occupyingItem.isSectionModifier) {
             //Check if the item being placed on edge of section modifier
+            // if((item.isSectionModifier))
+
+            //Check if item is on edge of section modifier
+            if (occupyingItem.sectionModifierType === "LeftDoor" || occupyingItem.sectionModifierType === "RightDoor") {
+              console.log("Item is on door of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              return false;
+            }
             if (occupyingItem.sectionModifierType === "RightWall") {
               console.log("Item is on left wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
               if (j == item.cellsLong - 1) {
@@ -1206,6 +1261,10 @@ function Layout() {
           const occupyingItem = items.find((it) => it.id == funcCells[startCell.y + i][startCell.x + j].itemId);
           if (occupyingItem && occupyingItem.isSectionModifier) {
             //Check if the item being placed on edge of section modifier
+            if (occupyingItem.sectionModifierType === "LeftDoor" || occupyingItem.sectionModifierType === "RightDoor") {
+              console.log("Item is on door of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
+              return false;
+            }
             if (occupyingItem.sectionModifierType === "RightWall") {
               console.log("Item is on left wall of section modifier, can place item", i, j, item.cellsTall, item.cellsLong)
               if (j == item.cellsLong - 1) {
@@ -1288,7 +1347,7 @@ function Layout() {
     const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
     setCanSave(true);
     if (removeCell != null) {
-      console.log("Removing item")
+      console.log("Removing item", item.id, "from cell", removeCell.toId())
       const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(removeCell, sections);
       //remove item from section
       section!.items = section!.items.filter((i) => i.id != item.id);
@@ -1564,6 +1623,7 @@ function Layout() {
     const newCells: CellProps[][] = Array.from(funcCells)
 
     if (funcCells[startCell.y] == undefined) {
+      console.log("Start cell is out of bounds", startCell);
 
       unHighlightCells();
       return;
@@ -2051,6 +2111,7 @@ function Layout() {
 
 
   return (
+    console.log("RENDERING APP", !(isCreatingArea && creatingAreaStage != "placing-items")),
     <>
 
       <div className="App" >
@@ -2058,7 +2119,9 @@ function Layout() {
         <br />
         {isPickingBoothMap && <div className='area-creation'>
           {!hasPickedBooth ? <><h2 className='area-creation-title'>Picking Booth</h2>
-            <label htmlFor="">Tap on an open booth then click on the checkmark to pick a booth</label> </> : <><h2 className='area-creation-title'>You have already picked a booth</h2> </>}
+            <label htmlFor="">Tap on an open booth then click on the checkmark to pick a booth</label> </> : <><h2 className='area-creation-title'>You have already picked a booth</h2>
+            <label htmlFor="">Contact {company?.supportEmail} to change booths</label>
+          </>}
           <label htmlFor="">Booth Size: {vendor?.plotWidth}ft x {vendor?.plotHeight}ft</label>
           <br />
         </div>}
@@ -2440,8 +2503,29 @@ function Layout() {
 
             }} className='forward-mobile-areas' />}</div>
             : <AreaComponent width={width * cellSize} height={height * cellSize} cells={flattenCells(cells)} />}
-
+          {(creatingAreaStage == "placing-items" || !isCreatingArea) && <KeyTile maxHeight={isMobile ? undefined : height * cellSize} />}
         </div>
+        {isViewingBoothMap && <div className='design-view'>
+          <button className='action-btn' onClick={() => {
+            const screenshotSections = sections.map((s) => new Section({
+              name: s.name,
+              cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
+              cellsLong: s.cellsLong,
+              cellsTall: s.cellsTall,
+              modifierItems: s.modifierItems,
+              booths: s.booths,
+              startingItems: s.items.map((i) => new StaringItem({
+                cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                item: new Item({
+                  ...i, // copies all properties
+                  starterItem: true,
+                })
+              }))
+            }));
+            localStorage.setItem('printSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
+            window.open(window.location.origin + `/LayItOut/Print/?companyId=${companyId}&areaId=${areaId}&designName=${boothMap?.name}`, '_blank');
+          }}>Print</button>
+        </div>}
         {isViewingDesign && <div className='design-view'>
           <button className='action-btn' onClick={() => {
             const screenshotSections = sections.map((s) => new Section({
@@ -2450,6 +2534,7 @@ function Layout() {
               cellsLong: s.cellsLong,
               cellsTall: s.cellsTall,
               modifierItems: s.modifierItems,
+              booths: s.booths,
               startingItems: s.items.map((i) => new StaringItem({
                 cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
                 item: new Item({
@@ -2562,7 +2647,7 @@ function Layout() {
       <div >
         {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
         {items.map((item) => {
-          return <DraggableItem isCreatingArea={isCreatingArea} isCreatingTemplate={isCreatingTemplate || isEditingTemplate} cellSize={cellSize} isViewingDesign={isViewingDesign || isViewingArea || isViewingBoothMap || isPickingBoothMap} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.isSectionModifier ? sections.find((s) => s.name == mobileViewingSection)?.modifierItems.some((i) => i.item.id === item.id) : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+          return <DraggableItem isPlacingItem={placingItem != null} isCreatingArea={isCreatingArea} isCreatingTemplate={isCreatingTemplate || isEditingTemplate} cellSize={cellSize} isViewingDesign={isViewingDesign || isViewingArea || isViewingBoothMap || isPickingBoothMap} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.isSectionModifier ? sections.find((s) => s.name == mobileViewingSection)?.modifierItems.some((i) => i.item.id === item.id) : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
 
             item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
             onSelect={onSelectItem}
@@ -2571,7 +2656,7 @@ function Layout() {
         })}
         {booths.map((booth) => {
           console.log("CAN PICK BOOTH", booth.cellsLong == vendor?.plotWidth && booth.cellsTall == vendor!.plotHeight, "BOOTH", booth, "VENDOR", vendor);
-          return <BoothItem canPick={isViewingBoothMap || hasPickedBooth || (booth.cellsLong == vendor?.plotWidth && booth.cellsTall == vendor!.plotHeight)} visible={!isMobile ? true : mobileViewingSection == null ? false : (sections.find((s) => s.name == mobileViewingSection)?.booths.some((i) => i.id === booth.id) ?? false)} booth={booth} isViewingBooth={isViewingBoothMap || hasPickedBooth} isSelected={selectedItemId == booth.id} cellSize={cellSize} key={booth.id} onSelect={onSelectItem}
+          return <BoothItem canPick={isViewingBoothMap || hasPickedBooth || (booth.cellsLong == vendor?.plotWidth && booth.cellsTall == vendor!.plotHeight)} visible={!isMobile ? true : mobileViewingSection == null ? false : (sections.find((s) => s.name == mobileViewingSection)?.booths.some((i) => i.id === booth.id) ?? false)} booth={booth} isViewingBooth={isViewingBoothMap} hasPickedBooth={hasPickedBooth} isSelected={selectedItemId == booth.id} cellSize={cellSize} key={booth.id} onSelect={onSelectItem}
             isUnselecting={unselectingItemIds.includes(booth.id)}
             onDeselect={() => onDeselectItem(booth.id)} onPickBooth={async (boothId) => {
               setLoading(true);
@@ -2619,6 +2704,35 @@ function Layout() {
               await saveAreaBoothMap(companyId, updatedBoothMap);
               window.location.reload();
               setLoading(false);
+            }}
+            onRemoveVendorFromBooth={() => {
+              setLoading(true);
+              const updatedSections = sections.map((s) => {
+                return new Section({
+                  ...s,
+                  booths: s.booths.map((b) => {
+                    if (b.user?.id === booth.user?.id) {
+                      return new Booth({
+                        ...b,
+                        user: null,
+                        initialElement: b.initialElement ?? undefined
+                      });
+                    }
+                    return b;
+                  })
+                });
+              });
+              const updatedBoothMap = new BoothMap({
+                ...boothMap!,
+                sections: updatedSections,
+
+              });
+              saveAreaBoothMap(companyId, updatedBoothMap).then(() => {
+                window.location.reload();
+              });
+            }} onAddVendorToBooth={() => {
+              setSelectedBooth(booth);
+              addVendorToBoothDialogRef.current?.showModal();
             }} />
         })}
       </div>
@@ -2809,6 +2923,54 @@ function Layout() {
 
 
 
+      }} />
+
+      <AddVendorToBoothDialog dialogRef={addVendorToBoothDialogRef} vendors={boothMap?.vendors.filter((v) => !vendorHasBooth(v, boothMap)) ?? []} closeDialog={() => {
+        addVendorToBoothDialogRef.current?.close();
+      }} addVendorToBooth={async (vendor) => {
+        setLoading(true);
+        const updatedSections = sections.map((s) => {
+          if (s.name === mobileViewingSection) {
+            return new Section({
+              ...s,
+              booths: s.booths.map((i) => {
+                if (i.id === selectedBooth!.id) {
+                  return new Booth({
+                    ...i,
+                    user: vendor,
+                    initialElement: i.initialElement ?? undefined
+                  });
+                }
+                return i;
+              })
+            });
+          } else if (s.booths.some((i) => i.id === selectedBooth!.id)) {
+            return new Section({
+              ...s,
+              booths: s.booths.map((i) => {
+                if (i.id === selectedBooth!.id) {
+                  return new Booth({
+                    ...i,
+                    user: vendor,
+                    initialElement: i.initialElement ?? undefined
+                  });
+                }
+                return i;
+              })
+            });
+          } else {
+            return s;
+          }
+        });
+        console.log("Updated sections", updatedSections);
+        setSections(updatedSections);
+        const updatedBoothMap = new BoothMap({
+          ...boothMap!,
+          sections: updatedSections
+        });
+        await saveAreaBoothMap(companyId, updatedBoothMap);
+        window.location.reload();
+        setLoading(false);
       }} />
 
       {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src={window.location.origin + '/LayItOut/Preview/'} width={totalWidth * cellSize + 20} height={totalHeight * cellSize + 20}></iframe>}

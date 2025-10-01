@@ -223,6 +223,7 @@ function Layout() {
           newBooths.push(...section.booths.map((booth) => {
             return new Booth({
               ...booth, // copies all properties
+              cell: new CellId({ x: section.cellId.x + booth.cell.x, y: section.cellId.y + booth.cell.y }),
               initialElement: document.querySelector(`.App #${booth.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
             })
           }))
@@ -865,7 +866,7 @@ function Layout() {
       <div id={takingPhoto ? 'capture' : ''}>
         {sections.map((section) => <SectionArea takingPhoto={takingPhoto} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
         {items.map((item) => {
-          return <DraggableItem isCreatingArea={false} isCreatingTemplate={false} cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+          return <DraggableItem isPlacingItem={false} isCreatingArea={false} isCreatingTemplate={false} cellSize={cellSize} isViewingDesign={isViewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
 
             item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
             onSelect={onSelectItem}
@@ -873,7 +874,7 @@ function Layout() {
             onDeselect={() => onDeselectItem(item.id)} />
         })}
         {booths.map((booth) => {
-          return <BoothItem visible={!isMobile ? true : mobileViewingSection == null ? false : (sections.find((s) => s.name == mobileViewingSection)?.booths.some((i) => i.id === booth.id) ?? false)} booth={booth} isViewingBooth={false} isSelected={selectedItemId == booth.id} cellSize={cellSize} key={booth.id} onSelect={onSelectItem}
+          return <BoothItem canPick={true} visible={!isMobile ? true : mobileViewingSection == null ? false : (sections.find((s) => s.name == mobileViewingSection)?.booths.some((i) => i.id === booth.id) ?? false)} booth={booth} isViewingBooth={false} isSelected={selectedItemId == booth.id} cellSize={cellSize} key={booth.id} onSelect={onSelectItem}
             isUnselecting={unselectingItemIds.includes(booth.id)}
             onDeselect={() => onDeselectItem(booth.id)} onPickBooth={async (boothId) => {
 

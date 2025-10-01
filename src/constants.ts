@@ -30,8 +30,12 @@ export const SectionModifierType = {
     TopLeftCornerWall: "TopLeftCornerWall",
     BottomRightCornerWall: "BottomRightCornerWall",
     BottomLeftCornerWall: "BottomLeftCornerWall",
-    Door: "Door",
-    Window: "Window"
+    LeftDoor: "LeftDoor",
+    RightDoor: "RightDoor",
+    TopWindow: "TopWindow",
+    BottomWindow: "BottomWindow",
+    LeftWindow: "LeftWindow",
+    RightWindow: "RightWindow",
 } as const;
 
 export type SectionModifierType = typeof SectionModifierType[keyof typeof SectionModifierType];
@@ -513,12 +517,14 @@ export class Company {
     id: string;
     code: string;
     users: string[];
+    supportEmail: string;
 
-    constructor({ name, id, code, users }: { name: string, id: string, code: string, users: string[] }) {
+    constructor({ name, id, code, users, supportEmail }: { name: string, id: string, code: string, users: string[], supportEmail?: string }) {
         this.name = name;
         this.id = id;
         this.code = code;
         this.users = users;
+        this.supportEmail = supportEmail || "";
     }
 
     static fromDoc(data: DocumentData): Company {
@@ -526,7 +532,8 @@ export class Company {
             name: data.name,
             id: data.id,
             code: data.code,
-            users: data.users || []
+            users: data.users || [],
+            supportEmail: data.supportEmail || ""
         });
     }
 
@@ -535,7 +542,8 @@ export class Company {
             name: this.name,
             id: this.id,
             code: this.code,
-            users: this.users || []
+            users: this.users || [],
+            supportEmail: this.supportEmail || ""
         };
     }
 

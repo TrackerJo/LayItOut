@@ -3,6 +3,7 @@ import "./draggable_item.css"
 import { Booth } from "../constants";
 import XMark from "../assets/xmark.png";
 import Checkmark from "../assets/checkmark.png";
+import PersonAdd from "../assets/person_add.png"
 import "./booth_item.css";
 
 
@@ -15,12 +16,15 @@ type BoothItemProps = {
     onDeselect: () => void,
     isUnselecting: boolean,
     onPickBooth: (boothId: string) => void,
+    onRemoveVendorFromBooth: (boothId: string) => void,
+    onAddVendorToBooth: (boothId: string) => void,
     visible: boolean,
     cellSize: number,
+    hasPickedBooth: boolean,
     canPick: boolean,
 }
 
-function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth, onSelect, isUnselecting, visible, cellSize, canPick }: BoothItemProps) {
+function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth, onSelect, isUnselecting, visible, cellSize, canPick, hasPickedBooth, onAddVendorToBooth, onRemoveVendorFromBooth }: BoothItemProps) {
     const [x, setX] = useState<number>(0)
     const [y, setY] = useState<number>(0)
     const textRef = useRef<HTMLParagraphElement>(null);
@@ -146,7 +150,7 @@ function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth,
                 <div
                     id={booth.id}
                     ref={itemRef}
-                    className={`booth draggable-item ${isViewingBooth ? "viewing" : ""} ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${booth.user != null && !isViewingBooth ? "no-select" : ""} ${visible ? "" : "invisible"} ${!canPick ? "cannot-pick" : ""}`}
+                    className={`booth draggable-item ${hasPickedBooth ? "viewing" : ""} ${isDragging ? "dragging" : isSelected ? "selected" : ""} ${booth.user != null && !isViewingBooth ? "no-select" : ""} ${visible ? "" : "invisible"} ${!canPick ? "cannot-pick" : ""}`}
                     style={{
                         top: `${y}px`,
                         left: `${x}px`,
@@ -159,8 +163,8 @@ function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth,
 
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (isViewingBooth) return;
-                        if (booth.user != null) return;
+                        if (hasPickedBooth) return;
+                        if (booth.user != null && !isViewingBooth) return;
                         if (!canPick) return;
                         if (isSelected) {
                             onDeselect();
@@ -175,7 +179,7 @@ function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth,
                         <div className="booth-inner">
                             <p >{booth.name}</p>
                             <p className="booth-sizing">{booth.cellsLong}ft x {booth.cellsTall}ft</p>
-                            <p ref={textRef}>{booth.user == null ? "Open" : booth.user!.businessName}</p>
+                            <p ref={textRef}>{booth.user == null ? "Open " : booth.user!.businessName}</p>
 
                         </div>
                     </div>
@@ -195,15 +199,26 @@ function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth,
                                         width: `10px`
                                     }}
                                 >
-                                    <img
+                                    {isViewingBooth ? <img
+                                        src={PersonAdd}
+                                        alt="Person Add"
+                                        className={"person-icon"}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onAddVendorToBooth(booth.id);
+
+
+                                        }}
+                                    /> : <img
                                         src={Checkmark}
                                         alt="pick"
                                         className={"pick-icon"}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onPickBooth(booth.id);
+
                                         }}
-                                    />
+                                    />}
                                 </div>
                                 <div
                                     className={`draggable-item-options mobile-right ${isUnselecting ? "exiting" : ""}`}
@@ -213,15 +228,25 @@ function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth,
                                         width: `10px`
                                     }}
                                 >
-                                    <img
+                                    {isViewingBooth && booth.user != null ? <img
                                         src={XMark}
                                         alt="delete"
                                         className="delete-icon"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onDeselect();
+                                            onRemoveVendorFromBooth(booth.id);
                                         }}
-                                    />
+                                    /> : !isViewingBooth ? <>
+                                        <img
+                                            src={XMark}
+                                            alt="delete"
+                                            className="delete-icon"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeselect();
+                                            }}
+                                        />
+                                    </> : <></>}
                                 </div>
                             </>
                         ) : (
@@ -234,7 +259,17 @@ function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth,
                                     width: `${booth.cellsLong * cellSize}px`
                                 }}
                             >
-                                <img
+                                {isViewingBooth && booth.user == null ? <img
+                                    src={PersonAdd}
+                                    alt="Person Add"
+                                    className={"person-icon"}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onAddVendorToBooth(booth.id);
+
+
+                                    }}
+                                /> : isViewingBooth && booth.user != null ? <></> : <img
                                     src={Checkmark}
                                     alt="pick"
                                     className={"pick-icon"}
@@ -243,16 +278,26 @@ function BoothItem({ booth, isViewingBooth, isSelected, onDeselect, onPickBooth,
                                         onPickBooth(booth.id);
 
                                     }}
-                                />
-                                <img
+                                />}
+                                {isViewingBooth && booth.user != null ? <img
                                     src={XMark}
                                     alt="delete"
                                     className="delete-icon"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        onDeselect();
+                                        onRemoveVendorFromBooth(booth.id);
                                     }}
-                                />
+                                /> : !isViewingBooth ? <>
+                                    <img
+                                        src={XMark}
+                                        alt="delete"
+                                        className="delete-icon"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeselect();
+                                        }}
+                                    />
+                                </> : <></>}
                             </div>
                         )}
                     </>

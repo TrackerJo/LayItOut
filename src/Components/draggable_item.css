@@ -253,6 +253,22 @@ body:not(:has(.draggable-item.dragging)) .draggable-item:hover:not(.dragging):no
     border-right: 1px solid black;
 }
 
+.draggable-item.TopWindow {
+    border-top: 1px dashed black;
+}
+
+.draggable-item.BottomWindow {
+    border-bottom: 1px dashed black;
+}
+
+.draggable-item.LeftWindow {
+    border-left: 1px dashed black;
+}
+
+.draggable-item.RightWindow {
+    border-right: 1px dashed black;
+}
+
 .draggable-item.BottomLeftCornerWall {
     border-bottom: 1px solid black;
     border-left: 1px solid black;
@@ -299,6 +315,12 @@ body:not(:has(.draggable-item.dragging)):not(:has(.draggable-item.placed-modifie
 
 .draggable-item.not-moveable div {
     filter: brightness(0.8) grayscale(0.5);
+}
+
+.draggable-item.is-placing {
+
+    pointer-events: none;
+
 }
 
 @media (max-width: 768px) {

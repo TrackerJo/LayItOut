@@ -1,6 +1,6 @@
 
 
-import { useEffect, useRef, useState } from "react"
+import { use, useCallback, useEffect, useRef, useState } from "react"
 import { Item, type CellId, type InventoryItem } from "../constants"
 import "./display_item.css"
 
@@ -21,7 +21,7 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedIt
     const textRef = useRef<HTMLParagraphElement>(null);
     const [fontSize, setFontSize] = useState<number>(12);
     const [currentItem, setCurrentItem] = useState<Item>(inventoryItem.item);
-
+    const [mouseDown, setMouseDown] = useState<boolean>(false);
 
     // useEffect(() => {
     //     //Check if using mobile
@@ -87,12 +87,13 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedIt
     const preventScroll = (e: TouchEvent) => {
         e.preventDefault();
     };
-    return (<div className="display">
 
-        <div ref={displayRef} id={inventoryItem.item.id} className={inventoryItem.item.isSectionItem ? `display-section` : `display-item ${inventoryItem.item.isSectionModifier ? inventoryItem.item.sectionModifierType!.toString() : ""}`} style={{ width: `${inventoryItem.item.cellsLong * 10}px`, height: `${inventoryItem.item.cellsTall * 10}px` }} onMouseDown={(e) => {
+    const onMouseMove = useCallback(() => {
+        console.log("MOUSE MOVE", mouseDown);
+        if (mouseDown) {
+            setMouseDown(false);
             if (tapAndPlaceMode) return;
-            e.preventDefault();
-            e.stopPropagation();
+
             inventoryItem.item.initialElement = displayRef.current!
             inventoryItem.item.id = inventoryItem.item.name + (Math.random() * 10000).toString()
             console.log("ADDING ITEM", inventoryItem.item.id, "to initialElement", inventoryItem.item.initialElement)
@@ -100,9 +101,49 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedIt
                 ...inventoryItem.item, // copies all properties
             }))
             addDraggingItem(inventoryItem.item)
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("touchmove", onMouseMove);
+        }
+    }, [mouseDown, tapAndPlaceMode]);
+
+
+    useEffect(() => {
+        if (mouseDown) {
+            window.addEventListener("touchmove", onMouseMove);
+            window.addEventListener("mousemove", onMouseMove);
+
+        } else {
+            window.removeEventListener("touchmove", onMouseMove);
+            window.removeEventListener("mousemove", onMouseMove);
+        }
+
+        return () => {
+            window.removeEventListener("touchmove", onMouseMove);
+            window.removeEventListener("mousemove", onMouseMove);
+        };
+    }, [mouseDown, onMouseMove]);
+
+
+    return (<div className="display">
+
+        <div ref={displayRef} id={inventoryItem.item.id} className={inventoryItem.item.isSectionItem ? `display-section` : `display-item ${inventoryItem.item.isSectionModifier ? inventoryItem.item.sectionModifierType!.toString() : ""}`} style={{ width: `${inventoryItem.item.cellsLong * 10}px`, height: `${inventoryItem.item.cellsTall * 10}px` }} onMouseDown={(e) => {
+            setMouseDown(true);
+
+
+
+
+        }} onMouseUp={() => {
+            console.log("MOUSE UP");
+            setMouseDown(false);
 
         }} onClick={(e) => {
-            if (!tapAndPlaceMode) return;
+
+            if (!tapAndPlaceMode) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            console.log("CLICKED ON ITEM", inventoryItem.item.id, "with tap and place mode");
             e.preventDefault();
             e.stopPropagation();
             inventoryItem.item.initialElement = displayRef.current!
@@ -125,7 +166,7 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedIt
                 addDraggingItem(inventoryItem.item)
 
             }}>
-            {inventoryItem.item.isSectionModifier ? null : inventoryItem.item.icon.includes("custom-") ?
+            {inventoryItem.item.isSectionModifier ? inventoryItem.item.sectionModifierType === "LeftDoor" || inventoryItem.item.sectionModifierType === "RightDoor" ? <img src={inventoryItem.item.icon} alt="icon" /> : null : inventoryItem.item.icon.includes("custom-") ?
                 <div className={inventoryItem.item.isSectionItem ? "custom-section" : "custom-icon"}>
                     <div>
 

@@ -6,7 +6,7 @@ import '../index.css'
 import AreaComponent from '../Components/area';
 import type { CellProps } from '../Components/cell';
 import DraggableItem from '../Components/draggable_item';
-import { CellId, Item, Section, StaringItem } from '../constants';
+import { Booth, CellId, Item, Section, StaringItem } from '../constants';
 
 
 
@@ -16,6 +16,7 @@ import SectionArea from '../Components/section';
 import { getArea, saveCompanyArea } from '../api/firestore';
 import { getLocalArea } from '../api/local_firestore';
 import { createRoot } from 'react-dom/client';
+import BoothItem from '../Components/booth_item';
 
 createRoot(document.getElementById('root')!).render(
 
@@ -39,11 +40,10 @@ function Print() {
 
   const [sections, setSections] = useState<Section[]>([]);
 
-  const [companyId, setCompanyId] = useState<string>("");
-  const [areaId, setAreaId] = useState<string>("");
+
   const [designName, setDesignName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
-
+  const [booths, setBooths] = useState<Booth[]>([]);
 
 
 
@@ -111,6 +111,7 @@ function Print() {
     setTimeout(() => {
       const newStartingItems: StaringItem[] = []
       const newSections: Section[] = [...sectionsToGenerate];
+      const newBooths: Booth[] = [];
       for (const section of newSections) {
 
 
@@ -139,6 +140,14 @@ function Print() {
               moveable: false,
               // Ensure rotation is set
             })
+          })
+        }))
+
+        newBooths.push(...section.booths.map((booth) => {
+          return new Booth({
+            ...booth, // copies all properties
+            cell: new CellId({ x: section.cellId.x + booth.cell.x, y: section.cellId.y + booth.cell.y }),
+            initialElement: document.querySelector(`.App #${booth.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
           })
         }))
 
@@ -172,6 +181,25 @@ function Print() {
 
         setItems((old) => [...old, startingItem.item])
       }
+      for (const booth of newBooths) {
+
+
+        // Get the current rotation from the item
+
+
+        for (let i = 0; i < booth.cellsTall; i++) {
+          for (let j = 0; j < booth.cellsLong; j++) {
+            newCells[booth.cell.y + i][booth.cell.x + j].hasItem = true;
+            newCells[booth.cell.y + i][booth.cell.x + j].itemId = booth.id;
+          }
+        }
+
+        booth.initialElement = document.querySelector(`.App #${booth.cell.toId()}.cell:not(.cell-border)`) as HTMLElement;
+
+
+
+        setBooths((old) => [...old, booth])
+      }
 
       setCells([...newCells]);
       setTimeout(() => {
@@ -200,16 +228,7 @@ function Print() {
 
   async function loadArea() {
     const urlParams = new URLSearchParams(window.location.search);
-    const companyId = urlParams.get("companyId");
-    const areaId = urlParams.get("areaId");
-    const designName = urlParams.get("designName");
-    const designId = urlParams.get("designId");
-    if (!companyId || !areaId || !designName || !designId) {
-      alert("Invalid URL parameters");
-      return;
-    }
-    setCompanyId(companyId);
-    setAreaId(areaId);
+    const designName = urlParams.get("designName") || "";
     setDesignName(designName);
 
 
@@ -235,6 +254,7 @@ function Print() {
         cellsTall: section.cellsTall,
         startingItems: section.startingItems,
         modifierItems: section.modifierItems,
+        booths: section.booths,
         items: section.startingItems.map((i) => new Item({
           ...i.item, // copies all properties
           sectionCell: new CellId({ x: i.cell.x, y: i.cell.y }),
@@ -252,6 +272,7 @@ function Print() {
         cellsTall: section.cellsTall,
         startingItems: section.startingItems,
         modifierItems: section.modifierItems,
+        booths: section.booths,
         items: section.startingItems.map((i) => new Item({
           ...i.item, // copies all properties
           sectionCell: new CellId({ x: i.cell.x, y: i.cell.y }),
@@ -313,12 +334,21 @@ function Print() {
       </div>
       {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={true} cellSize={cellSize} />)}
       {items.map((item) => {
-        return <DraggableItem isCreatingArea={false} isCreatingTemplate={false} cellSize={cellSize} isViewingDesign={true} removeItem={() => { }} visible={true}
+        return <DraggableItem isPlacingItem={false} isCreatingArea={false} isCreatingTemplate={false} cellSize={cellSize} isViewingDesign={true} removeItem={() => { }} visible={true}
 
           item={item} canPlaceItem={() => { return false }} placeItem={() => { }} deleteItemRotate={() => { }} highlightCells={() => { }} unHighlightCells={() => { }} key={item.id} deleteItem={() => { }} isSelected={false}
           onSelect={() => { }}
           isUnselecting={false}
           onDeselect={() => { }} />
+      })}
+      {booths.map((booth) => {
+        return <BoothItem onAddVendorToBooth={() => { }} canPick={true} visible={true} booth={booth} isViewingBooth={false} isSelected={false} cellSize={cellSize} key={booth.id} onSelect={() => { }}
+          isUnselecting={false}
+          hasPickedBooth={false}
+          onRemoveVendorFromBooth={() => { }}
+          onDeselect={() => { }} onPickBooth={async (boothId) => {
+
+          }} />
       })}
 
       <div className="print-footer">

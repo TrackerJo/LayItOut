@@ -212,7 +212,7 @@ body::before {
 @media (max-width: 768px) {
   body {
     width: 100vw;
-    height: 100vh;
+    /* height: 100vh; */
     /* overflow: hidden; */
     overflow-x: hidden;
     background-size: 30px 30px, 30px 30px, 30px 30px;

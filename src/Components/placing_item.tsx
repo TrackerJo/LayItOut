@@ -204,6 +204,11 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
         if (targetElement?.classList?.contains("cell") && !isHighlighting) {
 
             highlightCells(CellId.fromString(targetElement.id), tempItem);
+        } else if (targetElement?.classList?.contains("section-modifier") && !isHighlighting) {
+            // Highlight section modifier cells
+
+            highlightCells(CellId.fromString(targetElement.dataset.cell as string), tempItem);
+
         } else if (!isHighlighting) {
             unHighlightCells();
         }
@@ -215,7 +220,7 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
 
         // } else {
         setX(clientX - dragOffset.x)
-        setY(clientY - dragOffset.y + 5)
+        setY(clientY - dragOffset.y + (item.sectionModifierType?.includes("Door") ? 10 : 5));
         //check if mouse is pressed
 
         if (isMouseDown) {
@@ -247,7 +252,7 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
         // Find the element under the final position
         const targetElement = document.elementFromPoint(clientX, clientY) as HTMLElement;
 
-        if (!targetElement?.classList?.contains("cell")) {
+        if (!targetElement?.classList?.contains("cell") && !targetElement?.classList?.contains("section-modifier")) {
             const rotatedDims = getRotatedDimensions(rotation);
             const tempItem = {
                 ...item,
@@ -264,7 +269,39 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
 
             // setX(prevX)
             // setY(prevY)
-        } else {
+        } else if (targetElement?.classList?.contains("section-modifier")) {
+            console.log("Placing item on section modifier cell");
+            console.log("Target element:", targetElement.dataset.cell);
+            if (targetElement.dataset.cell == "") {
+
+                return;
+            }
+            // Create item with current rotation for placement validation
+            const rotatedDims = getRotatedDimensions(rotation);
+            const tempItem = {
+                ...item,
+                cellsLong: rotatedDims.cellsWide,
+                cellsTall: rotatedDims.cellsTall
+            };
+
+
+
+            if (!isHighlighting) {
+                if (!canPlaceItem(CellId.fromString(targetElement.dataset.cell as string), tempItem)) {
+
+                    // setX(prevX);
+                    // setY(prevY);
+                    // setIsDragging(false);
+                    return;
+                }
+                placeItem(CellId.fromString(targetElement.dataset.cell as string), tempItem, cell != null ? CellId.fromString(cell.id) : null);
+            } else {
+                setIsHighlighting(false);
+                placeMultiItem(tempItem);
+            }
+            console.log("Placed item at cell:", targetElement);
+        }
+        else {
             // Create item with current rotation for placement validation
             const rotatedDims = getRotatedDimensions(rotation);
             const tempItem = {
@@ -314,6 +351,8 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
         handleEnd({ clientX, clientY } as MouseEvent);
         document.body.removeEventListener('touchmove', preventScroll);
     }, [handleEnd, preventScroll]);
+
+
 
 
 

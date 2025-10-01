@@ -236,6 +236,22 @@
     border-top: 1px solid black;
 }
 
+.display-item.TopWindow {
+    border-top: 1px dashed black;
+}
+.display-item.BottomWindow {
+    border-bottom: 1px dashed black;
+}
+
+.display-item.LeftWindow {
+    border-left: 1px dashed black;
+}
+.display-item.RightWindow {
+    border-right: 1px dashed black;
+}
+
+
+
 .display-item.BottomWall {
     border-bottom: 1px solid black;
 }
