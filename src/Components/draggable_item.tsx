@@ -599,8 +599,8 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                     style={{
                         top: `${y}px`,
                         left: `${x}px`,
-                        width: `${item.cellsLong * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "LeftWall" || item.sectionModifierType == "RightWall" || item.sectionModifierType === "LeftWindow" || item.sectionModifierType === "RightWindow" ? 1 : 0)}px`,
-                        height: `${item.cellsTall * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "TopWall" || item.sectionModifierType == "BottomWall" || item.sectionModifierType === "TopWindow" || item.sectionModifierType === "BottomWindow" ? 1 : 0)}px`,
+                        width: `${item.cellsLong * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "LeftWall" || item.sectionModifierType == "RightWall" || item.sectionModifierType === "LeftWindow" || item.sectionModifierType === "RightWindow" ? 0 : 0)}px`,
+                        height: `${item.cellsTall * (item.isDisplayItem && !isDragging && !item.hasMoved ? 10 : cellSize) - (isSelected ? 4 : 0) - (item.sectionModifierType == "TopWall" || item.sectionModifierType == "BottomWall" || item.sectionModifierType === "TopWindow" || item.sectionModifierType === "BottomWindow" ? 0 : 0)}px`,
                         rotate: `${rotation * 90}deg`,
                         transformOrigin: 'center center',
                         fontSize: `${fontSize}px`
