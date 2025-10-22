@@ -865,3 +865,53 @@ export class User {
         };
     }
 }
+
+export class CustomItem extends Item {
+
+    constructor({ cellsLong, cellsTall, name, id, icon, moveable }: { cellsLong: number, cellsTall: number, name: string, id: string, icon: string, moveable: boolean }) {
+        super({ cellsLong, cellsTall, name, id, icon, moveable: moveable, starterItem: false, displayItem: true });
+    }
+
+    static fromDoc(data: DocumentData): CustomItem {
+        return new CustomItem({
+            id: data.id,
+            name: data.name,
+            icon: data.icon,
+            cellsLong: data.cellsLong,
+            cellsTall: data.cellsTall,
+            moveable: data.moveable
+        });
+    }
+
+    static fromJSON(data: any): CustomItem {
+        return new CustomItem({
+            id: data.id,
+            name: data.name,
+            icon: data.icon,
+            cellsLong: data.cellsLong,
+            cellsTall: data.cellsTall,
+            moveable: data.moveable
+        });
+    }
+    toJSON(): object {
+        return {
+            id: this.id,
+            name: this.name,
+            icon: this.icon,
+            cellsLong: this.cellsLong,
+            cellsTall: this.cellsTall,
+            moveable: this.moveable
+        };
+    }
+
+    toDoc(): DocumentData {
+        return {
+            id: this.id,
+            name: this.name,
+            icon: this.icon,
+            cellsLong: this.cellsLong,
+            cellsTall: this.cellsTall,
+            moveable: this.moveable
+        };
+    }
+}

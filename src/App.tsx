@@ -4,9 +4,9 @@ import "./App.css";
 import PersonIcon from "./assets/person.png";
 import PlusIcon from "./assets/plus.png";
 import { useEffect, useRef, useState } from "react";
-import type { Area, BoothMap, Design } from "./constants";
+import { InventoryItem, type Area, type BoothMap, type CustomItem, type Design } from "./constants";
 import { isLoggedIn, logout } from "./api/auth";
-import { createAreaBoothMap, createAreaDesign, createCompanyArea, deleteArea, deleteBoothMap, deleteDesign, getAreaBoothMaps, getAreaDesigns, getCompanyAreas } from "./api/firestore";
+import { addCompanyCustomItem, createAreaBoothMap, createAreaDesign, createCompanyArea, deleteArea, deleteBoothMap, deleteCompanyCustomItem, deleteDesign, getAreaBoothMaps, getAreaDesigns, getCompanyAreas, getCompanyCustomItems } from "./api/firestore";
 import AreaTile from "./Components/area_tile";
 import CreateDesignDialog from "./Components/create_design_dialog";
 import DesignTile from "./Components/design_tile";
@@ -14,6 +14,10 @@ import AccountDialog from "./Components/account_dialog";
 import CreateAreaDialog from "./Components/create_area_dialog";
 import CreateBoothMapDialog from "./Components/create_boothmap_dialog";
 import BoothMapTile from "./Components/boothmap_tile";
+import AddCustomItemDialog from "./Components/add_custom_item_dialog";
+import CreateCustomItemDialog from "./Components/create_custom_item_dialog";
+import InventoryItemTile from "./Components/inventory_item_tile";
+import { deleteCustomItem } from "./api/storage";
 
 createRoot(document.getElementById('root')!).render(
 
@@ -24,16 +28,18 @@ createRoot(document.getElementById('root')!).render(
 
 function App() {
     const [isMobile, setIsMobile] = useState<boolean>(/Mobi|Android/i.test(navigator.userAgent));
-    const [selectedNav, setSelectedNav] = useState<string>("designs");
+    const [selectedNav, setSelectedNav] = useState<"designs" | "areas" | "boothmaps" | "items">("designs");
     const [designs, setDesigns] = useState<Design[]>([]);
     const [areas, setAreas] = useState<Area[]>([]);
     const [boothMaps, setBoothMaps] = useState<BoothMap[]>([]);
+    const [customItems, setCustomItems] = useState<CustomItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
     const accountDialogRef = useRef<HTMLDialogElement>(null);
     const createDesignRef = useRef<HTMLDialogElement>(null);
     const createAreaRef = useRef<HTMLDialogElement>(null);
     const createBoothMapRef = useRef<HTMLDialogElement>(null);
+    const createCustomItemRef = useRef<HTMLDialogElement>(null);
 
     useEffect(() => {
         isLoggedIn(() => { })
@@ -45,6 +51,8 @@ function App() {
             setSelectedNav("areas");
         } else if (view === "boothmaps") {
             setSelectedNav("boothmaps");
+        } else if (view === "items") {
+            setSelectedNav("items");
         }
         async function fetchContent() {
             const companyId = localStorage.getItem("companyId");
@@ -68,6 +76,8 @@ function App() {
             designsArrays.forEach(areaDesignsResponse => {
                 designsResponse.push(...areaDesignsResponse);
             });
+            const customItemsResponse: CustomItem[] = await getCompanyCustomItems(companyId!);
+            setCustomItems([...customItemsResponse]);
             setAreas([...areasResponse]);
             setDesigns([...designsResponse]);
             setBoothMaps([...boothMapsResponse]);
@@ -108,6 +118,7 @@ function App() {
                             <button className={`nav-button ${selectedNav == "boothmaps" ? "selected" : ""}`} onClick={() => setSelectedNav("boothmaps")}>Booth Maps</button>
 
                             <button className={`nav-button ${selectedNav == "areas" ? "selected" : ""}`} onClick={() => setSelectedNav("areas")}>Areas</button>
+                            <button className={`nav-button ${selectedNav == "items" ? "selected" : ""}`} onClick={() => setSelectedNav("items")}>Inventory Items</button>
 
                         </div>
 
@@ -116,6 +127,7 @@ function App() {
                         {selectedNav == "designs" && designs.length == 0 && <div className="no-designs"><h3>No Designs Yet</h3></div>}
                         {selectedNav == "areas" && areas.length == 0 && <div className="no-areas"><h3>No Areas Yet</h3></div>}
                         {selectedNav == "boothmaps" && boothMaps.length == 0 && <div className="no-boothmaps"><h3>No BoothMaps Yet</h3></div>}
+                        {selectedNav == "items" && customItems.length == 0 && <div className="no-items"><h3>No Custom Items Yet</h3></div>}
                         {selectedNav == "areas" &&
 
                             <div className="area-tiles">
@@ -170,6 +182,21 @@ function App() {
                             </div>
 
                         }
+                        {selectedNav == "items" &&
+
+                            <div className="custom-item-tiles">
+                                {customItems.map((customItem) => (
+                                    <InventoryItemTile key={customItem.id} item={customItem} onSelect={() => { }} canDelete={true} onDelete={async () => {
+                                        setCustomItems(customItems.filter(ci => ci.id !== customItem.id));
+                                        setLoading(true);
+                                        await deleteCompanyCustomItem(localStorage.getItem("companyId")!, customItem.id);
+                                        // await deleteCustomItem(customItem.icon);
+                                        setLoading(false);
+                                    }} />
+                                ))}
+                            </div>
+
+                        }
                         {selectedNav == "designs" || !isMobile ? <div className="plus-icon" onClick={() => {
                             if (selectedNav == "designs") {
                                 createDesignRef.current?.showModal();
@@ -177,6 +204,8 @@ function App() {
                                 createBoothMapRef.current?.showModal();
                             } else if (selectedNav == "areas") {
                                 createAreaRef.current?.showModal();
+                            } else if (selectedNav == "items") {
+                                createCustomItemRef.current?.showModal();
                             }
                         }}>
                             <img src={PlusIcon} alt="Plus Icon" />
@@ -205,6 +234,13 @@ function App() {
                 setBoothMaps([...boothMaps, boothMap]);
                 await createAreaBoothMap(localStorage.getItem("companyId")!, boothMap.areaId, boothMap);
                 createBoothMapRef.current?.close();
+            }} />
+
+            <CreateCustomItemDialog dialogRef={createCustomItemRef} closeDialog={() => createCustomItemRef.current?.close()} createCustomItem={async (customItem) => {
+                // Implement the logic to add the custom item to the inventory
+                await addCompanyCustomItem(localStorage.getItem("companyId")!, customItem);
+                setCustomItems([...customItems, customItem]);
+                createCustomItemRef.current?.close();
             }} />
         </>
     );

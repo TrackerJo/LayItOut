@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react';
+import {useState, type RefObject } from 'react';
 import './create_area_dialog.css';
 import { Area } from '../constants';
 
@@ -48,8 +48,8 @@ function CreateAreaDialog({ dialogRef, closeDialog, createArea }: CreateAreaDial
                     setLoading(true);
                     const newArea = new Area({
                         name: areaName,
-                        width: areaWidth,
-                        height: areaHeight,
+                        width: Math.floor(areaWidth),
+                        height: Math.floor(areaHeight),
                         id: areaName.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(),
                         previewImage: "",
                         sections: [],

@@ -1,7 +1,8 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc } from "firebase/firestore";
 import { app } from "./firebase";
 import { getLocalArea, getLocalTemplates } from "./local_firestore";
-import { Area, BoothMap, Company, Design, Section, Template } from "../constants";
+import { Area, BoothMap, Company, CustomItem, Design, Section, Template } from "../constants";
+import { getCurrentUser } from "./auth";
 
 const db = getFirestore(app);
 const useLocalFirestore = false;
@@ -209,6 +210,13 @@ export async function placeAreaSections(companyId: string, areaId: string, secti
         console.warn("Using local firestore, not updating sections");
         return Promise.resolve();
     } else {
+        console.log("Saving sections for area", areaId, "in company", companyId);
+        // const authID = getCurrentUser()?.id;
+        // if (!authID) {
+        //     throw new Error("User not logged in");
+        // }
+        // console.log("Authenticated user ID:", authID);
+
         const companyRef = doc(companiesCollection, companyId);
         const areaRef = doc(companyRef, "areas", areaId);
         await updateDoc(areaRef, {
@@ -279,4 +287,44 @@ export async function saveAreaBoothMap(companyId: string, boothMap: BoothMap): P
         const boothMapRef = doc(areaRef, "boothMaps", boothMap.id);
         await setDoc(boothMapRef, boothMap.toDoc());
     }
-}   
+}
+
+export async function getCompanyCustomItems(companyId: string): Promise<CustomItem[]> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, returning empty custom items list");
+        return Promise.resolve([]);
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const customItemsCollection = collection(companyRef, "customItems");
+        const customItemsSnapshot = await getDocs(customItemsCollection);
+        const customItems: CustomItem[] = [];
+        customItemsSnapshot.forEach((doc) => {
+            const data = doc.data();
+            customItems.push(CustomItem.fromDoc(data));
+        });
+        return customItems;
+    }
+}
+
+export async function addCompanyCustomItem(companyId: string, customItem: CustomItem): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not saving custom item");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const customItemRef = doc(companyRef, "customItems", customItem.id);
+        await setDoc(customItemRef, customItem.toDoc());
+    }
+}
+
+export async function deleteCompanyCustomItem(companyId: string, customItemId: string): Promise<void> {
+    if (useLocalFirestore) {
+        console.warn("Using local firestore, not deleting custom item");
+        return Promise.resolve();
+    } else {
+        const companyRef = doc(companiesCollection, companyId);
+        const customItemRef = doc(companyRef, "customItems", customItemId);
+
+        await deleteDoc(customItemRef);
+    }
+}

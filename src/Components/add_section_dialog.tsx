@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useState, type RefObject } from 'react';
 import './add_section_dialog.css';
 import { Item, InventoryItem } from '../constants';
 

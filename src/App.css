@@ -100,7 +100,8 @@
 
 .no-designs,
 .no-areas,
-.no-boothmaps {
+.no-boothmaps,
+.no-items {
     width: 100%;
     height: 100%;
     display: flex;
@@ -141,7 +142,8 @@
 
 .area-tiles,
 .boothmap-tiles,
-.design-tiles {
+.design-tiles,
+.custom-item-tiles {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;

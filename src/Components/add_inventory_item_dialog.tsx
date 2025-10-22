@@ -1,6 +1,8 @@
 import { useEffect, useState, type RefObject } from 'react';
 import './add_inventory_item_dialog.css';
-import { Item, InventoryItem, premadeItems } from '../constants';
+import { Item, InventoryItem, premadeItems, CustomItem } from '../constants';
+import InventoryItemTile from './inventory_item_tile';
+import { getCompanyCustomItems } from '../api/firestore';
 
 
 type InventoryItemDialogProps = {
@@ -17,6 +19,13 @@ function AddInventoryItemDialog({ dialogRef, closeDialog, addInventoryItem }: In
     const [itemWidth, setItemWidth] = useState<number>(1);
     const [itemHeight, setItemHeight] = useState<number>(1);
     const [isMoveable, setIsMoveable] = useState<boolean>(true);
+    const [customItems, setCustomItems] = useState<CustomItem[]>([]);
+
+    useEffect(() => {
+        getCompanyCustomItems(localStorage.getItem("companyId") || "").then((items) => {
+            setCustomItems(items);
+        });
+    }, []);
 
 
 
@@ -27,7 +36,7 @@ function AddInventoryItemDialog({ dialogRef, closeDialog, addInventoryItem }: In
                 <h2>Add Inventory Item</h2>
                 {selectedItem == null ? <>  <label htmlFor="">Premade Items:</label>
                     <div className='inventory-item-list'>
-                        {premadeItems.map((item) => <div key={item.name} className='inventory-item' onClick={() => {
+                        {customItems.map((item) => <InventoryItemTile key={item.id} item={item} onSelect={() => {
                             const newItem = new InventoryItem({
                                 quantity: 1, item: new Item({
                                     id: item.name + (Math.random() * 10000).toString(),
@@ -41,16 +50,7 @@ function AddInventoryItemDialog({ dialogRef, closeDialog, addInventoryItem }: In
                                 })
                             });
                             setSelectedItem(newItem);
-
-
-                        }}
-                        ><div className='inventory-item-display'>
-
-                                <img src={item.icon} alt="icon" />
-                                <p>{item.name}</p>
-                                <p className="quantity">{item.cellsLong}ft x {item.cellsTall}ft</p>
-
-                            </div></div>)}
+                        }} />)}
 
                     </div>
 
@@ -133,7 +133,16 @@ function AddInventoryItemDialog({ dialogRef, closeDialog, addInventoryItem }: In
                     closeDialog();
                 }}>Add Item</button>
 
-                <button className='action-btn' onClick={closeDialog}>Close</button>
+                <button className='action-btn' onClick={() => {
+                    setIsMoveable(true);
+                    setSelectedItem(null);
+                    setItemName('');
+                    setItemCount(1);
+                    setItemWidth(1);
+                    setItemHeight(1);
+
+                    closeDialog();
+                }}>Close</button>
 
 
             </div>

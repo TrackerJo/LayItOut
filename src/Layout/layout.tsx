@@ -25,8 +25,7 @@ import { createRoot } from 'react-dom/client';
 import AddSectionDialog from '../Components/add_section_dialog';
 import AddInventoryItemDialog from '../Components/add_inventory_item_dialog';
 import PlacingItem from '../Components/placing_item';
-import LoginDialog from '../Components/login_dialog';
-import { getCurrentUser } from '../api/auth';
+
 import BoothItem from '../Components/booth_item';
 import VendorsTile from '../Components/vendors_tile';
 import AddVendorDialog from '../Components/add_vendor_dialog';
@@ -1383,13 +1382,18 @@ function Layout() {
         }
       }
     }
+    const itemId = item.name + Math.floor(Math.random() * 100000).toString();
+
     if (creatingAreaStage !== "placing-sections" || !isCreatingArea) {
       const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(startCell, sections);
       // Add item to section
       const relativeCell = new CellId({ x: startCell.x - section!.cellId.x, y: startCell.y - section!.cellId.y });
       item.sectionCell = relativeCell;
       console.log("Adding item to section", section!.name, "at", relativeCell, item)
-      section!.items.push(item);
+      section!.items.push(tapAndPlaceMode ? new Item({
+        ...item,
+        id: itemId,
+      }) : item);
     } else {
       item.sectionCell = new CellId({ x: startCell.x, y: startCell.y });
     }
@@ -1449,10 +1453,14 @@ function Layout() {
         item.starterItem = true;
         item.isDisplayItem = false;
         item.initialElement = document.querySelector(`.App #${startCell.toId()}.cell:not(.cell-border)`) as HTMLElement;
+
+        console.log("New item id", itemId)
         return [...old, new Item({
           ...item, // copies all properties
           hasMoved: true,
-          id: item.name + Math.floor(Math.random() * 100000).toString(),
+          id: itemId,
+
+
         })];
       } else {
         if (!old.find((i) => i.id == item.id)!.hasMoved) {
@@ -1565,10 +1573,13 @@ function Layout() {
       const section = isMobile ? sections.find((m) => m.name === mobileViewingSection)! : getSectionByCellId(cell, sections);
       //remove item from section
       section!.items = section!.items.filter((i) => i.id != item.id);
-      console.log("DELETING ITEM", item.id)
+      console.log("DELETING ITEM section", item.id)
+      console.log("SECTION ITEMS AFTER DELETE", section!.items)
+
     }
     setItems((old) => {
-      console.log()
+      console.log("Removing item new", item.id)
+      console.log("ITEMS AFTER REMOVE", old.filter((i) => i.id != item.id))
       return old.filter((i) => i.id != item.id)
     })
 
