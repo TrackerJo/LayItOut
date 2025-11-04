@@ -21,14 +21,14 @@ function DesignTile({ design, areaName, onClick, deleteDesign }: { design: Desig
                     <img src={Link} alt="" className="design-link" onClick={async (e) => {
                         e.stopPropagation(); // Prevent the tile click event
                         const companyId = localStorage.getItem("companyId");
-                        const shareUrl = window.location.origin + `/LayItOut/Layout/?companyId=${companyId}&areaId=${design.areaId}&type=client-edit-design&designId=${design.id}&designName=${design.name}`;
+                        const shareUrl = window.location.origin + `/Layout/?companyId=${companyId}&areaId=${design.areaId}&type=client-edit-design&designId=${design.id}&designName=${design.name}`;
                         await navigator.clipboard.writeText(shareUrl);
                         alert("Design link copied to clipboard!");
                     }} />
                     <img src={Preview} alt="" className="design-preview" onClick={async (e) => {
                         e.stopPropagation(); // Prevent the tile click event
                         const companyId = localStorage.getItem("companyId");
-                        const shareUrl = window.location.origin + `/LayItOut/Layout/?companyId=${companyId}&areaId=${design.areaId}&type=public-preview&designId=${design.id}&designName=${design.name}`;
+                        const shareUrl = window.location.origin + `/Layout/?companyId=${companyId}&areaId=${design.areaId}&type=public-preview&designId=${design.id}&designName=${design.name}`;
                         await navigator.clipboard.writeText(shareUrl);
                         alert("Preview link copied to clipboard!");
                     }} />

@@ -23,7 +23,7 @@ function VendorDisplayTile({ vendor, onDelete, onEdit, boothMap }: VendorDisplay
                 <img src={Link} alt="Share" className="vendor-link" onClick={async (e) => {
                     e.stopPropagation(); // Prevent the tile click event
                     const companyId = localStorage.getItem("companyId");
-                    const shareUrl = window.location.origin + `/LayItOut/Layout/?companyId=${companyId}&areaId=${boothMap.areaId}&type=pick-booth&boothMapId=${boothMap.id}&boothMapName=${boothMap.name}&vendorId=${vendor.id}`;
+                    const shareUrl = window.location.origin + `/Layout/?companyId=${companyId}&areaId=${boothMap.areaId}&type=pick-booth&boothMapId=${boothMap.id}&boothMapName=${boothMap.name}&vendorId=${vendor.id}`;
                     await navigator.clipboard.writeText(shareUrl);
                     alert("BoothMap link copied to clipboard!");
                 }} />

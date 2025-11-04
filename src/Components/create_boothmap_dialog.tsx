@@ -48,7 +48,7 @@ function CreateBoothMapDialog({ dialogRef, closeDialog, createBoothMap, areas }:
         }
 
         await createBoothMap(newBoothMap);
-        window.location.href = `/LayItOut/Layout/?companyId=${localStorage.getItem("companyId")}&areaId=${newBoothMap.areaId}&type=create-boothMap&boothMapId=${newBoothMap.id}&boothMapName=${newBoothMap.name}`;
+        window.location.href = `/Layout/?companyId=${localStorage.getItem("companyId")}&areaId=${newBoothMap.areaId}&type=create-boothMap&boothMapId=${newBoothMap.id}&boothMapName=${newBoothMap.name}`;
         setLoading(false);
         setBoothMapName("");
         setSelectedArea(null);

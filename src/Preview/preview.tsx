@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 
 import './preview.css'
@@ -6,20 +6,15 @@ import '../index.css'
 import AreaComponent from '../Components/area';
 import type { CellProps } from '../Components/cell';
 import DraggableItem from '../Components/draggable_item';
-import { Area, Booth, CellId, Design, InventoryItem, Item, Section, StaringItem, Template } from '../constants';
-import Toolbox from '../Components/toolbox';
+import {  Booth, CellId, InventoryItem, Item, Section, StaringItem } from '../constants';
+
 
 
 import SectionArea from '../Components/section';
 import ForwardIcon from '../assets/forward.png';
 
-import LayoutDialog from '../Components/layout_dialog';
-import LayoutIcon from '../assets/layout_icon_white.png';
-import TemplateIcon from '../assets/template.png';
-import TemplateDialog from '../Components/template_dialog';
-import AddCustomItemDialog from '../Components/add_custom_item_dialog';
 
-import { getArea, getAreaDesign, saveAreaTemplates, saveCompanyArea, updateAreaDesign } from '../api/firestore';
+import {  saveCompanyArea } from '../api/firestore';
 import { getLocalArea } from '../api/local_firestore';
 import { createRoot } from 'react-dom/client';
 import BoothItem from '../Components/booth_item';
@@ -43,37 +38,24 @@ function Layout() {
   const cellSize = 10;
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
-  const layoutDialogRef = useRef<HTMLDialogElement>(null);
-  const [layoutDialogOpen, setLayoutDialogOpen] = useState<boolean>(false);
-  const [layoutSections, setLayoutSections] = useState<Section[]>([]);
+
 
   const [sections, setSections] = useState<Section[]>([]);
 
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [templateDialogOpen, setTemplateDialogOpen] = useState<boolean>(false);
-  const templateDialogRef = useRef<HTMLDialogElement>(null);
 
   const [mobileAreas, setMobileAreas] = useState<{ width: number, height: number, sectionName: string }[]>([]);
   const [mobileCells, setMobileCells] = useState<{ sectionName: string, cells: CellProps[][] }[]>([]);
   const [mobileViewingSection, setMobileViewingSection] = useState<string | null>(null);
-  const [isCreatingTemplate, setIsCreatingTemplate] = useState<boolean>(false);
-  const [isEditingTemplate, setIsEditingTemplate] = useState<boolean>(false);
+
   const [isViewingDesign, setIsViewingDesign] = useState<boolean>(false);
-  const [isViewingArea, setIsViewingArea] = useState<boolean>(false);
-  const [isEditingDesign, setIsEditingDesign] = useState<boolean>(false);
-  const [isClientEditingDesign, setIsClientEditingDesign] = useState<boolean>(false);
-  const [designName, setDesignName] = useState<string>("");
-  const [templateName, setTemplateName] = useState<string>("");
-  const [companyId, setCompanyId] = useState<string>("");
-  const [areaId, setAreaId] = useState<string>("");
-  const [designId, setDesignId] = useState<string>("");
+
   const [loading, setLoading] = useState<boolean>(true);
-  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+
   const [takingPhoto, setTakingPhoto] = useState<boolean>(false);
   const [tookScreenshot, setTookScreenshot] = useState<boolean>(false);
   const [booths, setBooths] = useState<Booth[]>([]);
 
-  const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
+
 
   function getSectionByCellId(cellId: CellId, sections: Section[]): Section | null {
     for (const section of sections) {

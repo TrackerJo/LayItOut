@@ -32,6 +32,8 @@ import AddVendorDialog from '../Components/add_vendor_dialog';
 import EditVendorDialog from '../Components/edit_vendor_dialog';
 import KeyTile from '../Components/key_tile';
 import AddVendorToBoothDialog from '../Components/add_vendor_to_booth';
+import EditToolboxInventoryItemDialog from '../Components/edit_toolbox_inventory_item_dialog';
+
 
 
 createRoot(document.getElementById('root')!).render(
@@ -205,6 +207,7 @@ function Layout() {
   const [isCreatingArea, setIsCreatingArea] = useState<boolean>(false);
   const [creatingAreaStage, setCreatingAreaStage] = useState<"placing-sections" | "modify-sections" | "placing-items">("placing-sections");
   const [isEditingDesign, setIsEditingDesign] = useState<boolean>(false);
+  const [isEditingArea, setIsEditingArea] = useState<boolean>(false);
   const [isViewingBoothMap, setIsViewingBoothMap] = useState<boolean>(false);
   const [isCreatingBoothMap, setIsCreatingBoothMap] = useState<boolean>(false);
   const [isPickingBoothMap, setIsPickingBoothMap] = useState<boolean>(false);
@@ -230,6 +233,9 @@ function Layout() {
   const [hasPickedBooth, setHasPickedBooth] = useState<boolean>(false);
   const [editVendor, setEditVendor] = useState<Vendor | null>(null);
   const [selectedBooth, setSelectedBooth] = useState<Booth | null>(null);
+  const [dateSubmitted, setDateSubmitted] = useState<Date | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [selectedEditItem, setSelectedEditItem] = useState<InventoryItem | null>(null);
 
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
   const addSectionDialogRef = useRef<HTMLDialogElement>(null);
@@ -237,6 +243,7 @@ function Layout() {
   const addVendorDialogRef = useRef<HTMLDialogElement>(null);
   const editVendorDialogRef = useRef<HTMLDialogElement>(null);
   const addVendorToBoothDialogRef = useRef<HTMLDialogElement>(null);
+  const editToolboxInventoryItemDialogRef = useRef<HTMLDialogElement>(null);
 
 
   function getSectionByCellId(cellId: CellId, sections: Section[]): Section | null {
@@ -407,6 +414,7 @@ function Layout() {
                 ...item.item, // copies all properties
                 initialElement: document.querySelector(`.App #${item.cell.toId()}.cell:not(.cell-border)`) as HTMLElement,
                 starterItem: true,
+                hasMoved: true,
               })
             })
           }))
@@ -504,7 +512,7 @@ function Layout() {
     const templateId = urlParams.get('templateId') || "";
     const area: Area = await getArea(companyId, areaId);
     if (area === null) {
-      window.location.href = "/LayItOut/DNF/";
+      window.location.href = "/DNF/";
       return;
     }
     setArea(area);
@@ -524,6 +532,8 @@ function Layout() {
     } else if (type === "create-template") {
       setIsCreatingTemplate(true);
 
+    } else if (type === "edit-area") {
+      setIsEditingArea(true);
     } else if (type === "edit-template") {
       setIsEditingTemplate(true);
 
@@ -557,6 +567,7 @@ function Layout() {
       setDesignName(designName);
       const designId = urlParams.get('designId') || "";
       setDesignId(designId);
+
     } else if (type === "create-area") {
       isCreatingArea = true;
       setIsCreatingArea(true);
@@ -593,7 +604,7 @@ function Layout() {
       setBoothMapId(boothMapId);
       const newBoothMap = await getAreaBoothMap(companyId, areaId, boothMapId);
       if (newBoothMap === null) {
-        window.location.href = "/LayItOut/DNF/";
+        window.location.href = "/DNF/";
         return;
       }
       setBoothMap(newBoothMap);
@@ -606,7 +617,7 @@ function Layout() {
       setBoothMapId(boothMapId);
       const newBoothMap = await getAreaBoothMap(companyId, areaId, boothMapId);
       if (newBoothMap === null) {
-        window.location.href = "/LayItOut/DNF/";
+        window.location.href = "/DNF/";
         return;
       }
       setBoothMap(newBoothMap);
@@ -629,13 +640,13 @@ function Layout() {
           setHasPickedBooth(pickedBooth);
           const company = await getCompany(companyId);
           if (company === null) {
-            window.location.href = "/LayItOut/DNF/";
+            window.location.href = "/DNF/";
             return;
           }
           setCompany(company);
 
         } else {
-          window.location.href = "/LayItOut/DNF/";
+          window.location.href = "/DNF/";
           return;
         }
       }
@@ -649,7 +660,7 @@ function Layout() {
       setBoothMapId(boothMapId);
       const newBoothMap = await getAreaBoothMap(companyId, areaId, boothMapId);
       if (newBoothMap === null) {
-        window.location.href = "/LayItOut/DNF/";
+        window.location.href = "/DNF/";
         return;
       }
       setBoothMap(newBoothMap);
@@ -664,7 +675,7 @@ function Layout() {
       setDesignName(designName);
       const newBoothMap = await getAreaBoothMap(companyId, areaId, boothMapId);
       if (newBoothMap === null) {
-        window.location.href = "/LayItOut/DNF/";
+        window.location.href = "/DNF/";
         return;
       }
       setBoothMap(newBoothMap);
@@ -810,9 +821,11 @@ function Layout() {
         const design = await getAreaDesign(companyId, areaId, urlParams.get('designId') || "");
         if (design === null) {
 
-          window.location.href = "/LayItOut/DNF/";
+          window.location.href = "/DNF/";
           return;
         }
+        setIsSubmitted(design.submitted);
+        setDateSubmitted(design.dateSubmitted ? new Date(design.dateSubmitted) : null);
         setDesign(design);
         setInventoryItems(design.inventoryItems.map(inv => new InventoryItem({
           item: new Item({
@@ -997,7 +1010,8 @@ function Layout() {
 
       console.log("Adding item to items", startingItem.item.initialElement)
       newItems.push(new Item({
-        ...startingItem.item, // copies all properties
+        ...startingItem.item,
+        hasMoved: true// copies all properties
       }));
 
     }
@@ -1358,6 +1372,8 @@ function Layout() {
             return false;
           }
         }
+        console.log("Finished checking placement. Current Item ID:", item.id, "Over: ", funcCells[startCell.y + i][startCell.x + j]);
+
       }
     }
 
@@ -1419,7 +1435,7 @@ function Layout() {
     }
 
     // If the item is being placed, remove it from the inventory
-    console.log("Removing item from inventory", item.name, item.hasMoved)
+    console.log("Removing item from inventory", item.name, item.hasMoved, item.starterItem)
     let removedItem = false;
 
     if (!item.hasMoved) {
@@ -1875,7 +1891,7 @@ function Layout() {
     }
     await placeAreaSections(companyId, areaId, newSections, currentWidth, currentHeight);
 
-    window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=create-area&stage=modify-sections`;
+    window.location.href = `/Layout/?companyId=${companyId}&areaId=${areaId}&type=create-area&stage=modify-sections`;
 
   }
 
@@ -1908,7 +1924,7 @@ function Layout() {
     await saveAreaSections(companyId, areaId, newSections);
     console.log("Section modifier items saved successfully");
 
-    window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=create-area&stage=placing-items`;
+    window.location.href = `/Layout/?companyId=${companyId}&areaId=${areaId}&type=create-area&stage=placing-items`;
   }
 
   async function saveArea(sections: Section[], inventoryItems: InventoryItem[]) {
@@ -1947,7 +1963,7 @@ function Layout() {
           id: areaId,
           name: area!.name,
           sections: newSections,
-          templates: [],
+          templates: area?.templates || [],
           previewImage: event.newValue!,
           width: area!.width,
           height: area!.height,
@@ -1962,7 +1978,7 @@ function Layout() {
         await saveCompanyArea(companyId!, newArea);
         console.log("Area saved successfully");
         setLoading(false);
-        window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=view-area`;
+        window.location.href = `/Layout/?companyId=${companyId}&areaId=${areaId}&type=view-area`;
       }
     })
   }
@@ -2141,10 +2157,35 @@ function Layout() {
         await saveAreaBoothMap(companyId!, newBoothMap);
         console.log("Booth Map saved successfully");
         setLoading(false);
-        window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=view-boothMap&boothMapId=${boothMapId}`;
+        window.location.href = `/Layout/?companyId=${companyId}&areaId=${areaId}&type=view-boothMap&boothMapId=${boothMapId}`;
       }
     })
   }
+
+  useEffect(() => {
+    // Your effect logic here
+    //Check when escape key is pressed
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // Handle escape key press
+        console.log("Escape key pressed");
+        if (highlightedCells.length > 0) {
+          // Add any additional logic if needed when there are highlighted cells
+          console.log("There are highlighted cells");
+          setHighlightedCells([]);
+          unHighlightCells();
+        } else {
+          setPlacingItem(null);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [highlightedCells]);
 
 
   return (
@@ -2177,6 +2218,10 @@ function Layout() {
         </div>}
         {(isViewingDesign || isPublicPreviewingDesign) && <div className='design-name-row'>
           <label htmlFor="design-name">Design Name: {designName}</label>
+          {(isViewingDesign && isSubmitted) &&
+            <p>Design was submitted on {dateSubmitted?.toLocaleDateString()}</p>
+
+          }
         </div>}
 
         {(isCreatingTemplate || isEditingTemplate) && <div className='template-creation'>
@@ -2272,7 +2317,7 @@ function Layout() {
                       const urlParams = new URLSearchParams(window.location.search);
                       const companyIdParam = urlParams.get('companyId');
                       const areaIdParam = urlParams.get('areaId');
-                      window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
+                      window.location.href = `/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
                     });
                   }
                 })
@@ -2356,7 +2401,7 @@ function Layout() {
                       const urlParams = new URLSearchParams(window.location.search);
                       const companyIdParam = urlParams.get('companyId');
                       const areaIdParam = urlParams.get('areaId');
-                      window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
+                      window.location.href = `/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
                     });
                   }
                 })
@@ -2375,11 +2420,11 @@ function Layout() {
             const urlParams = new URLSearchParams(window.location.search);
             const companyIdParam = urlParams.get('companyId');
             const areaIdParam = urlParams.get('areaId');
-            window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
+            window.location.href = `/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=view-area`
           }}>Cancel</button>
 
         </div>}
-        {(isClientEditingDesign) && <div className='template-creation'>
+        {(isClientEditingDesign && !isSubmitted) && <div className='template-creation'>
           {canSave && <button className='action-btn' onClick={() => {
             setLoading(true);
 
@@ -2411,6 +2456,8 @@ function Layout() {
                   const updatedDesign = new Design({
                     name: designName,
                     previewImage: event.newValue!,
+                    submitted: false,
+                    dateSubmitted: null,
                     areaId: areaId,
                     inventoryItems: inventoryItems,
                     sections: sections.map((s) => new Section({
@@ -2451,11 +2498,87 @@ function Layout() {
           }>Save</button>}
           <button className='action-btn' onClick={() => {
 
+            setLoading(true);
+
+            setTimeout(async () => {
+              //open url in new tab
+
+              const screenshotSections = sections.map((s) => new Section({
+                name: s.name,
+                cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
+                cellsLong: s.cellsLong,
+                cellsTall: s.cellsTall,
+                modifierItems: s.modifierItems,
+                startingItems: s.items.map((i) => new StaringItem({
+                  cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                  item: new Item({
+                    ...i, // copies all properties
+                    starterItem: true,
+                  })
+                }))
+              }));
+              localStorage.setItem('screenshotSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
+              console.log("Screenshot sections saved to localStorage", screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
+              localStorage.setItem('screenshot', '');
+              setTakingPhoto(true);
+              window.addEventListener('storage', async (event) => {
+                console.log("Storage event", event);
+                if (event.key === 'screenshot') {
+                  setTakingPhoto(false);
+                  const updatedDesign = new Design({
+                    name: designName,
+                    previewImage: event.newValue!,
+                    submitted: true,
+                    dateSubmitted: new Date(),
+                    areaId: areaId,
+                    inventoryItems: inventoryItems,
+                    sections: sections.map((s) => new Section({
+                      name: s.name,
+                      cellId: new CellId({ x: layoutSections.find((se) => se.name == s.name)!.cellId.x, y: layoutSections.find((se) => se.name == s.name)!.cellId.y }),
+                      cellsLong: s.cellsLong,
+                      cellsTall: s.cellsTall,
+                      modifierItems: s.modifierItems,
+                      startingItems: s.items.map((i) => new StaringItem({
+                        cell: new CellId({ x: i.sectionCell!.x, y: i.sectionCell!.y }),
+                        item: new Item({
+                          ...i, // copies all properties
+                          starterItem: true,
+                        })
+                      }))
+                    })),
+                    id: designId
+                  });
+                  updateAreaDesign(companyId, areaId, updatedDesign).then(() => {
+                    console.log("Design updated successfully");
+                    setCanSave(false);
+                    setLoading(false);
+                    setIsSubmitted(true);
+                    setDateSubmitted(new Date());
+
+
+                  });
+                }
+              })
+              // open the url in the background
+
+
+
+
+
+
+            }, 500)
+
+
           }}>Submit</button>
 
         </div>}
+        {(isClientEditingDesign && isSubmitted) && <div className='area-creation'>
+          <label htmlFor="">Design was submitted on {dateSubmitted?.toLocaleDateString()}</label>
+          <br />
 
-        {!isViewingDesign && !isViewingArea && !isViewingBoothMap && !isPickingBoothMap && !isPublicPreviewingDesign && < div className='place-mode-row'>
+        </div>}
+
+        {!isViewingDesign && !isViewingArea && !isViewingBoothMap && !isPickingBoothMap && !isPublicPreviewingDesign && !(isSubmitted && isClientEditingDesign) && < div className='place-mode-row'>
           <label htmlFor="tap-and-place-mode">Place Mode: </label>
           <select id="tap-and-place-mode" name="tap-and-place-mode" value={tapAndPlaceMode ? "tap" : "drag"} onChange={(e) => setTapAndPlaceMode(e.target.value === "tap")} className='place-mode-select'>
             <option value="drag">Drag and Drop</option>
@@ -2473,10 +2596,13 @@ function Layout() {
         )} <div className='layout'>
 
 
-          {!isViewingDesign && !isViewingArea && !isViewingBoothMap && !isPickingBoothMap && !isPublicPreviewingDesign && <Toolbox setSelectedItem={setPlacingItem} tapAndPlaceMode={tapAndPlaceMode} isModifyingSections={isCreatingArea && creatingAreaStage == 'modify-sections'} isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height * cellSize} showAddCustomItem={() => {
+          {!isViewingDesign && !isViewingArea && !isViewingBoothMap && !isPickingBoothMap && !isPublicPreviewingDesign && !(isSubmitted && isClientEditingDesign) && <Toolbox canEditItem={(isCreatingArea && creatingAreaStage == 'placing-items') || isEditingArea} onEditItem={(invItem) => {
+            setSelectedEditItem(invItem);
+            editToolboxInventoryItemDialogRef.current?.showModal();
+          }} setSelectedItem={setPlacingItem} tapAndPlaceMode={tapAndPlaceMode} isModifyingSections={isCreatingArea && creatingAreaStage == 'modify-sections'} isViewingDesign={isViewingDesign} isEditingTemplate={isEditingTemplate} isCreatingTemplate={isCreatingTemplate} maxHeight={isMobile ? 200 : height * cellSize} showAddCustomItem={() => {
             if (creatingAreaStage == "placing-sections" && isCreatingArea) {
               addSectionDialogRef.current?.showModal();
-            } else if (creatingAreaStage == "placing-items" && isCreatingArea) {
+            } else if (creatingAreaStage == "placing-items" && isCreatingArea || isEditingArea) {
               addInventoryItemDialogRef.current?.showModal();
             } else { addCustomItemDialogRef.current?.showModal(); }
           }} addDraggingItem={addDraggingItem} removeItem={removeItem} inventoryItems={inventoryItems.map(inv =>
@@ -2560,7 +2686,7 @@ function Layout() {
               }))
             }));
             localStorage.setItem('printSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-            window.open(window.location.origin + `/LayItOut/Print/?companyId=${companyId}&areaId=${areaId}&designName=${boothMap?.name}`, '_blank');
+            window.open(window.location.origin + `/Print/?companyId=${companyId}&areaId=${areaId}&designName=${boothMap?.name}`, '_blank');
           }}>Print</button>
         </div>}
         {isViewingDesign && <div className='design-view'>
@@ -2581,7 +2707,7 @@ function Layout() {
               }))
             }));
             localStorage.setItem('printSections', screenshotSections.map((s) => JSON.stringify(s.toJSON())).join("LAYOUTSEPARATOR"));
-            window.open(window.location.origin + `/LayItOut/Print/?companyId=${companyId}&areaId=${areaId}&designName=${designName}&designId=${designId}`, '_blank');
+            window.open(window.location.origin + `/Print/?companyId=${companyId}&areaId=${areaId}&designName=${designName}&designId=${designId}`, '_blank');
           }}>Print</button>
           <button className='action-btn' onClick={() => {
 
@@ -2619,32 +2745,47 @@ function Layout() {
               setTemplates(updatedTemplates);
 
 
-              window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=edit-template&templateId=${newTemplate.id}`;
+              window.location.href = `/Layout/?companyId=${companyId}&areaId=${areaId}&type=edit-template&templateId=${newTemplate.id}`;
             });
           }}>Turn into a Template</button>
 
           <button className='action-btn' onClick={() => {
 
-            window.location.href = `/LayItOut/?view=desings`;
+            window.location.href = `/?view=desings`;
           }}>Back</button>
 
         </div>}
         {isViewingBoothMap && <div className='design-view'>
           <button className='action-btn' onClick={() => {
-            window.location.href = `/LayItOut/?view=boothmaps`;
+            window.location.href = `/?view=boothmaps`;
           }}>Back</button>
         </div>
 
         }
         {isViewingArea && <div className='design-view'>
 
-
+          <button className='action-btn' onClick={() => {
+            window.location.href = `/Layout/?companyId=${companyId}&areaId=${areaId}&type=edit-area`;
+          }}>Edit Area</button>
           <button className='action-btn' onClick={() => {
 
-            window.location.href = `/LayItOut/?view=areas`;
+            window.location.href = `/?view=areas`;
           }}>Back</button>
 
         </div>}
+        {isEditingArea && <div className='design-view'>
+          <button className='action-btn' onClick={async () => {
+
+            await saveArea(sections, inventoryItems);
+
+          }}>Save Area</button>
+          <button className='action-btn' onClick={async () => {
+            setLoading(true);
+
+            window.location.href = `/Layout/?companyId=${companyId}&areaId=${areaId}&type=view-area`;
+          }}>Back</button>
+
+        </div >}
         {isCreatingArea && <div className='design-view'>
           <button className='action-btn' onClick={() => {
             if (creatingAreaStage == "placing-sections") {
@@ -2661,7 +2802,7 @@ function Layout() {
           <button className='action-btn' onClick={async () => {
             setLoading(true);
             await deleteArea(companyId, areaId);
-            window.location.href = `/LayItOut/`
+            window.location.href = `/`
           }}>Cancel</button>
 
         </div >}
@@ -2675,7 +2816,7 @@ function Layout() {
           <button className='action-btn' onClick={async () => {
             setLoading(true);
             await deleteBoothMap(companyId, areaId, boothMapId);
-            window.location.href = `/LayItOut/?view=boothmaps`
+            window.location.href = `/?view=boothmaps`
           }}>Cancel</button>
 
         </div >}
@@ -2684,7 +2825,7 @@ function Layout() {
       <div >
         {sections.map((section) => <SectionArea takingPhoto={false} section={section} key={section.cellId.toId()} visible={mobileViewingSection == null ? true : section.name == mobileViewingSection} cellSize={cellSize} />)}
         {items.map((item) => {
-          return <DraggableItem isPlacingItem={placingItem != null} isCreatingArea={isCreatingArea} isCreatingTemplate={isCreatingTemplate || isEditingTemplate} cellSize={cellSize} isViewingDesign={isViewingDesign || isViewingArea || isViewingBoothMap || isPickingBoothMap || isPublicPreviewingDesign} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.isSectionModifier ? sections.find((s) => s.name == mobileViewingSection)?.modifierItems.some((i) => i.item.id === item.id) : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
+          return <DraggableItem isPlacingItem={placingItem != null} isCreatingArea={isCreatingArea} isCreatingTemplate={isCreatingTemplate || isEditingTemplate} cellSize={cellSize} isViewingDesign={isViewingDesign || isViewingArea || isViewingBoothMap || isPickingBoothMap || isPublicPreviewingDesign || (isSubmitted && isClientEditingDesign)} removeItem={removeItem} visible={!isMobile ? true : !item.hasMoved && !item.starterItem ? true : mobileViewingSection == null ? false : item.isSectionModifier ? sections.find((s) => s.name == mobileViewingSection)?.modifierItems.some((i) => i.item.id === item.id) : item.starterItem ? sections.find((s) => s.name == mobileViewingSection)?.startingItems.some((i) => i.item.id === item.id) : sections.find((s) => s.name == mobileViewingSection)?.items.some((i) => i.id === item.id)}
 
             item={item} canPlaceItem={canPlaceItem} placeItem={placeItem} deleteItemRotate={deleteItemRotate} highlightCells={highlightCells} unHighlightCells={unHighlightCells} key={item.id} deleteItem={deleteItem} isSelected={selectedItemId === item.id}
             onSelect={onSelectItem}
@@ -2785,7 +2926,7 @@ function Layout() {
         </div>
       }
       {
-        !loading && !(isCreatingTemplate || isEditingTemplate || isViewingDesign || isCreatingBoothMap || isCreatingArea || isViewingBoothMap || isPickingBoothMap || isPublicPreviewingDesign) && <div className='template-icon' onClick={() => {
+        !loading && !(isCreatingTemplate || isEditingArea || isEditingTemplate || isViewingDesign || isCreatingBoothMap || isCreatingArea || isViewingBoothMap || isPickingBoothMap || isPublicPreviewingDesign || (isSubmitted && isClientEditingDesign)) && <div className='template-icon' onClick={() => {
           templateDialogRef.current?.showModal();
           setTemplateDialogOpen(true);
           console.log("Showing template dialog")
@@ -2832,7 +2973,7 @@ function Layout() {
           setTemplates(updatedTemplates);
           setTemplateDialogOpen(false);
 
-          window.location.href = `/LayItOut/Layout/?companyId=${companyId}&areaId=${areaId}&type=edit-template&templateId=${newTemplate.id}`;
+          window.location.href = `/Layout/?companyId=${companyId}&areaId=${areaId}&type=edit-template&templateId=${newTemplate.id}`;
         });
       }}
 
@@ -2869,6 +3010,8 @@ function Layout() {
                   name: designName,
                   previewImage: event.newValue!,
                   areaId: areaId,
+                  submitted: false,
+                  dateSubmitted: null,
                   inventoryItems: temp.inventoryItems,
                   sections: temp.sections.map((s) => new Section({
                     name: s.name,
@@ -2962,6 +3105,14 @@ function Layout() {
 
       }} />
 
+      <EditToolboxInventoryItemDialog dialogRef={editToolboxInventoryItemDialogRef} closeDialog={() => {
+        editToolboxInventoryItemDialogRef.current?.close();
+      }} deleteInventoryItem={(invItem) => {
+        setInventoryItems((prevItems) => prevItems.filter(item => item.item.id !== invItem.item.id));
+      }} editInventoryItem={(invItem) => {
+        setInventoryItems((prevItems) => prevItems.map(item => item.item.id === invItem.item.id ? invItem : item));
+      }} selectedItem={selectedEditItem} />
+
       <AddVendorToBoothDialog dialogRef={addVendorToBoothDialogRef} vendors={boothMap?.vendors.filter((v) => !vendorHasBooth(v, boothMap)) ?? []} closeDialog={() => {
         addVendorToBoothDialogRef.current?.close();
       }} addVendorToBooth={async (vendor) => {
@@ -3010,7 +3161,7 @@ function Layout() {
         setLoading(false);
       }} />
 
-      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src={window.location.origin + '/LayItOut/Preview/'} width={totalWidth * cellSize + 20} height={totalHeight * cellSize + 20}></iframe>}
+      {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src={window.location.origin + '/Preview/'} width={totalWidth * cellSize + 20} height={totalHeight * cellSize + 20}></iframe>}
     </>
   )
 }

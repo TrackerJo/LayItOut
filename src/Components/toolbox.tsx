@@ -12,6 +12,8 @@ type ToolboxProps = {
     removeItem: (item: Item) => void,
     setSelectedItem: (item: Item | null) => void,
     tapAndPlaceMode: boolean,
+    canEditItem: boolean,
+    onEditItem: (inventoryItem: InventoryItem) => void,
 
     maxHeight?: number,
     isCreatingTemplate: boolean,
@@ -20,9 +22,9 @@ type ToolboxProps = {
     isModifyingSections: boolean
 }
 
-function Toolbox({ inventoryItems, addDraggingItem, maxHeight, removeItem, showAddCustomItem, isCreatingTemplate, isEditingTemplate, isViewingDesign, tapAndPlaceMode, setSelectedItem, isModifyingSections }: ToolboxProps) {
+function Toolbox({ inventoryItems, addDraggingItem, maxHeight, removeItem, showAddCustomItem, isCreatingTemplate, isEditingTemplate, isViewingDesign, tapAndPlaceMode, setSelectedItem, isModifyingSections, canEditItem, onEditItem }: ToolboxProps) {
     return (<div className="toolbox" style={{ maxHeight: maxHeight ? `${maxHeight}px` : '200px' }}>
-        {inventoryItems.map((item) => <DisplayItem setSelectedItem={setSelectedItem} tapAndPlaceMode={tapAndPlaceMode} inventoryItem={item} addDraggingItem={addDraggingItem} removeItem={removeItem} />)}
+        {inventoryItems.map((item) => <DisplayItem canEditItem={canEditItem} onEditItem={onEditItem} setSelectedItem={setSelectedItem} tapAndPlaceMode={tapAndPlaceMode} inventoryItem={item} addDraggingItem={addDraggingItem} removeItem={removeItem} />)}
         {!(isCreatingTemplate || isEditingTemplate || isViewingDesign || isModifyingSections) && <div className="add-item" onClick={() => {
             showAddCustomItem();
 

@@ -235,3 +235,9 @@ body:has(#screenshot-iframe) #root {
 .area-creation-title {
   margin: 0;
 }
+
+.design-name-row p {
+  margin: 0.5rem 0 0 0;
+  font-size: 1rem;
+  font-weight: normal;
+}

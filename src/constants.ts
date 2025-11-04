@@ -556,14 +556,18 @@ export class Design {
     previewImage: string;
     sections: Section[];
     inventoryItems: InventoryItem[];
+    submitted: boolean;
+    dateSubmitted: Date | null;
 
-    constructor({ id, name, areaId, previewImage, sections, inventoryItems }: {
+    constructor({ id, name, areaId, previewImage, sections, inventoryItems, submitted, dateSubmitted }: {
         id: string,
         name: string,
         areaId: string,
         previewImage: string,
         sections: Section[],
-        inventoryItems: InventoryItem[]
+        inventoryItems: InventoryItem[],
+        submitted: boolean,
+        dateSubmitted: Date | null
     }) {
         this.id = id;
         this.name = name;
@@ -571,6 +575,8 @@ export class Design {
         this.previewImage = previewImage;
         this.sections = sections;
         this.inventoryItems = inventoryItems;
+        this.submitted = submitted;
+        this.dateSubmitted = dateSubmitted;
     }
 
     static fromDoc(data: DocumentData): Design {
@@ -580,7 +586,9 @@ export class Design {
             areaId: data.areaId,
             previewImage: data.previewImage || "",
             sections: data.sections ? data.sections.map((section: any) => Section.fromDoc(section)) : [],
-            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromDoc(item)) : []
+            inventoryItems: data.inventoryItems ? data.inventoryItems.map((item: any) => InventoryItem.fromDoc(item)) : [],
+            submitted: data.submitted || false,
+            dateSubmitted: data.dateSubmitted ? data.dateSubmitted.toDate() : null
         });
     }
 
@@ -591,7 +599,9 @@ export class Design {
             areaId: this.areaId,
             previewImage: this.previewImage || "",
             sections: this.sections.map(section => section.toDoc()),
-            inventoryItems: this.inventoryItems.map(item => item.toDoc())
+            inventoryItems: this.inventoryItems.map(item => item.toDoc()),
+            submitted: this.submitted || false,
+            dateSubmitted: this.dateSubmitted ? this.dateSubmitted : null
         };
     }
 }

@@ -99,7 +99,7 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen, isViewingAr
                                         const urlParams = new URLSearchParams(window.location.search);
                                         const companyIdParam = urlParams.get('companyId');
                                         const areaIdParam = urlParams.get('areaId');
-                                        window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=edit-template&templateId=${allTemplates.find((t) => t.name == temp)!.id}`
+                                        window.location.href = `/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=edit-template&templateId=${allTemplates.find((t) => t.name == temp)!.id}`
                                     } else {
                                         closeDialog();
 
@@ -180,7 +180,7 @@ function TemplateDialog({ dialogRef, closeDialog, templates, isOpen, isViewingAr
                     const urlParams = new URLSearchParams(window.location.search);
                     const companyIdParam = urlParams.get('companyId');
                     const areaIdParam = urlParams.get('areaId');
-                    window.location.href = `/LayItOut/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=create-template`
+                    window.location.href = `/Layout/?companyId=${companyIdParam}&areaId=${areaIdParam}&type=create-template`
                 }}>Create new Template</button> <br /></>}
                 <br />
                 <button className='action-btn' onClick={closeDialog}>Close</button>

@@ -239,6 +239,7 @@
 .display-item.TopWindow {
     border-top: 1px dashed black;
 }
+
 .display-item.BottomWindow {
     border-bottom: 1px dashed black;
 }
@@ -246,6 +247,7 @@
 .display-item.LeftWindow {
     border-left: 1px dashed black;
 }
+
 .display-item.RightWindow {
     border-right: 1px dashed black;
 }
@@ -289,4 +291,11 @@
     }
 
 
+}
+
+.edit-icon {
+    width: 24px;
+    height: 24px;
+
+    cursor: pointer;
 }

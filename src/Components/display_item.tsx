@@ -3,6 +3,7 @@
 import { use, useCallback, useEffect, useRef, useState } from "react"
 import { Item, type CellId, type InventoryItem } from "../constants"
 import "./display_item.css"
+import Pencil from "../assets/pencil.png"
 
 
 type DisplayItemProps = {
@@ -10,12 +11,14 @@ type DisplayItemProps = {
     addDraggingItem: (item: Item) => void,
     removeItem: (item: Item) => void,
     setSelectedItem: (item: Item | null) => void,
-    tapAndPlaceMode: boolean
+    tapAndPlaceMode: boolean,
+    canEditItem: boolean
+    onEditItem: (invItem: InventoryItem) => void
 
 
 }
 
-function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedItem, tapAndPlaceMode }: DisplayItemProps) {
+function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedItem, tapAndPlaceMode, canEditItem, onEditItem }: DisplayItemProps) {
     const displayRef = useRef<HTMLDivElement>(null)
     const cellSize = /Mobi|Android/i.test(navigator.userAgent) ? 5 : 10;
     const textRef = useRef<HTMLParagraphElement>(null);
@@ -99,6 +102,7 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedIt
             console.log("ADDING ITEM", inventoryItem.item.id, "to initialElement", inventoryItem.item.initialElement)
             setCurrentItem(new Item({
                 ...inventoryItem.item, // copies all properties
+
             }))
             addDraggingItem(inventoryItem.item)
             window.removeEventListener("mousemove", onMouseMove);
@@ -183,6 +187,7 @@ function DisplayItem({ inventoryItem, addDraggingItem, removeItem, setSelectedIt
 
         <p>{inventoryItem.item.name}</p>
         {inventoryItem.quantity > 0 && <p className="quantity">x{inventoryItem.quantity}</p>}
+        {canEditItem && <img src={Pencil} alt="Edit" className="edit-icon" onClick={() => onEditItem(inventoryItem)} />}
     </div >
     )
 }

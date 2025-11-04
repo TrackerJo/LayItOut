@@ -20,7 +20,7 @@ function BoothMapTile({ boothMap, areaName, onClick, deleteBoothMap }: { boothMa
                     <img src={Preview} alt="" className="boothMap-preview" onClick={async (e) => {
                         e.stopPropagation(); // Prevent the tile click event
                         const companyId = localStorage.getItem("companyId");
-                        const shareUrl = window.location.origin + `/LayItOut/Layout/?companyId=${companyId}&areaId=${boothMap.areaId}&type=public-preview-boothMap&boothMapId=${boothMap.id}&designName=${boothMap.name}`;
+                        const shareUrl = window.location.origin + `/Layout/?companyId=${companyId}&areaId=${boothMap.areaId}&type=public-preview-boothMap&boothMapId=${boothMap.id}&designName=${boothMap.name}`;
                         await navigator.clipboard.writeText(shareUrl);
                         alert("Preview link copied to clipboard!");
                     }} />

@@ -1,6 +1,6 @@
 import { useEffect, useState, type RefObject } from 'react';
 import './create_design_dialog.css';
-import { Area, Design, Section, Template } from '../constants';
+import { Area, Design, Template } from '../constants';
 
 
 type CreateDesignDialogProps = {
