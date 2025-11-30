@@ -108,7 +108,7 @@ function AddInventoryItemDialog({ dialogRef, closeDialog, addInventoryItem }: In
                             quantity: itemCount, item: new Item({
                                 id: itemName + (Math.random() * 10000).toString(),
                                 name: itemName,
-                                icon: `inventory-${itemName}`,
+                                icon: `custom-${itemName}`,
                                 cellsLong: Math.ceil(itemWidth),
                                 cellsTall: Math.ceil(itemHeight),
                                 moveable: isMoveable,

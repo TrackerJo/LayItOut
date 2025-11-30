@@ -15,7 +15,8 @@ type PlacingItemProps = {
     setSelectingItem: () => void,
     addHighlightedCell: (cellId: CellId) => void,
     placeMultiItem: (item: Item) => void,
-    cellSize: number
+    cellSize: number,
+
 }
 
 function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem, placeItem, highlightCells, unHighlightCells, cellSize, placeMultiItem }: PlacingItemProps) {
@@ -29,11 +30,12 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
     const [cell, setCell] = useState<HTMLElement | null>(null);
     const [canRotate, setCanRotate] = useState<boolean>(true);
     const [fontSize, setFontSize] = useState<number>(12); // Default font size
-    const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
     const itemRef = useRef<HTMLDivElement>(null);
     const [inViewport, setInViewport] = useState<boolean>(true);
     const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
     const [isHighlighting, setIsHighlighting] = useState<boolean>(false);
+    const [initialOffsetX, setInitialOffsetX] = useState<number>(0);
+    const [initialOffsetY, setInitialOffsetY] = useState<number>(0);
 
 
 
@@ -136,16 +138,12 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
             setIsDragging(true)
             // Calculate offset only once at drag start
             const rect = itemRef.current?.getBoundingClientRect();
-            setDragOffset({
-                x: rect ? rect.left - x : 0,
-                y: rect ? rect.top - y : 0,
-            });// Reset offset for new drag
-
+            setInitialOffsetX(rect ? rect.left - x : 0);
+            setInitialOffsetY(rect ? rect.top - y : 0);
 
         } else {
             console.log("No item to place, stopping dragging")
             setIsDragging(false);
-            setDragOffset(null);
             setX(0);
             setY(0);
             setPrevX(0);
@@ -154,13 +152,15 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
             setCell(null);
             setCanRotate(true);
             setFontSize(12);
-            setInViewport(true); // Reset offset for new drag
+            setInViewport(true);
+            setInitialOffsetX(0);
+            setInitialOffsetY(0);
 
 
         }
 
 
-    }, [item]);
+    }, [item, x, y]);
 
 
 
@@ -171,14 +171,8 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
 
     const handleMove = useCallback((clientX: number, clientY: number, e: MouseEvent | TouchEvent) => {
         if (item == null || !isDragging) return;
-        if (!dragOffset) {
-
-            return; // Wait for next move to use the offset
-        }
 
 
-
-        console.log("PLACING MOVE", item)
         const target = e.target as HTMLElement;
 
         // Create item with current rotation for highlighting
@@ -212,17 +206,12 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
         } else if (!isHighlighting) {
             unHighlightCells();
         }
-        // if (item.starterItem) {
-        //     // setX(clientX);
-        //     // setY(clientY);
-        //     setX(clientX - initialOffsetX)
-        //     setY(clientY - initialOffsetY + 5)
 
-        // } else {
-        setX(clientX - dragOffset.x)
-        setY(clientY - dragOffset.y + (item.sectionModifierType?.includes("Door") ? 10 : 5));
+        // Use the offset calculated once at drag start (stable across moves)
+        setX(clientX - initialOffsetX)
+        setY(clientY - initialOffsetY + 5)
+
         //check if mouse is pressed
-
         if (isMouseDown) {
             if (!isHighlighting) {
                 unHighlightCells();
@@ -230,9 +219,7 @@ function PlacingItem({ item, setSelectingItem, addHighlightedCell, canPlaceItem,
             setIsHighlighting(true);
             addHighlightedCell(CellId.fromString(targetElement.id));
         }
-        // Adjust for touch offset
-        // }
-    }, [item, isDragging, x, y, isHighlighting, isMouseDown, dragOffset, canPlaceItem, placeItem, getRotatedDimensions, rotation, highlightCells, unHighlightCells, itemRef]);
+    }, [item, isDragging, initialOffsetX, initialOffsetY, isHighlighting, isMouseDown, getRotatedDimensions, rotation, highlightCells, unHighlightCells, addHighlightedCell]);
 
     const handleEnd = useCallback((e: MouseEvent) => {
 

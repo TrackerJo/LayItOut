@@ -33,6 +33,7 @@ import EditVendorDialog from '../Components/edit_vendor_dialog';
 import KeyTile from '../Components/key_tile';
 import AddVendorToBoothDialog from '../Components/add_vendor_to_booth';
 import EditToolboxInventoryItemDialog from '../Components/edit_toolbox_inventory_item_dialog';
+import DesignTutorialDialog from '../Components/design_tutorial_dialog';
 
 
 
@@ -237,6 +238,7 @@ function Layout() {
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [selectedEditItem, setSelectedEditItem] = useState<InventoryItem | null>(null);
 
+
   const addCustomItemDialogRef = useRef<HTMLDialogElement>(null);
   const addSectionDialogRef = useRef<HTMLDialogElement>(null);
   const addInventoryItemDialogRef = useRef<HTMLDialogElement>(null);
@@ -244,6 +246,7 @@ function Layout() {
   const editVendorDialogRef = useRef<HTMLDialogElement>(null);
   const addVendorToBoothDialogRef = useRef<HTMLDialogElement>(null);
   const editToolboxInventoryItemDialogRef = useRef<HTMLDialogElement>(null);
+  const designTutorialDialogRef = useRef<HTMLDialogElement>(null);
 
 
   function getSectionByCellId(cellId: CellId, sections: Section[]): Section | null {
@@ -567,6 +570,10 @@ function Layout() {
       setDesignName(designName);
       const designId = urlParams.get('designId') || "";
       setDesignId(designId);
+      const hasSeenDesignTutorial = localStorage.getItem(`hasSeenDesignTutorial`);
+      if (!hasSeenDesignTutorial) {
+        designTutorialDialogRef.current?.showModal();
+      }
 
     } else if (type === "create-area") {
       isCreatingArea = true;
@@ -1131,12 +1138,12 @@ function Layout() {
 
 
   function canPlaceItem(startCell: CellId, item: Item): boolean {
-    console.log(startCell)
+
     const funcCells = isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells;
 
     const rowLength = funcCells[startCell.y].length;
     const columnLength = funcCells.length;
-    console.log(rowLength, columnLength)
+
 
     // Use rotated dimensions for boundary checking
     if (startCell.x + item.cellsLong > rowLength) {
@@ -1166,7 +1173,8 @@ function Layout() {
           }
         }
         if (funcCells[startCell.y + i][startCell.x + j].hasItem && funcCells[startCell.y + i][startCell.x + j].itemId != item.id) {
-          console.log("Something is already here")
+          console.log("Something is already here single")
+          console.log("Current ID", funcCells[startCell.y + i][startCell.x + j].itemId, "Placing Item ID", item.id)
           //Check if item in cell is a section modifier item
           const occupyingItem = items.find((it) => it.id == funcCells[startCell.y + i][startCell.x + j].itemId);
           if (occupyingItem && occupyingItem.isSectionModifier) {
@@ -1292,7 +1300,7 @@ function Layout() {
           }
         }
         if (funcCells[startCell.y + i][startCell.x + j].hasItem && funcCells[startCell.y + i][startCell.x + j].itemId != item.id) {
-          console.log("Something is already here")
+          console.log("Something is already here multi")
           //Check if item in cell is a section modifier item
           const occupyingItem = items.find((it) => it.id == funcCells[startCell.y + i][startCell.x + j].itemId);
           if (occupyingItem && occupyingItem.isSectionModifier) {
@@ -1418,7 +1426,11 @@ function Layout() {
     for (let i = 0; i < item.cellsTall; i++) {
       for (let j = 0; j < item.cellsLong; j++) {
         newCells[startCell.y + i][startCell.x + j].hasItem = true;
-        newCells[startCell.y + i][startCell.x + j].itemId = item.id;
+        if (tapAndPlaceMode) {
+          newCells[startCell.y + i][startCell.x + j].itemId = itemId;
+        } else {
+          newCells[startCell.y + i][startCell.x + j].itemId = item.id;
+        }
       }
     }
 
@@ -1464,7 +1476,7 @@ function Layout() {
 
       console.log("Updating item", item.id)
       if (tapAndPlaceMode && placingItem && item.id == placingItem.id) {
-        console.log("Updating placing item", item.id)
+        console.log("Updating placing item", itemId)
         item.hasMoved = true;
         item.starterItem = true;
         item.isDisplayItem = false;
@@ -1748,7 +1760,7 @@ function Layout() {
   }
 
   function unHighlightCells() {
-    console.log("Unhighlighting cells")
+    // console.log("Unhighlighting cells")
     const newCells: CellProps[][] = Array.from(isMobile ? mobileCells.find((m) => m.sectionName === mobileViewingSection)!.cells : cells);
     newCells.forEach(row => row.forEach(cell => {
       cell.mouseOver = false;
@@ -2002,7 +2014,7 @@ function Layout() {
       setMobileCells((old) => old.map((m) => m.sectionName === mobileViewingSection ? { ...m, cells: newCells } : m));
 
     } else {
-      console.log("Adding highlighted cell", startCell.toId())
+
       setCells(newCells);
     }
   }
@@ -2017,6 +2029,7 @@ function Layout() {
       }
     });
     setHighlightedCells([]);
+    console.log("PLACING HUGHCELLS")
     const newItems: Item[] = [];
     const inventoryIndex = inventoryItems.findIndex((i) => i.item.name == item.name && !i.item.hasMoved);
     let inventoryQuantity = inventoryIndex !== -1 ? inventoryItems[inventoryIndex].quantity : 0;
@@ -2189,7 +2202,7 @@ function Layout() {
 
 
   return (
-    console.log("RENDERING APP", !(isCreatingArea && creatingAreaStage != "placing-items")),
+
     <>
 
       <div className="App" >
@@ -3162,6 +3175,10 @@ function Layout() {
       }} />
 
       {takingPhoto && <iframe id="screenshot-iframe" title="Screenshot Iframe" src={window.location.origin + '/Preview/'} width={totalWidth * cellSize + 20} height={totalHeight * cellSize + 20}></iframe>}
+      <DesignTutorialDialog dialogRef={designTutorialDialogRef} closeDialog={() => {
+        designTutorialDialogRef.current?.close();
+
+      }} />
     </>
   )
 }

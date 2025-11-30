@@ -101,6 +101,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
         tempItem.hasMoved = item.hasMoved;
         let currentCell = cell;
         // Check if rotation is valid at current position
+        console.log("Trying to rotate item with id", item.id);
         if ((!item.hasMoved && item.rotation != 0) || (currentCell && canPlaceItem(CellId.fromString(currentCell.id), tempItem))) {
             if (currentCell == null) {
                 currentCell = item.initialElement!;
@@ -172,7 +173,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
 
             }
             if (item.isDisplayItem && !item.hasMoved) {
-                console.log("Starting item as dragging item");
+
                 setIsDragging(true);
 
             }
@@ -188,13 +189,13 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
 
         if (item.initialElement != null) {
             //rotate item if it has a rotation
-            console.log("Item initial element:", item.rotation);
+
             if (item.rotation) {
                 setTimeout(() => {
-                    console.log("Rotating item to initial rotation:", item.rotation);
+
                     //repeat the rotation logic
                     for (let i = 0; i < item.rotation; i++) {
-                        console.log("Rotating item", i + 1, "times");
+
                         setRotation((prevRotation) => {
                             const newRotation = (prevRotation + 1) % 4;
                             const offset = getRotationOffset(newRotation);
@@ -215,7 +216,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
 
             if (item.initialElement) {
                 if (item.initialElement.classList.contains("cell")) {
-                    console.log("Setting cell to initial element:", item.initialElement.children[0] as HTMLElement);
+
                     setCell(item.initialElement.children[0] as HTMLElement);
                 }
 
@@ -292,12 +293,12 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
         e.preventDefault();
     };
     useEffect(() => {
-        console.log("IS Dragging: ", isDragging)
+
         if (isDragging) {
             setPrevX(x)
             setPrevY(y)
 
-
+            console.log("Dragging item", item.icon);
 
             document.body.addEventListener('touchmove', preventScroll, { passive: false });
 
@@ -339,12 +340,12 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                     highlightCells(CellId.fromString(targetElement.id), tempItem);
                 } else if (targetElement?.classList?.contains("section-modifier")) {
                     // Highlight section modifier cells
-                    console.log("Target element is a section modifier, highlighting cells", targetElement);
+
                     highlightCells(CellId.fromString(targetElement.dataset.cell as string), tempItem);
 
                 }
                 else {
-                    console.log("Target element is not a cell or section modifier, not highlighting cells", targetElement);
+
                     unHighlightCells();
                 }
                 // if (item.starterItem) {
@@ -357,7 +358,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                 setX(clientX - initialOffsetX)
                 setY(clientY - initialOffsetY + 5)
                 //check if mouse is pressed
-                console.log("Is mouse down:", isMouseDown);
+
                 // if (isMouseDown) {
                 //     const rotatedDims = getRotatedDimensions(rotation);
                 //     const tempItem = {
@@ -395,7 +396,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
             };
 
             const handleEnd = (clientX: number, clientY: number) => {
-                console.log("Drag ended")
+
                 unHighlightCells();
 
                 document.body.removeEventListener('touchmove', preventScroll);
@@ -404,7 +405,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                 // Find the element under the final position
                 const targetElement = document.elementFromPoint(clientX, clientY) as HTMLElement;
                 if (cell !== null && targetElement?.dataset.cell === cell.id) {
-                    console.log("Target element is the same cell, not placing item");
+
                     setX(prevX);
                     setY(prevY);
                     setIsDragging(false);
@@ -412,7 +413,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                 }
                 if (!targetElement?.classList?.contains("cell") && !targetElement?.classList?.contains("section-modifier")) {
                     if (item.isDisplayItem && !item.hasMoved) {
-                        console.log("Removing item from toolbox");
+
                         removeItem(item);
                         setIsDragging(false);
                         return;
@@ -422,12 +423,11 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                     setX(prevX)
                     setY(prevY)
                 } else if (targetElement?.classList?.contains("section-modifier")) {
-                    console.log("Placing item on section modifier cell");
-                    console.log("Target element:", targetElement.dataset.cell);
+
                     if (targetElement.dataset.cell == "") {
                         console.warn("Section modifier cell data is null, cannot place item");
                         if (item.isDisplayItem && !item.hasMoved) {
-                            console.log("Removing item from toolbox");
+
                             removeItem(item);
                             setIsDragging(false);
                             return;
@@ -449,7 +449,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
 
                     if (!canPlaceItem(CellId.fromString(targetElement.dataset.cell as string), tempItem)) {
                         if (item.isDisplayItem && !item.hasMoved) {
-                            console.log("Removing item from toolbox");
+
                             removeItem(item);
                             return;
                         }
@@ -473,7 +473,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                     setPrevY(finalY)
                     setIsDragging(false);
                     placeItem(CellId.fromString(targetElement.dataset.cell as string), tempItem, cell != null ? CellId.fromString(cell.id) : null);
-                    console.log("Placed item at cell:", targetElement);
+
                     setCell(document.getElementById(targetElement.dataset.cell as string));
 
                 } else {
@@ -487,7 +487,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
 
                     if (!canPlaceItem(CellId.fromString(targetElement.id), tempItem)) {
                         if (item.isDisplayItem && !item.hasMoved) {
-                            console.log("Removing item from toolbox");
+
                             removeItem(item);
                             return;
                         }
@@ -511,7 +511,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
                     setPrevY(finalY)
 
                     placeItem(CellId.fromString(targetElement.id), tempItem, cell != null ? CellId.fromString(cell.id) : null);
-                    console.log("Placed item at cell:", targetElement);
+
                     setCell(targetElement)
                     setIsDragging(false);
                 }
@@ -525,7 +525,7 @@ function DraggableItem({ isCreatingArea, isCreatingTemplate, item, canPlaceItem,
             };
 
             document.onmouseup = (e) => {
-                console.log("Mouse up at:", e.clientX, e.clientY);
+
                 handleEnd(e.clientX, e.clientY);
                 document.onmousemove = null;
                 document.onmouseup = null;

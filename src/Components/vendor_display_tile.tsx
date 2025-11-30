@@ -25,7 +25,7 @@ function VendorDisplayTile({ vendor, onDelete, onEdit, boothMap }: VendorDisplay
                     const companyId = localStorage.getItem("companyId");
                     const shareUrl = window.location.origin + `/Layout/?companyId=${companyId}&areaId=${boothMap.areaId}&type=pick-booth&boothMapId=${boothMap.id}&boothMapName=${boothMap.name}&vendorId=${vendor.id}`;
                     await navigator.clipboard.writeText(shareUrl);
-                    alert("BoothMap link copied to clipboard!");
+                    alert("Booth Map link copied to clipboard!");
                 }} />
                 <img src={Pencil} alt="Edit" className="vendor-edit" onClick={(e) => {
                     e.stopPropagation(); // Prevent the tile click event
